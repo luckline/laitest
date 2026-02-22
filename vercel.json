@@ -5,7 +5,10 @@
     { "src": "css/**", "use": "@vercel/static" },
     { "src": "app.js", "use": "@vercel/static" },
     { "src": "app.html", "use": "@vercel/static" },
-    { "src": "index.html", "use": "@vercel/static" }
+    { "src": "index.html", "use": "@vercel/static" },
+    { "src": "privacy.html", "use": "@vercel/static" },
+    { "src": "terms.html", "use": "@vercel/static" },
+    { "src": "security.html", "use": "@vercel/static" }
   ],
   "rewrites": [
     { "source": "/api/(.*)", "destination": "/api/index.py" },
