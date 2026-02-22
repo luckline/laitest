@@ -11,6 +11,10 @@
     }
   ],
   "rewrites": [
+    {
+      "source": "/css/(.*)",
+      "destination": "/css/$1"
+    },
     { 
       "source": "/api/(.*)", 
       "destination": "/api/index.py" 
