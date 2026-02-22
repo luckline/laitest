@@ -3,12 +3,14 @@
   "builds": [
     { "src": "api/index.py", "use": "@vercel/python" },
     { "src": "css/**", "use": "@vercel/static" },
+    { "src": "app.js", "use": "@vercel/static" },
     { "src": "app.html", "use": "@vercel/static" },
     { "src": "index.html", "use": "@vercel/static" }
   ],
   "rewrites": [
     { "source": "/api/(.*)", "destination": "/api/index.py" },
     { "source": "/css/(.*)", "destination": "/css/$1" },
+    { "source": "/app.js", "destination": "/app.js" },
     { "source": "/app", "destination": "/app.html"},
     { "source": "/(.*)", "destination": "/$1" }
   ]
