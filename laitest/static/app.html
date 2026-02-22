@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>laitest console</title>
+    <link rel="stylesheet" href="/static/styles.css" />
+  </head>
+  <body>
+    <header class="top">
+      <div class="brand">
+        <div class="logo">LAI</div>
+        <div>
+          <div class="name">laitest</div>
+          <div class="tagline">智能测试平台控制台</div>
+        </div>
+      </div>
+      <div class="health" id="health">checking...</div>
+    </header>
+
+    <main class="grid">
+      <section class="card">
+        <h2>Projects</h2>
+        <div class="row">
+          <input id="projectName" placeholder="New project name" />
+          <button id="createProject">Create</button>
+        </div>
+        <div id="projects" class="list"></div>
+      </section>
+
+      <section class="card">
+        <h2>Suites</h2>
+        <div class="row">
+          <select id="suiteProject"></select>
+          <input id="suiteName" placeholder="New suite name" />
+          <button id="createSuite">Create</button>
+        </div>
+        <div id="suites" class="list"></div>
+      </section>
+
+      <section class="card wide">
+        <h2>Cases</h2>
+        <div class="row">
+          <select id="caseProject"></select>
+          <select id="caseSuite"></select>
+          <input id="caseTitle" placeholder="Case title" />
+          <button id="createCase">Create</button>
+        </div>
+        <div class="hint">
+          默认新建的是 demo 用例；你可以点开编辑 spec，改成 http_get 或更复杂流程。
+        </div>
+        <div id="cases" class="list"></div>
+      </section>
+
+      <section class="card wide">
+        <h2>Runs</h2>
+        <div class="row">
+          <select id="runProject"></select>
+          <select id="runSuite"></select>
+          <input id="runName" placeholder="Run name (optional)" />
+          <button id="createRun">Run selected cases</button>
+        </div>
+        <div class="hint">执行在后台异步运行，页面会自动刷新状态。</div>
+        <div id="runs" class="list"></div>
+      </section>
+
+      <section class="card wide">
+        <h2>AI Generate</h2>
+        <div class="hint">粘贴需求/验收标准，每行一个点，生成建议用例；可勾选“直接写入用例库”。</div>
+        <textarea id="aiPrompt" placeholder="- 登录成功\n- 登录失败（密码错误）\n- 忘记密码流程"></textarea>
+        <div class="row">
+          <select id="aiProject"></select>
+          <select id="aiSuite"></select>
+          <label class="check"><input type="checkbox" id="aiCreate" /> create cases</label>
+          <button id="aiGo">Generate</button>
+        </div>
+        <pre id="aiOut" class="pre"></pre>
+      </section>
+    </main>
+
+    <footer class="foot">
+      <span>官网首页：<a href="/">/</a></span>
+      <span class="sep">|</span>
+      <span>Data: <code>./.laitest/laitest.db</code></span>
+      <span class="sep">|</span>
+      <span>Token: set <code>LAITEST_TOKEN</code> to enable bearer auth</span>
+    </footer>
+
+    <script src="/static/app.js"></script>
+  </body>
+</html>
+

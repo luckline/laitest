@@ -1,0 +1,188 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>laitest | AI 测试平台</title>
+    <meta name="description" content="laitest 是面向研发团队的 AI 测试平台，帮助你更快生成用例、自动执行回归并定位失败根因。" />
+    <link rel="stylesheet" href="/static/marketing.css" />
+  </head>
+  <body>
+    <header class="nav">
+      <a class="brand" href="/">
+        <span class="mark">LAI</span>
+        <span class="word">laitest</span>
+      </a>
+      <nav class="links">
+        <a href="#product">产品</a>
+        <a href="#integrations">集成</a>
+        <a href="#pricing">定价</a>
+        <a href="#security">安全</a>
+      </nav>
+      <div class="nav-actions">
+        <a class="btn ghost" href="/app">控制台</a>
+        <a class="btn solid" href="#cta">预约演示</a>
+      </div>
+    </header>
+
+    <main>
+      <section class="hero">
+        <div class="hero-copy">
+          <p class="eyebrow">AI-native Software Testing</p>
+          <h1>把回归测试从“人肉堆时间”，升级到“AI 驱动闭环交付”</h1>
+          <p class="sub">
+            laitest 帮助团队自动生成测试用例、执行关键路径回归、聚类失败根因，并给出可执行修复建议。
+          </p>
+          <div class="hero-actions">
+            <a class="btn solid" href="#cta">免费试用</a>
+            <a class="btn ghost" href="/app">查看产品</a>
+          </div>
+          <div class="proof">
+            <span>平均回归时间降低 <b>76%</b></span>
+            <span>缺陷定位速度提升 <b>3.4x</b></span>
+            <span>关键场景覆盖率提升 <b>41%</b></span>
+          </div>
+        </div>
+        <div class="hero-panel">
+          <div class="terminal">
+            <div class="term-head">
+              <span></span><span></span><span></span>
+              <code>run quality gate</code>
+            </div>
+            <pre>
+Suites: smoke,checkout,auth
+Cases: 128   Passed: 121   Failed: 7
+
+Top failure clusters:
+1) expected status 200, got 500 (4)
+2) response body missing expected substring (2)
+3) timeout after 10.0s (1)
+
+Recommendation:
+- retry flaky http_get with backoff
+- lock seed data for /checkout flow
+            </pre>
+          </div>
+        </div>
+      </section>
+
+      <section class="logo-strip">
+        <p>被以下类型团队采用</p>
+        <div class="logos">
+          <span>FinTech</span><span>SaaS</span><span>E-commerce</span><span>AI Apps</span><span>Enterprise IT</span>
+        </div>
+      </section>
+
+      <section id="product" class="section">
+        <h2>核心能力</h2>
+        <div class="cards three">
+          <article class="card">
+            <h3>AI 生成用例</h3>
+            <p>从需求、PR 描述、接口文档快速生成可执行用例，覆盖正常流、边界流和失败流。</p>
+          </article>
+          <article class="card">
+            <h3>自动执行与质量门禁</h3>
+            <p>支持 smoke / regression / release 流水线执行，输出通过率、失败率与风险等级。</p>
+          </article>
+          <article class="card">
+            <h3>失败聚类与根因分析</h3>
+            <p>自动聚类同类报错，提取高频问题并给出修复建议，降低 triage 时间。</p>
+          </article>
+        </div>
+      </section>
+
+      <section id="integrations" class="section alt">
+        <h2>集成生态</h2>
+        <div class="chips">
+          <span>GitHub Actions</span><span>GitLab CI</span><span>Jenkins</span><span>Jira</span><span>Slack</span><span>Webhook</span>
+        </div>
+        <p class="center">从代码提交到发布门禁，统一在一个测试中枢完成。</p>
+      </section>
+
+      <section id="pricing" class="section">
+        <h2>定价</h2>
+        <div class="cards three">
+          <article class="card price">
+            <h3>Starter</h3>
+            <p class="price-num">¥0<span>/月</span></p>
+            <ul>
+              <li>1 项目</li>
+              <li>基础用例管理</li>
+              <li>社区支持</li>
+            </ul>
+            <a class="btn ghost block" href="/app">立即开始</a>
+          </article>
+          <article class="card price featured">
+            <h3>Pro</h3>
+            <p class="price-num">¥899<span>/月</span></p>
+            <ul>
+              <li>10 项目</li>
+              <li>AI 用例生成</li>
+              <li>失败聚类分析</li>
+            </ul>
+            <a class="btn solid block" href="#cta">开始试用</a>
+          </article>
+          <article class="card price">
+            <h3>Enterprise</h3>
+            <p class="price-num">联系销售</p>
+            <ul>
+              <li>无限项目</li>
+              <li>私有化部署</li>
+              <li>SLA 与专属支持</li>
+            </ul>
+            <a class="btn ghost block" href="#cta">预约方案</a>
+          </article>
+        </div>
+      </section>
+
+      <section id="security" class="section alt">
+        <h2>安全与合规</h2>
+        <div class="cards two">
+          <article class="card">
+            <h3>企业级安全基线</h3>
+            <p>传输加密、访问控制、操作审计、Token 鉴权，满足团队内部治理需求。</p>
+          </article>
+          <article class="card">
+            <h3>可扩展部署</h3>
+            <p>支持云端与私有化部署，按组织规模扩展执行节点与测试吞吐能力。</p>
+          </article>
+        </div>
+      </section>
+
+      <section class="section faq">
+        <h2>FAQ</h2>
+        <details>
+          <summary>laitest 适合什么团队？</summary>
+          <p>适合持续交付频率高、回归压力大、需要提升测试效率和稳定性的研发团队。</p>
+        </details>
+        <details>
+          <summary>可以接入现有 CI 流程吗？</summary>
+          <p>可以，通过 CLI/API/Webhook 接入现有流水线，逐步替换或并行运行都可以。</p>
+        </details>
+        <details>
+          <summary>可以从免费版升级到企业版吗？</summary>
+          <p>可以，数据与用例资产可平滑迁移到更高版本。</p>
+        </details>
+      </section>
+
+      <section id="cta" class="cta">
+        <h2>让你的测试系统，从“工具拼装”走向“平台化智能协作”</h2>
+        <p>10 分钟预约演示，带你看如何在一周内上线第一条 AI 回归链路。</p>
+        <div class="hero-actions">
+          <a class="btn solid" href="/app">进入控制台</a>
+          <a class="btn ghost" href="mailto:sales@laitest.tech">联系销售</a>
+        </div>
+      </section>
+    </main>
+
+    <footer class="foot">
+      <div>© 2026 laitest.tech</div>
+      <div class="foot-links">
+        <a href="#">Privacy</a>
+        <a href="#">Terms</a>
+        <a href="#">Security</a>
+        <a href="mailto:hello@laitest.tech">Contact</a>
+      </div>
+    </footer>
+  </body>
+</html>
