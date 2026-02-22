@@ -8,6 +8,7 @@
   "rewrites": [
     { "source": "/api/(.*)", "destination": "/api/index.py" },
     { "source": "/css/(.*)", "destination": "/css/$1" },
+    { "source": "/app", "destination": "/app.html"},
     { "source": "/(.*)", "destination": "/$1" }
   ]
 }
