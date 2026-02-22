@@ -1,13 +1,10 @@
 {
   "version": 2,
-  "builds": [
-    { "src": "api/index.py", "use": "@vercel/python" },
-    { "src": "css/**", "use": "@vercel/static" },
-    { "src": "index.html", "use": "@vercel/static" }
-  ],
+  "cleanUrls": true,
   "rewrites": [
-    { "source": "/api/(.*)", "destination": "/api/index.py" },
-    { "source": "/css/(.*)", "destination": "/css/$1" },
-    { "source": "/(.*)", "destination": "/$1" }
+    { 
+      "source": "/api/(.*)", 
+      "destination": "/api/index.py" 
+    }
   ]
 }
