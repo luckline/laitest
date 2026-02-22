@@ -1,19 +1,16 @@
-from flask import Flask, jsonify
+from flask import Flask
 
+# 变量名必须叫 app，这是 Vercel 的默认寻找对象
 app = Flask(__name__)
 
+@app.route('/')
+def home():
+    return "Laitest Tech Python API is Live!"
 
-@app.route("/api/test", methods=["GET"])
+@app.route('/api/test')
 def test():
-    return jsonify({"status": "success", "message": "Python 后端已连接到 laitest.tech"})
+    return {"status": "success", "message": "Backend connected"}
 
-
-@app.route("/api/health", methods=["GET"])
-def health():
-    return jsonify({"ok": True})
-
-
-# 这一行在 Vercel 部署时可作为显式入口保留
-def handler(request):
-    return app(request)
-
+# 关键修复：显式导出，防止 Vercel 运行时识别失败
+# 在文件最底部添加这一行
+handler = app
