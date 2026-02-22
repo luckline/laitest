@@ -3,6 +3,7 @@
   "builds": [
     { "src": "api/index.py", "use": "@vercel/python" },
     { "src": "css/**", "use": "@vercel/static" },
+    { "src": "app.html", "use": "@vercel/static" },
     { "src": "index.html", "use": "@vercel/static" }
   ],
   "rewrites": [
