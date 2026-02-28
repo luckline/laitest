@@ -4,7 +4,7 @@ import argparse
 import json
 from typing import Any
 
-from .ai import generate_cases_local
+from .ai import generate_cases
 from .db import db_conn, json_loads, row_to_dict, utc_now_iso
 from .ids import new_id
 from .report import render_run_report
@@ -275,9 +275,11 @@ def run_cli(argv: list[str]) -> int:
         return 0
 
     if args.cmd == "ai-generate":
-        ss = generate_cases_local(args.prompt)
+        ss, provider, warning = generate_cases(args.prompt)
         _pp(
             {
+                "provider": provider,
+                "warning": warning,
                 "suggestions": [
                     {"title": s.title, "description": s.description, "tags": s.tags, "kind": s.kind, "spec": s.spec}
                     for s in ss
@@ -287,4 +289,3 @@ def run_cli(argv: list[str]) -> int:
         return 0
 
     raise SystemExit("unknown command")
-

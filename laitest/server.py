@@ -10,14 +10,18 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import parse_qs, urlparse
 
-from .ai import generate_cases_local
+from .ai import generate_cases
 from .db import db_conn, json_loads, row_to_dict, utc_now_iso
 from .ids import new_id
 from .runner import analyze_failures, run_case, summarize_run
 
 
 def _static_dir() -> Path:
-    return Path(__file__).resolve().parent / "static"
+    pkg_static = Path(__file__).resolve().parent / "static"
+    if pkg_static.exists():
+        return pkg_static
+    # Backward compatible layout: static files placed at repository root.
+    return Path(__file__).resolve().parent.parent
 
 
 def _read_json(req: BaseHTTPRequestHandler) -> dict:
@@ -165,6 +169,7 @@ class Handler(BaseHTTPRequestHandler):
     def _do_GET(self) -> None:
         parsed = urlparse(self.path)
         path = parsed.path
+        sdir = _static_dir()
 
         if path.startswith("/api/"):
             if not _require_token(self):
@@ -174,19 +179,27 @@ class Handler(BaseHTTPRequestHandler):
             return
 
         if path in ("/", "/index.html"):
-            _send_file(self, _static_dir() / "index.html")
+            _send_file(self, sdir / "index.html")
             return
         if path in ("/app", "/app.html"):
-            _send_file(self, _static_dir() / "app.html")
+            _send_file(self, sdir / "app.html")
             return
         if path.startswith("/static/"):
             rel = path.removeprefix("/static/").lstrip("/")
-            p = (_static_dir() / rel).resolve()
-            if _static_dir() not in p.parents and p != _static_dir():
+            p = (sdir / rel).resolve()
+            if sdir not in p.parents and p != sdir:
                 _send_text(self, 400, "bad path", "text/plain; charset=utf-8")
                 return
             _send_file(self, p)
             return
+
+        # Direct static fallback, e.g. /app.js, /css/styles.css, /favicon.ico
+        rel2 = path.lstrip("/")
+        if rel2:
+            p2 = (sdir / rel2).resolve()
+            if sdir in p2.parents and p2.is_file():
+                _send_file(self, p2)
+                return
 
         _send_text(self, 404, "not found", "text/plain; charset=utf-8")
 
@@ -453,7 +466,7 @@ class Handler(BaseHTTPRequestHandler):
                 project_id = str(body.get("project_id") or "").strip()
                 suite_id = str(body.get("suite_id") or "").strip() or None
 
-                suggestions = generate_cases_local(prompt)
+                suggestions, provider, warning = generate_cases(prompt)
                 # Option: auto-create in DB when asked.
                 create = bool(body.get("create"))
                 created_ids: list[str] = []
@@ -495,6 +508,8 @@ class Handler(BaseHTTPRequestHandler):
                             }
                             for s in suggestions
                         ],
+                        "provider": provider,
+                        "warning": warning,
                         "created_case_ids": created_ids,
                     },
                 )

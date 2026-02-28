@@ -22,7 +22,7 @@
   <body>
     <header class="nav">
       <a class="brand" href="/">
-        <span class="mark">LAI</span>
+        <span class="mark">AI</span>
         <span class="word">laitest</span>
       </a>
       <nav class="links">
@@ -33,6 +33,7 @@
       </nav>
       <div class="nav-actions">
         <a class="btn ghost" href="/app">控制台</a>
+        <a class="btn ghost" href="#wechat">测试最前沿</a>
         <a class="btn solid" href="#cta">预约演示</a>
       </div>
     </header>
@@ -41,47 +42,94 @@
       <section class="hero">
         <div class="hero-copy">
           <p class="eyebrow">AI-native Software Testing</p>
-          <h1>把回归测试从“人肉堆时间”，升级到“AI 驱动闭环交付”</h1>
+          <h1>让AI测试更简单</h1>
           <p class="sub">
-            laitest 帮助团队自动生成测试用例、执行关键路径回归、聚类失败根因，并给出可执行修复建议。
+            laitest帮助团队自动生成测试用例、执行关键路径回归。
           </p>
           <div class="hero-actions">
             <a class="btn solid" href="#cta">免费试用</a>
             <a class="btn ghost" href="/app">查看产品</a>
           </div>
           <div class="proof">
-            <span>平均回归时间降低 <b>76%</b></span>
-            <span>缺陷定位速度提升 <b>3.4x</b></span>
+            <span>测试用例编写效率提升 <b>50%</b></span>
+            <span>平均回归时间降低 <b>70%</b></span>
             <span>关键场景覆盖率提升 <b>41%</b></span>
           </div>
         </div>
         <div class="hero-panel">
           <div class="terminal">
-            <div class="term-head">
-              <span></span><span></span><span></span>
-              <code>run quality gate</code>
-            </div>
-            <pre>
-Suites: smoke,checkout,auth
-Cases: 128   Passed: 121   Failed: 7
-
-Top failure clusters:
-1) expected status 200, got 500 (4)
-2) response body missing expected substring (2)
-3) timeout after 10.0s (1)
-
-Recommendation:
-- retry flaky http_get with backoff
-- lock seed data for /checkout flow
-            </pre>
+            <aside class="wx-qr">
+              <p>扫码获取最新测试学习资料</p>
+              <div class="qr-box">
+                <img src="/img/qrcode_laitest.jpg" alt="laitest 公众号二维码" />
+              </div>
+              <div class="wx-meta">
+                公众号名称：<b>小梁游记（后续专注测试领域学习）</b><br />
+                简介：<b>十几年测试老兵，分享测试领域学习资料，包括测试基础、测试方法、测试工具、测试案例等。</b>
+              </div>
+            </aside>
           </div>
         </div>
       </section>
 
-      <section class="logo-strip">
-        <p>被以下类型团队采用</p>
-        <div class="logos">
-          <span>FinTech</span><span>SaaS</span><span>E-commerce</span><span>AI Apps</span><span>Enterprise IT</span>
+      <section id="wechat" class="section">
+        <h2>测试最前沿</h2>
+        <div class="wx-hero">
+          <div>
+            <p class="sub">
+              汇总测试学习内容：测试设计、自动化实践、质量工程与 AI 测试方法。
+            </p>
+            <div class="hero-actions">
+              <a class="btn solid" href="#materials">查看资料</a>
+            </div>
+          </div>
+          
+        </div>
+        <div id="materials" class="cards two">
+          <article class="card">
+            <h3>从需求到用例：高质量测试设计清单</h3>
+            <p>覆盖正常流、边界流、异常流的结构化思路，可直接套用到评审和用例编写流程。</p>
+            <a
+              class="wx-link"
+              href="https://mp.weixin.qq.com/s/SzFTo3DcoaC6gsouPioI6w"
+              target="_blank"
+              rel="noopener noreferrer"
+              >阅读公众号文章</a
+            >
+          </article>
+          <article class="card">
+            <h3>测试用例概念和设计方法</h3>
+            <p>系统讲清测试用例的核心概念、设计原则与常见方法，帮助你建立可复用的用例设计框架。</p>
+            <a
+              class="wx-link"
+              href="https://mp.weixin.qq.com/s/WpWlNFcruEtZPQBpx64T-g"
+              target="_blank"
+              rel="noopener noreferrer"
+              >阅读公众号文章</a
+            >
+          </article>
+          <article class="card">
+            <h3>持续集成（CI）落地全指南</h3>
+            <p>从流水线规划到质量门禁配置，完整梳理持续集成在团队中的落地路径与实践要点。</p>
+            <a
+              class="wx-link"
+              href="https://mp.weixin.qq.com/s/xaipK5vbwLsAFtDvFupJVA"
+              target="_blank"
+              rel="noopener noreferrer"
+              >阅读公众号文章</a
+            >
+          </article>
+          <article class="card">
+            <h3>AI 生成用例在团队中的正确使用姿势</h3>
+            <p>如何把 AI 用例生成纳入测试流程，同时控制噪声、提升可执行率与回归价值。</p>
+            <a
+              class="wx-link"
+              href="https://mp.weixin.qq.com/s/5UPiDzVEczXOSiNEj-ANWw"
+              target="_blank"
+              rel="noopener noreferrer"
+              >阅读公众号文章</a
+            >
+          </article>
         </div>
       </section>
 
@@ -193,6 +241,7 @@ Recommendation:
         <a href="/privacy.html">Privacy</a>
         <a href="/terms.html">Terms</a>
         <a href="/security.html">Security</a>
+        <a href="#wechat">测试最前沿</a>
         <a href="mailto:hello@laitest.tech">Contact</a>
       </div>
     </footer>

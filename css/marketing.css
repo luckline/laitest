@@ -84,14 +84,19 @@ a { color: inherit; text-decoration: none; }
 .btn.ghost:hover { background: #f1f6fe; }
 .btn.block { width: 100%; }
 
-main { width: min(1160px, calc(100% - 32px)); margin: 0 auto; }
+main {
+  width: min(1160px, calc(100% - 32px));
+  margin: 0 auto;
+  padding-left: 14px;
+  padding-right: 14px;
+}
 
 .hero {
-  padding: 64px 0 28px;
+  padding: 36px 0 24px;
   display: grid;
   grid-template-columns: 1.2fr 1fr;
   gap: 26px;
-  align-items: center;
+  align-items: start;
 }
 
 .eyebrow {
@@ -311,11 +316,90 @@ h1 {
 .foot-links { display: flex; gap: 14px; }
 .foot-links a:hover { color: #0f172a; }
 
+.wx-main {
+  width: min(1160px, calc(100% - 32px));
+  margin: 0 auto;
+}
+
+.wx-hero {
+  padding: 18px 0 8px;
+  display: grid;
+  grid-template-columns: 1.2fr 0.8fr;
+  gap: 22px;
+  align-items: start;
+}
+
+.wx-hero > div:first-child {
+  max-width: 640px;
+}
+
+#wechat.section {
+  padding: 34px 0 8px;
+}
+
+.wx-qr {
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 18px;
+  box-shadow: 0 12px 28px rgba(15, 23, 42, 0.08);
+}
+
+.wx-qr h3 {
+  margin: 0 0 8px;
+  font-size: 22px;
+}
+
+.wx-qr p {
+  margin: 0 0 12px;
+  color: var(--muted);
+}
+
+.qr-box {
+  min-height: 190px;
+  border: 1px dashed #9fb2ca;
+  border-radius: 14px;
+  display: grid;
+  place-items: center;
+  text-align: center;
+  font-size: 14px;
+  color: #3f5f82;
+  background: #f7fbff;
+  margin-bottom: 10px;
+}
+
+.qr-box img {
+  width: 100%;
+  max-width: 230px;
+  height: auto;
+  border-radius: 10px;
+  display: block;
+}
+
+.wx-meta {
+  color: #334155;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.wx-link {
+  display: inline-block;
+  margin-top: 12px;
+  color: var(--brand);
+  font-weight: 700;
+}
+
+.wx-link[aria-disabled="true"] {
+  pointer-events: none;
+  opacity: 0.75;
+}
+
 @media (max-width: 980px) {
   .links { display: none; }
   .hero { grid-template-columns: 1fr; }
   .cards.three, .cards.two { grid-template-columns: 1fr; }
   .price.featured { transform: none; }
+  .wx-hero { grid-template-columns: 1fr; }
 }
 
 @media (max-width: 640px) {
@@ -326,6 +410,5 @@ h1 {
   }
   .word { font-size: 18px; }
   main, .foot { width: calc(100% - 20px); }
-  .hero { padding-top: 36px; }
+  .hero { padding-top: 24px; }
 }
-
