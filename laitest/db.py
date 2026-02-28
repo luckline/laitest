@@ -15,8 +15,21 @@ def utc_now_iso() -> str:
 
 
 def _data_dir() -> Path:
-    # Keep state in-repo for the MVP.
-    return Path(os.getcwd()) / ".laitest"
+    # Prefer workspace-local state, but fall back to /tmp for read-only hosts.
+    env_dir = os.environ.get("LAITEST_DATA_DIR", "").strip()
+    candidates: list[Path] = []
+    if env_dir:
+        candidates.append(Path(env_dir))
+    candidates.append(Path(os.getcwd()) / ".laitest")
+    candidates.append(Path("/tmp/.laitest"))
+
+    for p in candidates:
+        try:
+            p.mkdir(parents=True, exist_ok=True)
+            return p
+        except OSError:
+            continue
+    raise RuntimeError("unable to initialize laitest data directory")
 
 
 def db_path() -> Path:
@@ -117,4 +130,3 @@ def json_loads(s: str, default: Any) -> Any:
         return json.loads(s)
     except Exception:
         return default
-
