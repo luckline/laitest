@@ -1444,6 +1444,7 @@ def _qianwen_generate_cases(prompt: str) -> list[SuggestedCase]:
     urls = [_qianwen_chat_url(base) for base in _qianwen_base_urls()]
     max_attempts = retries + 1
     errors: list[str] = []
+    auth_failures: list[str] = []
     for url in urls:
         req_body = {
             "model": model,
@@ -1479,7 +1480,10 @@ def _qianwen_generate_cases(prompt: str) -> list[SuggestedCase]:
             except error.HTTPError as e:
                 code, msg = _parse_http_error(e)
                 if code in (401, 403):
-                    raise RuntimeError(f"qianwen auth failed ({code}): check QIANWEN_API_KEY") from e
+                    auth_err = f"{url} auth {code}: {msg}"
+                    auth_failures.append(auth_err)
+                    errors.append(auth_err)
+                    break
                 if code == 429:
                     raise RuntimeError(
                         "qianwen quota/rate limit exceeded (429): check plan/billing or wait for reset"
@@ -1516,6 +1520,11 @@ def _qianwen_generate_cases(prompt: str) -> list[SuggestedCase]:
             errors.append(f"{url} parse failed: {e}; preview={preview}")
             continue
 
+    if auth_failures and len(auth_failures) == len(urls):
+        detail = "; ".join(auth_failures)[:900]
+        raise RuntimeError(
+            f"qianwen auth failed on all endpoints (401/403): check QIANWEN_API_KEY; details={detail}"
+        )
     if errors:
         raise RuntimeError(f"qianwen failed across endpoints: {'; '.join(errors)[:900]}")
     raise RuntimeError("qianwen request failed")
