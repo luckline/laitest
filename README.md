@@ -54,6 +54,9 @@ python3 -m laitest cli projects
 - `DEEPSEEK_BASE_URL`：DeepSeek 基础地址（默认 `https://api.deepseek.com`）
 - `DEEPSEEK_TIMEOUT_S`：DeepSeek 请求超时秒数（默认 `60`）
 - `DEEPSEEK_RETRIES`：DeepSeek 超时/5xx 重试次数（默认 `2`，总尝试次数=重试+1）
+- `DEEPSEEK_MAX_TOKENS`：DeepSeek 最大输出 token（默认 `1400`，越小通常越快）
+- `DEEPSEEK_MAX_CASES`：单次最多生成用例条数（默认 `10`，越小通常越快）
+- `DEEPSEEK_PROMPT_MAX_CHARS`：发送给 DeepSeek 的需求文本最大字符数（默认 `4500`）
 - `GEMINI_API_KEY`：Gemini API Key（作为 DeepSeek 失败时回退）
 - `GEMINI_MODEL`：Gemini 模型名（默认 `gemini-2.0-flash`）
 - `GEMINI_TIMEOUT_S`：Gemini 请求超时秒数（默认 `25`）

@@ -547,6 +547,18 @@ def _try_decode_complete_json_text(raw: Any) -> str | None:
         return None
 
 
+def _safe_int_env(name: str, default: int, min_v: int, max_v: int) -> int:
+    try:
+        value = int(os.environ.get(name, str(default)) or str(default))
+    except Exception:
+        value = default
+    if value < min_v:
+        return min_v
+    if value > max_v:
+        return max_v
+    return value
+
+
 def _gemini_prompt_text(prompt: str) -> str:
     return (
         "你是一名资深QA测试工程师，请根据需求生成高质量软件测试用例。\n"
@@ -572,6 +584,28 @@ def _gemini_prompt_text(prompt: str) -> str:
         "- expected_result 必须可验证、可判定。\n"
         "- 尽可能覆盖正向、边界和异常场景。\n"
         f"需求文本:\n{prompt}"
+    )
+
+
+def _deepseek_prompt_text(prompt: str, max_cases: int) -> str:
+    # Keep prompt concise to reduce latency/token usage on DeepSeek.
+    return (
+        "请扮演资深QA工程师，根据需求输出结构化测试用例。只返回JSON对象，不要Markdown。\n"
+        "输出格式:\n"
+        "{\"cases\":[{"
+        "\"case_id\":\"string\","
+        "\"title\":\"string\","
+        "\"module\":\"string\","
+        "\"priority\":\"P0|P1|P2|P3\","
+        "\"type\":\"functional|boundary|negative|security|performance|compatibility|api\","
+        "\"preconditions\":[\"string\"],"
+        "\"steps\":[{\"step_no\":1,\"action\":\"string\",\"test_data\":\"string\",\"expected_result\":\"string\"}],"
+        "\"expected_result\":\"string\","
+        "\"tags\":[\"string\"],"
+        "\"description\":\"string\""
+        "}]}\n"
+        f"要求: 最多输出{max_cases}条；默认简体中文（需求明确要求英文除外）；步骤可执行，预期可验证。\n"
+        f"需求:\n{prompt}"
     )
 
 
@@ -869,6 +903,13 @@ def _deepseek_generate_cases(prompt: str) -> list[SuggestedCase]:
     model = _deepseek_model()
     timeout_s = float(os.environ.get("DEEPSEEK_TIMEOUT_S", "60"))
     retries = int(os.environ.get("DEEPSEEK_RETRIES", "2") or "2")
+    max_tokens = _safe_int_env("DEEPSEEK_MAX_TOKENS", 1400, 256, 8192)
+    max_cases = _safe_int_env("DEEPSEEK_MAX_CASES", 10, 1, 30)
+    prompt_max_chars = _safe_int_env("DEEPSEEK_PROMPT_MAX_CHARS", 4500, 500, 20000)
+    prompt_text = (prompt or "").strip()
+    if len(prompt_text) > prompt_max_chars:
+        prompt_text = prompt_text[:prompt_max_chars]
+
     if retries < 0:
         retries = 0
     if retries > 5:
@@ -880,13 +921,14 @@ def _deepseek_generate_cases(prompt: str) -> list[SuggestedCase]:
         "messages": [
             {
                 "role": "system",
-                "content": "你是资深QA测试工程师。除非用户明确要求英文，否则所有自然语言字段请使用简体中文，并严格返回JSON。",
+                "content": "你是资深QA测试工程师。默认输出简体中文，仅返回JSON。",
             },
-            {"role": "user", "content": _gemini_prompt_text(prompt)},
+            {"role": "user", "content": _deepseek_prompt_text(prompt_text, max_cases=max_cases)},
         ],
-        "temperature": 0.2,
+        "temperature": 0.1,
         "stream": False,
         "response_format": {"type": "json_object"},
+        "max_tokens": max_tokens,
     }
     raw = json.dumps(req_body, ensure_ascii=True).encode("utf-8")
     req = request.Request(
@@ -1182,6 +1224,9 @@ def ai_runtime_status() -> dict[str, Any]:
         "deepseek_base_url": _deepseek_base_url(),
         "deepseek_timeout_s": float(os.environ.get("DEEPSEEK_TIMEOUT_S", "60") or "60"),
         "deepseek_retries": int(os.environ.get("DEEPSEEK_RETRIES", "2") or "2"),
+        "deepseek_max_tokens": _safe_int_env("DEEPSEEK_MAX_TOKENS", 1400, 256, 8192),
+        "deepseek_max_cases": _safe_int_env("DEEPSEEK_MAX_CASES", 10, 1, 30),
+        "deepseek_prompt_max_chars": _safe_int_env("DEEPSEEK_PROMPT_MAX_CHARS", 4500, 500, 20000),
         "gemini_api_key_configured": has_gemini,
         "gemini_model": configured,
         "gemini_effective_model": effective,
