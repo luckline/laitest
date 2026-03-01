@@ -579,6 +579,63 @@ def _json_loads_loose(text: str) -> Any:
     raise last_err
 
 
+def _find_balanced_json_object(text: str, start: int) -> str | None:
+    if start < 0 or start >= len(text) or text[start] != "{":
+        return None
+    depth = 0
+    in_string = False
+    escape = False
+    for i in range(start, len(text)):
+        ch = text[i]
+        if in_string:
+            if escape:
+                escape = False
+            elif ch == "\\":
+                escape = True
+            elif ch == '"':
+                in_string = False
+            continue
+
+        if ch == '"':
+            in_string = True
+        elif ch == "{":
+            depth += 1
+        elif ch == "}":
+            depth -= 1
+            if depth == 0:
+                return text[start : i + 1]
+    return None
+
+
+def _extract_cases_obj_from_raw_response(data: str) -> Any | None:
+    s = str(data or "")
+    markers = ['{"cases"', '{"suggestions"']
+    for marker in markers:
+        idx = s.find(marker)
+        if idx >= 0:
+            obj_text = _find_balanced_json_object(s, idx)
+            if obj_text:
+                try:
+                    return _json_loads_loose(obj_text)
+                except Exception:
+                    pass
+
+    # Fallback for heavily escaped JSON strings inside raw completion payloads.
+    escaped_markers = ['{\\\"cases\\\"', '{\\\"suggestions\\\"']
+    for marker in escaped_markers:
+        idx = s.find(marker)
+        if idx >= 0:
+            obj_text = _find_balanced_json_object(s, idx)
+            if not obj_text:
+                continue
+            unescaped = obj_text.replace("\\\\n", "\n").replace('\\"', '"')
+            try:
+                return _json_loads_loose(unescaped)
+            except Exception:
+                continue
+    return None
+
+
 def _safe_int_env(name: str, default: int, min_v: int, max_v: int) -> int:
     try:
         value = int(os.environ.get(name, str(default)) or str(default))
@@ -647,6 +704,13 @@ def _parse_deepseek_response_cases(data: str) -> list[SuggestedCase]:
     try:
         payload = _json_loads_loose(data)
     except Exception as e:
+        # Some responses may have broken outer completion JSON while still
+        # containing a valid inner {"cases":[...]} object. Try to recover it.
+        recovered = _extract_cases_obj_from_raw_response(data)
+        if recovered is not None:
+            normalized = _normalize_cases_payload(recovered)
+            if normalized:
+                return normalized
         raise RuntimeError(f"deepseek returned non-json response: {e}") from e
 
     choices = payload.get("choices") if isinstance(payload, dict) else None
@@ -963,7 +1027,7 @@ def _deepseek_generate_cases(prompt: str) -> list[SuggestedCase]:
     max_tokens = _safe_int_env("DEEPSEEK_MAX_TOKENS", 1400, 256, 8192)
     max_cases = _safe_int_env("DEEPSEEK_MAX_CASES", 10, 1, 30)
     prompt_max_chars = _safe_int_env("DEEPSEEK_PROMPT_MAX_CHARS", 4500, 500, 20000)
-    parse_retries = _safe_int_env("DEEPSEEK_PARSE_RETRIES", 1, 0, 5)
+    parse_retries = _safe_int_env("DEEPSEEK_PARSE_RETRIES", 2, 0, 5)
     prompt_text = (prompt or "").strip()
     if len(prompt_text) > prompt_max_chars:
         prompt_text = prompt_text[:prompt_max_chars]
@@ -1278,7 +1342,7 @@ def ai_runtime_status() -> dict[str, Any]:
         "deepseek_base_url": _deepseek_base_url(),
         "deepseek_timeout_s": float(os.environ.get("DEEPSEEK_TIMEOUT_S", "60") or "60"),
         "deepseek_retries": int(os.environ.get("DEEPSEEK_RETRIES", "2") or "2"),
-        "deepseek_parse_retries": _safe_int_env("DEEPSEEK_PARSE_RETRIES", 1, 0, 5),
+        "deepseek_parse_retries": _safe_int_env("DEEPSEEK_PARSE_RETRIES", 2, 0, 5),
         "deepseek_max_tokens": _safe_int_env("DEEPSEEK_MAX_TOKENS", 1400, 256, 8192),
         "deepseek_max_cases": _safe_int_env("DEEPSEEK_MAX_CASES", 10, 1, 30),
         "deepseek_prompt_max_chars": _safe_int_env("DEEPSEEK_PROMPT_MAX_CHARS", 4500, 500, 20000),
