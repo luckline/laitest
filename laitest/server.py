@@ -10,7 +10,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import parse_qs, urlparse
 
-from .ai import generate_cases
+from .ai import ai_runtime_status, generate_cases, professional_case_from_suggested
 from .db import db_conn, json_loads, row_to_dict, utc_now_iso
 from .ids import new_id
 from .runner import analyze_failures, run_case, summarize_run
@@ -505,11 +505,13 @@ class Handler(BaseHTTPRequestHandler):
                                 "tags": s.tags,
                                 "kind": s.kind,
                                 "spec": s.spec,
+                                "test_case": professional_case_from_suggested(s),
                             }
                             for s in suggestions
                         ],
                         "provider": provider,
                         "warning": warning,
+                        "runtime": ai_runtime_status(),
                         "created_case_ids": created_ids,
                     },
                 )

@@ -33,6 +33,71 @@ _ALLOWED_TYPES = {
 
 _GEMINI_MODEL_CACHE: dict[str, str] = {}
 _GEMINI_API_VERSION_CACHE: dict[str, str] = {}
+_CJK_RE = re.compile(r"[\u3400-\u9FFF]")
+
+_EN_TEXT_EXACT_MAP: dict[str, str] = {
+    "prepare test data and preconditions": "准备测试前置条件与测试数据",
+    "according to requirement": "按需求准备",
+    "environment and test data are ready": "环境与测试数据准备完成",
+    "input based on requirement": "按需求输入",
+    "system processes request": "系统完成请求处理",
+    "observe response and state changes": "观察响应与状态变化",
+    "n/a": "无",
+    "generated from requirement": "根据需求生成",
+    "system under test is reachable": "系统可访问",
+    "required test account/data is available": "测试账号与测试数据已准备好",
+    "test account and test data are ready": "测试账号和测试数据已准备好",
+    "system behavior matches expected outcome.": "系统行为符合预期结果。",
+    "system behavior matches expected business outcome.": "系统行为符合预期业务结果。",
+    "system rejects invalid input and returns clear error information.": "系统拒绝非法输入并返回明确错误信息。",
+    "system handles boundary input correctly without breaking constraints.": "系统可正确处理边界输入，且不破坏约束。",
+    "security controls block risky behavior and produce auditable result.": "安全控制有效拦截风险行为，并产生可审计结果。",
+    "response time and throughput satisfy defined performance targets.": "响应时间与吞吐量满足既定性能目标。",
+    "prepare test preconditions and input": "准备前置条件和输入数据",
+    "as required by scenario": "按场景要求准备",
+    "preconditions are satisfied": "前置条件满足",
+    "scenario-specific input": "场景对应输入",
+    "system accepts and processes request": "系统接收并处理请求",
+    "verify response and side effects": "校验响应和副作用",
+    "generated from requirement text": "根据需求文本生成",
+}
+
+_EN_TOKEN_REPLACEMENTS: list[tuple[str, str]] = [
+    (r"\bverification code\b|\botp\b|\bcaptcha\b", "验证码"),
+    (r"\blogin\b|\bsign in\b|\bauthentication\b|\bauthenticate\b|\bauth\b", "登录"),
+    (r"\bpassword\b", "密码"),
+    (r"\busername\b", "用户名"),
+    (r"\bphone number\b|\bmobile\b", "手机号"),
+    (r"\buser\b", "用户"),
+    (r"\baccount\b", "账号"),
+    (r"\bsuccessful\b|\bsuccess\b", "成功"),
+    (r"\bfailed\b|\bfailure\b|\bfail\b", "失败"),
+    (r"\binvalid\b", "无效"),
+    (r"\berror\b", "错误"),
+    (r"\brequest\b", "请求"),
+    (r"\bresponse\b", "响应"),
+    (r"\bexpected result\b", "预期结果"),
+    (r"\bpreconditions?\b", "前置条件"),
+    (r"\bsteps?\b", "步骤"),
+    (r"\bmodule\b", "模块"),
+    (r"\bsystem\b", "系统"),
+    (r"\bboundary\b", "边界"),
+    (r"\bsecurity\b", "安全"),
+    (r"\bperformance\b", "性能"),
+    (r"\bapi\b", "接口"),
+    (r"\bverify\b", "校验"),
+    (r"\bprepare\b", "准备"),
+    (r"\binput\b", "输入"),
+    (r"\boutput\b", "输出"),
+    (r"\breset\b", "重置"),
+    (r"\btest data\b", "测试数据"),
+    (r"\bscenario\b", "场景"),
+    (r"\bexecute\b", "执行"),
+    (r"\bobserve\b", "观察"),
+    (r"\bstate changes?\b", "状态变化"),
+    (r"\bprocess(es|ed)?\b", "处理"),
+    (r"\breject(s|ed)?\b", "拒绝"),
+]
 
 
 def _env_first(*keys: str) -> str:
@@ -59,6 +124,87 @@ def _clean_list_str(value: Any, default: list[str] | None = None, max_items: int
         if text:
             out.append(text)
     return out or list(default or [])
+
+
+def _contains_cjk(value: Any) -> bool:
+    return bool(_CJK_RE.search(str(value or "")))
+
+
+def _has_heavy_latin(value: Any) -> bool:
+    s = str(value or "")
+    latin = len(re.findall(r"[A-Za-z]", s))
+    cjk = len(re.findall(r"[\u3400-\u9FFF]", s))
+    return latin >= 4 and latin > max(cjk // 2, 1)
+
+
+def _prompt_requests_english(prompt: str) -> bool:
+    low = (prompt or "").lower()
+    markers = [
+        "output in english",
+        "return in english",
+        "respond in english",
+        "use english",
+        "english only",
+        "in english",
+        "英文输出",
+        "输出英文",
+        "英语输出",
+        "用英文",
+    ]
+    return any(m in low for m in markers)
+
+
+def _to_zh_text(
+    value: Any,
+    default: str = "",
+    max_len: int = 400,
+    force_default_on_non_cjk: bool = False,
+) -> str:
+    s = _clean_text(value, default, max_len)
+    if not s:
+        return default
+    if _contains_cjk(s):
+        return s
+
+    mapped = _EN_TEXT_EXACT_MAP.get(s.strip().lower())
+    if mapped:
+        return mapped[:max_len]
+
+    out = s
+    for pat, repl in _EN_TOKEN_REPLACEMENTS:
+        out = re.sub(pat, repl, out, flags=re.IGNORECASE)
+    out = out.replace("N/A", "无").replace("n/a", "无")
+
+    if _contains_cjk(out):
+        if force_default_on_non_cjk and default and _has_heavy_latin(out):
+            return _clean_text(default, default, max_len)
+        return out[:max_len]
+    if force_default_on_non_cjk and default:
+        return _clean_text(default, default, max_len)
+    return s
+
+
+def _to_zh_module(value: Any) -> str:
+    raw = _clean_text(value, "", 80)
+    if not raw:
+        return "通用模块"
+    if _contains_cjk(raw):
+        return raw
+
+    low = raw.lower()
+    if any(k in low for k in ["login", "sign in", "auth"]):
+        return "登录认证"
+    if any(k in low for k in ["payment", "checkout", "refund"]):
+        return "支付结算"
+    if "api" in low:
+        return "接口"
+    if low in {"general", "common", "default", "misc"}:
+        return "通用模块"
+
+    converted = _to_zh_text(raw, "", 80)
+    if _contains_cjk(converted):
+        return converted
+    return "通用模块"
 
 
 def _normalize_priority(value: Any) -> str:
@@ -125,20 +271,20 @@ def _fallback_professional_steps(title: str, expected_result: str) -> list[dict[
     return [
         {
             "step_no": 1,
-            "action": "Prepare test data and preconditions",
-            "test_data": "According to requirement",
-            "expected_result": "Environment and test data are ready",
+            "action": "准备测试前置条件与测试数据",
+            "test_data": "按需求准备",
+            "expected_result": "环境与测试数据准备完成",
         },
         {
             "step_no": 2,
             "action": title,
-            "test_data": "Input based on requirement",
-            "expected_result": "System processes request",
+            "test_data": "按需求输入",
+            "expected_result": "系统完成请求处理",
         },
         {
             "step_no": 3,
-            "action": "Observe response and state changes",
-            "test_data": "N/A",
+            "action": "观察响应与状态变化",
+            "test_data": "无",
             "expected_result": expected_result,
         },
     ]
@@ -158,29 +304,29 @@ def _to_execution_steps(pro_case: dict[str, Any]) -> list[dict[str, Any]]:
         expected = _clean_text(row.get("expected_result"), "")
         if not action:
             continue
-        msg = f"step {no}: {action}" if no is not None else action
+        msg = f"步骤 {no}: {action}" if no is not None else action
         if expected:
-            msg += f" | expect: {expected}"
+            msg += f" | 预期: {expected}"
         out.append({"type": "pass", "message": msg[:240]})
 
     if out:
         return out
-    return [{"type": "pass", "message": "generated from requirement"}]
+    return [{"type": "pass", "message": "根据需求生成"}]
 
 
 def _normalize_professional_case(obj: dict[str, Any], title: str, tags: list[str]) -> dict[str, Any]:
-    module = _clean_text(obj.get("module"), "general", 80)
+    module = _clean_text(obj.get("module"), "通用模块", 80)
     priority = _normalize_priority(obj.get("priority"))
     case_type = _normalize_case_type(obj.get("type"))
     preconditions = _clean_list_str(
         obj.get("preconditions"),
-        default=["System under test is reachable", "Required test account/data is available"],
+        default=["系统可访问", "测试账号与测试数据已准备好"],
         max_items=10,
     )
 
     expected_result = _clean_text(
         obj.get("expected_result"),
-        default="System behavior matches expected outcome.",
+        default="系统行为符合预期结果。",
         max_len=400,
     )
 
@@ -213,7 +359,7 @@ def _normalize_case(obj: dict[str, Any]) -> SuggestedCase | None:
     if not title:
         return None
 
-    description = _clean_text(obj.get("description"), "(auto) generated from prompt", 500)
+    description = _clean_text(obj.get("description"), "（自动）根据需求生成", 500)
     tags = _clean_list_str(obj.get("tags"), default=[], max_items=12)
 
     automation = obj.get("automation")
@@ -350,8 +496,9 @@ def _is_timeout_error(exc: Exception) -> bool:
 
 def _gemini_prompt_text(prompt: str) -> str:
     return (
-        "You are a senior QA engineer generating high-quality software test cases.\n"
-        "Return ONLY valid JSON, no markdown.\n"
+        "你是一名资深QA测试工程师，请根据需求生成高质量软件测试用例。\n"
+        "只返回合法 JSON，不要返回 Markdown，不要添加额外解释。\n"
+        "除非需求明确要求英文，否则所有自然语言字段一律使用简体中文。\n"
         "Schema:\n"
         "{\"cases\":[{"
         "\"case_id\":\"string\","
@@ -367,10 +514,11 @@ def _gemini_prompt_text(prompt: str) -> str:
         "\"description\":\"string\""
         "}]}\n"
         "Rules:\n"
-        "- steps must be specific and executable.\n"
-        "- expected_result must be precise and testable.\n"
-        "- include positive, boundary and negative scenarios when possible.\n"
-        f"Requirement text:\n{prompt}"
+        "- 默认输出语言：简体中文（需求明确要求英文时除外）。\n"
+        "- steps 中 action/test_data/expected_result 必须具体且可执行。\n"
+        "- expected_result 必须可验证、可判定。\n"
+        "- 尽可能覆盖正向、边界和异常场景。\n"
+        f"需求文本:\n{prompt}"
     )
 
 
@@ -384,6 +532,13 @@ def _gemini_generate_raw(
     url = f"https://generativelanguage.googleapis.com/{api_version}/models/{model}:generateContent?key={api_key}"
     user_prompt = _gemini_prompt_text(prompt)
     req_body = {
+        "systemInstruction": {
+            "parts": [
+                {
+                    "text": "除非用户明确要求英文，否则所有自然语言字段必须使用简体中文。只返回JSON。"
+                }
+            ]
+        },
         "contents": [{"role": "user", "parts": [{"text": user_prompt}]}],
         "generationConfig": {"responseMimeType": "application/json"},
     }
@@ -670,6 +825,10 @@ def _deepseek_generate_cases(prompt: str) -> list[SuggestedCase]:
     req_body = {
         "model": model,
         "messages": [
+            {
+                "role": "system",
+                "content": "你是资深QA测试工程师。除非用户明确要求英文，否则所有自然语言字段请使用简体中文，并严格返回JSON。",
+            },
             {"role": "user", "content": _gemini_prompt_text(prompt)},
         ],
         "temperature": 0.2,
@@ -740,20 +899,20 @@ def _deepseek_generate_cases(prompt: str) -> list[SuggestedCase]:
 
 def _infer_local_profile(line: str) -> tuple[str, str, str, list[str], str]:
     low = line.lower()
-    module = "general"
+    module = "通用模块"
     case_type = "functional"
     priority = "P1"
     tags: list[str] = []
-    expected = "System behavior matches expected business outcome."
+    expected = "系统行为符合预期业务结果。"
 
     if any(k in low for k in ["login", "sign in", "auth"]) or any(k in line for k in ["登录", "鉴权", "认证"]):
-        module = "auth"
+        module = "登录认证"
         tags.append("auth")
     if any(k in low for k in ["payment", "checkout", "refund"]) or any(k in line for k in ["支付", "结算", "退款"]):
-        module = "payment"
+        module = "支付结算"
         tags.append("payment")
     if "api" in low or "接口" in line:
-        module = "api"
+        module = "接口"
         tags.append("api")
         case_type = "api"
 
@@ -761,27 +920,27 @@ def _infer_local_profile(line: str) -> tuple[str, str, str, list[str], str]:
         k in line for k in ["失败", "错误", "异常", "非法", "拒绝"]
     ):
         case_type = "negative"
-        expected = "System rejects invalid input and returns clear error information."
+        expected = "系统拒绝非法输入并返回明确错误信息。"
 
     if any(k in low for k in ["boundary", "limit", "max", "min", "empty", "null"]) or any(
         k in line for k in ["边界", "上限", "下限", "为空", "空值", "长度"]
     ):
         case_type = "boundary"
-        expected = "System handles boundary input correctly without breaking constraints."
+        expected = "系统可正确处理边界输入，且不破坏约束。"
 
     if any(k in low for k in ["security", "permission", "csrf", "xss", "sql injection"]) or any(
         k in line for k in ["安全", "权限", "注入", "越权", "风控"]
     ):
         case_type = "security"
         priority = "P0"
-        expected = "Security controls block risky behavior and produce auditable result."
+        expected = "安全控制有效拦截风险行为，并产生可审计结果。"
 
     if any(k in low for k in ["performance", "load", "stress", "latency"]) or any(
         k in line for k in ["性能", "并发", "压测", "延迟"]
     ):
         case_type = "performance"
         priority = "P1"
-        expected = "Response time and throughput satisfy defined performance targets."
+        expected = "响应时间与吞吐量满足既定性能目标。"
 
     return module, case_type, priority, sorted(set(tags)), expected
 
@@ -803,32 +962,32 @@ def generate_cases_local(prompt: str) -> list[SuggestedCase]:
         steps = [
             {
                 "step_no": 1,
-                "action": "Prepare test preconditions and input",
-                "test_data": "As required by scenario",
-                "expected_result": "Preconditions are satisfied",
+                "action": "准备前置条件和输入数据",
+                "test_data": "按场景要求准备",
+                "expected_result": "前置条件满足",
             },
             {
                 "step_no": 2,
                 "action": ln,
-                "test_data": "Scenario-specific input",
-                "expected_result": "System accepts and processes request",
+                "test_data": "场景对应输入",
+                "expected_result": "系统接收并处理请求",
             },
             {
                 "step_no": 3,
-                "action": "Verify response and side effects",
-                "test_data": "N/A",
+                "action": "校验响应和副作用",
+                "test_data": "无",
                 "expected_result": expected,
             },
         ]
         row = {
             "title": ln,
-            "description": "generated from requirement text",
+            "description": "根据需求文本生成",
             "module": module,
             "priority": priority,
             "type": case_type,
             "preconditions": [
-                "System under test is reachable",
-                "Test account and test data are ready",
+                "系统可访问",
+                "测试账号和测试数据已准备好",
             ],
             "steps": steps,
             "expected_result": expected,
@@ -839,7 +998,7 @@ def generate_cases_local(prompt: str) -> list[SuggestedCase]:
                     "steps": [
                         {
                             "type": "pass",
-                            "message": f"execute scenario: {ln}",
+                            "message": f"执行场景: {ln}",
                         }
                     ]
                 },
@@ -857,6 +1016,76 @@ def professional_case_from_suggested(s: SuggestedCase) -> dict[str, Any]:
     if isinstance(pro, dict):
         return _normalize_professional_case(pro, title=s.title, tags=s.tags)
     return _normalize_professional_case({}, title=s.title, tags=s.tags)
+
+
+def _coerce_suggested_case_to_zh(s: SuggestedCase) -> SuggestedCase:
+    pro = professional_case_from_suggested(s)
+    pro_title = _to_zh_text(
+        pro.get("title"),
+        "根据需求生成的测试用例",
+        300,
+        force_default_on_non_cjk=True,
+    )
+    pro["title"] = pro_title
+    pro["module"] = _to_zh_module(pro.get("module"))
+    pro["preconditions"] = [
+        _to_zh_text(x, "前置条件已满足", 200, force_default_on_non_cjk=True)
+        for x in _clean_list_str(pro.get("preconditions"), default=["系统可访问", "测试账号与测试数据已准备好"], max_items=10)
+    ]
+    pro["expected_result"] = _to_zh_text(
+        pro.get("expected_result"),
+        "系统行为符合预期结果。",
+        400,
+        force_default_on_non_cjk=True,
+    )
+
+    normalized_steps = _normalize_professional_steps(pro.get("steps"))
+    if not normalized_steps:
+        normalized_steps = _fallback_professional_steps(title=pro_title, expected_result=pro["expected_result"])
+    fixed_steps: list[dict[str, Any]] = []
+    for i, row in enumerate(normalized_steps, start=1):
+        fixed_steps.append(
+            {
+                "step_no": int(row.get("step_no") or i),
+                "action": _to_zh_text(row.get("action"), "执行测试步骤", 300, force_default_on_non_cjk=True),
+                "test_data": _to_zh_text(row.get("test_data"), "无", 200, force_default_on_non_cjk=True),
+                "expected_result": _to_zh_text(
+                    row.get("expected_result"),
+                    "系统行为符合预期。",
+                    300,
+                    force_default_on_non_cjk=True,
+                ),
+            }
+        )
+    pro["steps"] = fixed_steps
+
+    spec: dict[str, Any]
+    if isinstance(s.spec, dict):
+        try:
+            spec = json.loads(json.dumps(s.spec, ensure_ascii=False))
+        except Exception:
+            spec = dict(s.spec)
+    else:
+        spec = {}
+    spec["professional_case"] = pro
+    spec["steps"] = _to_execution_steps(pro)
+
+    title = _to_zh_text(s.title, pro_title, 300, force_default_on_non_cjk=True)
+    if not _contains_cjk(title):
+        title = pro_title
+    description = _to_zh_text(s.description, "（自动）根据需求生成", 500, force_default_on_non_cjk=True)
+    return SuggestedCase(title=title, description=description, tags=s.tags, kind=s.kind, spec=spec)
+
+
+def _coerce_cases_default_language(cases: list[SuggestedCase], prompt: str) -> list[SuggestedCase]:
+    if not cases:
+        return cases
+    default_lang = (os.environ.get("LAITEST_DEFAULT_LANG", "zh-CN").strip() or "zh-CN").lower()
+    if not default_lang.startswith("zh"):
+        return cases
+    if _prompt_requests_english(prompt):
+        return cases
+    return [_coerce_suggested_case_to_zh(s) for s in cases]
 
 
 def ai_runtime_status() -> dict[str, Any]:
@@ -883,6 +1112,7 @@ def ai_runtime_status() -> dict[str, Any]:
         "gemini_model": configured,
         "gemini_effective_model": effective,
         "gemini_api_version": api_version,
+        "default_language": (os.environ.get("LAITEST_DEFAULT_LANG", "zh-CN").strip() or "zh-CN"),
         "provider_order": ["deepseek", "gemini", "local"],
         "mode": mode,
     }
@@ -904,34 +1134,37 @@ def generate_cases(prompt: str) -> tuple[list[SuggestedCase], str, str | None]:
 
     if has_deepseek:
         try:
-            return _deepseek_generate_cases(text), "deepseek", None
+            rows = _deepseek_generate_cases(text)
+            return _coerce_cases_default_language(rows, text), "deepseek", None
         except Exception as deep_err:
             if has_gemini:
                 try:
+                    rows = _gemini_generate_cases(text)
                     return (
-                        _gemini_generate_cases(text),
+                        _coerce_cases_default_language(rows, text),
                         "gemini-fallback",
                         f"deepseek failed: {deep_err}",
                     )
                 except Exception as gem_err:
-                    local = generate_cases_local(text)
+                    local = _coerce_cases_default_language(generate_cases_local(text), text)
                     return (
                         local,
                         "local-fallback",
                         f"deepseek failed: {deep_err}; gemini failed: {gem_err}",
                     )
-            local = generate_cases_local(text)
+            local = _coerce_cases_default_language(generate_cases_local(text), text)
             return local, "local-fallback", f"deepseek failed: {deep_err}"
 
     if has_gemini:
         try:
-            return _gemini_generate_cases(text), "gemini", None
+            rows = _gemini_generate_cases(text)
+            return _coerce_cases_default_language(rows, text), "gemini", None
         except Exception as e:
-            local = generate_cases_local(text)
+            local = _coerce_cases_default_language(generate_cases_local(text), text)
             return local, "local-fallback", str(e)
 
     return (
-        generate_cases_local(text),
+        _coerce_cases_default_language(generate_cases_local(text), text),
         "local",
         "DEEPSEEK_API_KEY/DeepSeek_API_KEY and GEMINI_API_KEY are not configured; using local generator",
     )

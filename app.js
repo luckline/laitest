@@ -114,7 +114,7 @@ function normalizeTestCase(item, idx) {
   return {
     case_id: String(tc.case_id || `TC-GEN-${idx + 1}`),
     title: String(tc.title || item.title || `用例 ${idx + 1}`),
-    module: String(tc.module || "general"),
+    module: String(tc.module || "通用模块"),
     priority: String(tc.priority || "P1"),
     type: String(tc.type || "functional"),
     preconditions: Array.isArray(tc.preconditions)
@@ -144,10 +144,10 @@ function renderStepLines(steps) {
     .map((step) => {
       const parts = [`${step.step_no}. ${step.action}`];
       if (step.test_data) {
-        parts.push(`data: ${step.test_data}`);
+        parts.push(`测试数据: ${step.test_data}`);
       }
       if (step.expected_result) {
-        parts.push(`expect: ${step.expected_result}`);
+        parts.push(`预期: ${step.expected_result}`);
       }
       return parts.join(" | ");
     })
@@ -196,13 +196,13 @@ function renderSuggestions(list) {
       <table class="ai-result-table">
         <thead>
           <tr>
-            <th>id</th>
-            <th>module</th>
-            <th>title</th>
-            <th>priority</th>
-            <th>precondition</th>
-            <th>steps</th>
-            <th>expectedResult</th>
+            <th>用例ID</th>
+            <th>模块</th>
+            <th>标题</th>
+            <th>优先级</th>
+            <th>前置条件</th>
+            <th>执行步骤</th>
+            <th>预期结果</th>
           </tr>
         </thead>
         <tbody>${rows}</tbody>
@@ -243,13 +243,13 @@ function buildExcelHtml(rows) {
     <table>
       <thead>
         <tr>
-          <th>id</th>
-          <th>module</th>
-          <th>title</th>
-          <th>priority</th>
-          <th>precondition</th>
-          <th>steps</th>
-          <th>expectedResult</th>
+          <th>用例ID</th>
+          <th>模块</th>
+          <th>标题</th>
+          <th>优先级</th>
+          <th>前置条件</th>
+          <th>执行步骤</th>
+          <th>预期结果</th>
         </tr>
       </thead>
       <tbody>${body}</tbody>
