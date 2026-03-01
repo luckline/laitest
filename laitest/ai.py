@@ -29,6 +29,9 @@ _ALLOWED_TYPES = {
     "api",
 }
 
+_GEMINI_MODEL_CACHE: dict[str, str] = {}
+_GEMINI_API_VERSION_CACHE: dict[str, str] = {}
+
 
 def _clean_text(value: Any, default: str = "", max_len: int = 300) -> str:
     s = str(value or "").strip()
@@ -276,7 +279,10 @@ def _normalize_cases_payload(payload: Any) -> list[SuggestedCase]:
 
 
 def _gemini_model() -> str:
-    return os.environ.get("GEMINI_MODEL", "gemini-2.0-flash").strip() or "gemini-2.0-flash"
+    raw = os.environ.get("GEMINI_MODEL", "gemini-2.0-flash").strip() or "gemini-2.0-flash"
+    if raw.startswith("models/"):
+        raw = raw.removeprefix("models/")
+    return raw
 
 
 def _gemini_prompt_text(prompt: str) -> str:
@@ -305,12 +311,15 @@ def _gemini_prompt_text(prompt: str) -> str:
     )
 
 
-def _gemini_generate_raw(api_key: str, model: str, prompt: str, timeout_s: float) -> str:
-    url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={api_key}"
+def _gemini_generate_raw(
+    api_key: str,
+    model: str,
+    prompt: str,
+    timeout_s: float,
+    api_version: str = "v1beta",
+) -> str:
+    url = f"https://generativelanguage.googleapis.com/{api_version}/models/{model}:generateContent?key={api_key}"
     user_prompt = _gemini_prompt_text(prompt)
-    user_prompt = (
-        user_prompt
-    )
     req_body = {
         "contents": [{"role": "user", "parts": [{"text": user_prompt}]}],
         "generationConfig": {"responseMimeType": "application/json"},
@@ -343,8 +352,8 @@ def _parse_http_error(e: error.HTTPError) -> tuple[int, str]:
     return int(e.code), message[:500]
 
 
-def _list_generate_models(api_key: str, timeout_s: float) -> list[str]:
-    url = f"https://generativelanguage.googleapis.com/v1beta/models?key={api_key}"
+def _list_generate_models(api_key: str, timeout_s: float, api_version: str = "v1beta") -> list[str]:
+    url = f"https://generativelanguage.googleapis.com/{api_version}/models?key={api_key}"
     req = request.Request(url, method="GET")
     with request.urlopen(req, timeout=timeout_s) as resp:  # nosec - fixed upstream endpoint
         raw = resp.read().decode("utf-8", errors="replace")
@@ -414,12 +423,20 @@ def _gemini_generate_cases(prompt: str) -> list[SuggestedCase]:
     if not api_key:
         raise RuntimeError("missing GEMINI_API_KEY")
 
-    model = _gemini_model()
+    requested_model = _gemini_model()
+    model = _GEMINI_MODEL_CACHE.get(requested_model, requested_model)
+    api_version = _GEMINI_API_VERSION_CACHE.get(requested_model, "v1beta")
     timeout_s = float(os.environ.get("GEMINI_TIMEOUT_S", "25"))
 
     data = ""
     try:
-        data = _gemini_generate_raw(api_key=api_key, model=model, prompt=prompt, timeout_s=timeout_s)
+        data = _gemini_generate_raw(
+            api_key=api_key,
+            model=model,
+            prompt=prompt,
+            timeout_s=timeout_s,
+            api_version=api_version,
+        )
     except error.HTTPError as e:
         code, msg = _parse_http_error(e)
         if code == 429:
@@ -430,27 +447,77 @@ def _gemini_generate_cases(prompt: str) -> list[SuggestedCase]:
         # Auto-recover from stale/unsupported model aliases by probing model list once.
         if code == 404 and "not found" in msg.lower() and "models/" in msg:
             try:
-                available = _list_generate_models(api_key=api_key, timeout_s=timeout_s)
-                fallback = _pick_fallback_model(requested=model, available=available)
-                if fallback and fallback != model:
-                    data = _gemini_generate_raw(
-                        api_key=api_key, model=fallback, prompt=prompt, timeout_s=timeout_s
-                    )
+                # First try same model with a different API version.
+                alt_versions = [v for v in ("v1", "v1beta") if v != api_version]
+                for alt_ver in alt_versions:
+                    try:
+                        data = _gemini_generate_raw(
+                            api_key=api_key,
+                            model=model,
+                            prompt=prompt,
+                            timeout_s=timeout_s,
+                            api_version=alt_ver,
+                        )
+                        _GEMINI_MODEL_CACHE[requested_model] = model
+                        _GEMINI_API_VERSION_CACHE[requested_model] = alt_ver
+                        break
+                    except error.HTTPError:
+                        continue
+                if data:
+                    pass
                 else:
-                    sample = ", ".join(available[:6]) if available else "(empty)"
-                    raise RuntimeError(
-                        f"gemini model not found (404): requested={model}; available={sample}"
-                    ) from e
+                    available: list[str] = []
+                    list_errors: list[str] = []
+                    for ver in (api_version, *alt_versions):
+                        try:
+                            available = _list_generate_models(
+                                api_key=api_key, timeout_s=timeout_s, api_version=ver
+                            )
+                            if available:
+                                api_version = ver
+                                break
+                        except Exception as list_err:
+                            list_errors.append(str(list_err))
+                            continue
+
+                    fallback = _pick_fallback_model(requested=model, available=available)
+                    if fallback:
+                        data = _gemini_generate_raw(
+                            api_key=api_key,
+                            model=fallback,
+                            prompt=prompt,
+                            timeout_s=timeout_s,
+                            api_version=api_version,
+                        )
+                        _GEMINI_MODEL_CACHE[requested_model] = fallback
+                        _GEMINI_API_VERSION_CACHE[requested_model] = api_version
+                    else:
+                        sample = ", ".join(available[:6]) if available else "(empty)"
+                        if list_errors:
+                            raise RuntimeError(
+                                f"gemini model not found (404): requested={requested_model}; "
+                                f"available={sample}; list-errors={'; '.join(list_errors)[:280]}"
+                            ) from e
+                        raise RuntimeError(
+                            f"gemini model not found (404): requested={requested_model}; available={sample}"
+                        ) from e
             except RuntimeError:
                 raise
             except Exception as list_err:
                 raise RuntimeError(
-                    f"gemini model not found (404) and list-models failed: {list_err}"
+                    f"gemini model not found (404) and fallback failed: {list_err}"
                 ) from e
         else:
             raise RuntimeError(f"gemini http error: {code} {msg}") from e
     except Exception as e:  # pragma: no cover - environment/network dependent
         raise RuntimeError(f"gemini request failed: {e}") from e
+
+    # Persist current version for the requested model if we reached success path.
+    if data:
+        _GEMINI_MODEL_CACHE[requested_model] = _GEMINI_MODEL_CACHE.get(requested_model, model)
+        _GEMINI_API_VERSION_CACHE[requested_model] = _GEMINI_API_VERSION_CACHE.get(
+            requested_model, api_version
+        )
 
     try:
         text = _extract_content_text(data)
@@ -593,9 +660,14 @@ def professional_case_from_suggested(s: SuggestedCase) -> dict[str, Any]:
 
 def ai_runtime_status() -> dict[str, Any]:
     has_key = bool(os.environ.get("GEMINI_API_KEY", "").strip())
+    configured = _gemini_model()
+    effective = _GEMINI_MODEL_CACHE.get(configured, configured)
+    api_version = _GEMINI_API_VERSION_CACHE.get(configured, "v1beta")
     return {
         "gemini_api_key_configured": has_key,
-        "gemini_model": _gemini_model(),
+        "gemini_model": configured,
+        "gemini_effective_model": effective,
+        "gemini_api_version": api_version,
         "mode": "gemini" if has_key else "local",
     }
 
