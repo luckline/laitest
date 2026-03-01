@@ -1029,6 +1029,21 @@ def _parse_openai_compatible_response_cases(data: str, provider: str) -> list[Su
     try:
         payload = _json_loads_loose(data)
     except Exception as e:
+        recovered = _extract_cases_obj_from_raw_response(data)
+        if recovered is not None:
+            normalized = _normalize_cases_payload(recovered)
+            if normalized:
+                return normalized
+        content_text = _extract_content_text_from_broken_openai_payload(data)
+        if content_text:
+            try:
+                raw_obj = _extract_json_object_from_text(content_text)
+            except Exception:
+                raw_obj = _extract_cases_obj_from_raw_response(content_text)
+            if raw_obj is not None:
+                normalized = _normalize_cases_payload(raw_obj)
+                if normalized:
+                    return normalized
         raise RuntimeError(f"{provider} returned non-json response: {e}") from e
 
     choices = payload.get("choices") if isinstance(payload, dict) else None
@@ -1046,9 +1061,23 @@ def _parse_openai_compatible_response_cases(data: str, provider: str) -> list[Su
                 text += part["text"]
             elif isinstance(part, str):
                 text += part
-        raw_obj = _extract_json_object_from_text(text)
+        try:
+            raw_obj = _extract_json_object_from_text(text)
+        except Exception:
+            raw_obj = _extract_cases_obj_from_raw_response(text)
+            if raw_obj is None:
+                raw_obj = _extract_cases_obj_from_raw_response(data)
+            if raw_obj is None:
+                raise
     else:
-        raw_obj = _extract_json_object_from_text(str(content or ""))
+        try:
+            raw_obj = _extract_json_object_from_text(str(content or ""))
+        except Exception:
+            raw_obj = _extract_cases_obj_from_raw_response(str(content or ""))
+            if raw_obj is None:
+                raw_obj = _extract_cases_obj_from_raw_response(data)
+            if raw_obj is None:
+                raise
 
     normalized = _normalize_cases_payload(raw_obj)
     if not normalized:
