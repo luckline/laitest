@@ -413,6 +413,16 @@ def _normalize_case(obj: dict[str, Any]) -> SuggestedCase | None:
     return SuggestedCase(title=title, description=description, tags=tags, kind=kind, spec=raw_spec)
 
 
+def _looks_like_case_dict(obj: Any) -> bool:
+    if not isinstance(obj, dict):
+        return False
+    title = str(obj.get("title") or "").strip()
+    if not title:
+        return False
+    has_case_fields = any(k in obj for k in ("module", "priority", "steps", "expected_result", "test_case"))
+    return has_case_fields
+
+
 def _normalize_cases_payload(payload: Any) -> list[SuggestedCase]:
     rows: list[Any]
     if isinstance(payload, list):
@@ -421,7 +431,14 @@ def _normalize_cases_payload(payload: Any) -> list[SuggestedCase]:
         raw = payload.get("cases")
         if not isinstance(raw, list):
             raw = payload.get("suggestions")
-        rows = raw if isinstance(raw, list) else []
+        if not isinstance(raw, list):
+            raw = payload.get("test_cases")
+        if isinstance(raw, list):
+            rows = raw
+        elif _looks_like_case_dict(payload):
+            rows = [payload]
+        else:
+            rows = []
     else:
         rows = []
 
@@ -623,8 +640,13 @@ def _extract_cases_obj_from_raw_response(data: str) -> Any | None:
                 obj = _json_loads_loose(cand)
             except Exception:
                 continue
-            if isinstance(obj, dict) and ("cases" in obj or "suggestions" in obj):
-                return obj
+            if isinstance(obj, dict):
+                if "cases" in obj or "suggestions" in obj or "test_cases" in obj:
+                    return obj
+                if _looks_like_case_dict(obj):
+                    return {"cases": [obj]}
+            if isinstance(obj, list) and obj and all(isinstance(x, dict) for x in obj):
+                return {"cases": obj}
         return None
 
     # Fast path: common plain/escaped markers.
@@ -642,7 +664,17 @@ def _extract_cases_obj_from_raw_response(data: str) -> Any | None:
         if ch != "{":
             continue
         head = s[idx : idx + 260]
-        if not any(k in head for k in ('"cases"', '"suggestions"', '\\"cases\\"', '\\"suggestions\\"')):
+        if not any(
+            k in head
+            for k in (
+                '"cases"',
+                '"suggestions"',
+                '\\"cases\\"',
+                '\\"suggestions\\"',
+                '"title"',
+                '\\"title\\"',
+            )
+        ):
             continue
         obj_text = _find_balanced_json_object(s, idx)
         parsed = _try_parse_obj_text(obj_text or "")
