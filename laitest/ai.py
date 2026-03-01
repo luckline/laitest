@@ -482,6 +482,15 @@ def professional_case_from_suggested(s: SuggestedCase) -> dict[str, Any]:
     return _normalize_professional_case({}, title=s.title, tags=s.tags)
 
 
+def ai_runtime_status() -> dict[str, Any]:
+    has_key = bool(os.environ.get("GEMINI_API_KEY", "").strip())
+    return {
+        "gemini_api_key_configured": has_key,
+        "gemini_model": _gemini_model(),
+        "mode": "gemini" if has_key else "local",
+    }
+
+
 def generate_cases(prompt: str) -> tuple[list[SuggestedCase], str, str | None]:
     """
     Preferred generator.
@@ -500,4 +509,8 @@ def generate_cases(prompt: str) -> tuple[list[SuggestedCase], str, str | None]:
             local = generate_cases_local(text)
             return local, "local-fallback", str(e)
 
-    return generate_cases_local(text), "local", None
+    return (
+        generate_cases_local(text),
+        "local",
+        "GEMINI_API_KEY not configured; using local generator",
+    )

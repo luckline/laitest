@@ -58,10 +58,15 @@ function renderSummary(out) {
   const provider = out.provider || "unknown";
   const warning = out.warning || "";
   const count = Array.isArray(out.suggestions) ? out.suggestions.length : 0;
+  const runtime = out.runtime && typeof out.runtime === "object" ? out.runtime : {};
+  const mode = runtime.mode || "unknown";
+  const keyConfigured = runtime.gemini_api_key_configured;
 
   const bits = [
     `<span><b>${count}</b> 条用例</span>`,
     `<span>provider: <code>${escapeHtml(provider)}</code></span>`,
+    `<span>mode: <code>${escapeHtml(mode)}</code></span>`,
+    `<span>gemini_key: <code>${escapeHtml(String(Boolean(keyConfigured)))}</code></span>`,
     `<span>structure: <code>professional</code></span>`,
   ];
   if (warning) {

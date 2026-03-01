@@ -7,7 +7,7 @@ from typing import Any
 
 from flask import Flask, jsonify, request
 
-from laitest.ai import generate_cases, professional_case_from_suggested
+from laitest.ai import ai_runtime_status, generate_cases, professional_case_from_suggested
 from laitest.db import db_conn, json_loads, row_to_dict, utc_now_iso
 from laitest.ids import new_id
 from laitest.runner import analyze_failures, run_case, summarize_run
@@ -101,6 +101,11 @@ def api_home() -> Any:
 @app.get("/api/health")
 def health() -> Any:
     return jsonify({"ok": True, "ts": utc_now_iso()})
+
+
+@app.get("/api/ai/status")
+def ai_status() -> Any:
+    return jsonify({"ok": True, "runtime": ai_runtime_status()})
 
 
 @app.get("/api/projects")
@@ -427,6 +432,7 @@ def post_ai_generate_cases() -> Any:
             ],
             "provider": provider,
             "warning": warning,
+            "runtime": ai_runtime_status(),
             "created_case_ids": created_ids,
         }
     )
