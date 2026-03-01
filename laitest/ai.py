@@ -471,14 +471,14 @@ def _extract_json_object_from_text(text: str) -> Any:
         s = re.sub(r"\s*```$", "", s)
         s = s.strip()
     try:
-        return json.loads(s)
-    except json.JSONDecodeError:
+        return _json_loads_loose(s)
+    except Exception:
         pass
 
     start = s.find("{")
     end = s.rfind("}")
     if start >= 0 and end > start:
-        return json.loads(s[start : end + 1])
+        return _json_loads_loose(s[start : end + 1])
     raise RuntimeError("model content did not contain valid json object")
 
 
@@ -547,6 +547,38 @@ def _try_decode_complete_json_text(raw: Any) -> str | None:
         return None
 
 
+def _json_loads_loose(text: str) -> Any:
+    s = (text or "").strip()
+    if not s:
+        raise RuntimeError("empty json text")
+
+    candidates: list[str] = []
+    base = s.replace("\ufeff", "").strip()
+    candidates.append(base)
+    # Remove trailing commas before object/array endings.
+    candidates.append(re.sub(r",\s*([}\]])", r"\1", base))
+    # Remove accidental control chars that sometimes appear in streaming responses.
+    candidates.append(re.sub(r"[\x00-\x08\x0b\x0c\x0e-\x1f]", "", base))
+
+    last_err: Exception | None = None
+    dedup: list[str] = []
+    for c in candidates:
+        if c and c not in dedup:
+            dedup.append(c)
+    for c in dedup:
+        try:
+            return json.loads(c)
+        except Exception as e:
+            last_err = e
+        try:
+            return json.loads(c, strict=False)
+        except Exception as e:
+            last_err = e
+    if last_err is None:
+        raise RuntimeError("json parse failed")
+    raise last_err
+
+
 def _safe_int_env(name: str, default: int, min_v: int, max_v: int) -> int:
     try:
         value = int(os.environ.get(name, str(default)) or str(default))
@@ -605,8 +637,33 @@ def _deepseek_prompt_text(prompt: str, max_cases: int) -> str:
         "\"description\":\"string\""
         "}]}\n"
         f"要求: 最多输出{max_cases}条；默认简体中文（需求明确要求英文除外）；步骤可执行，预期可验证。\n"
+        "- JSON 必须可被标准 json.loads 直接解析。\n"
+        "- 禁止尾逗号，字符串里的双引号必须转义。\n"
         f"需求:\n{prompt}"
     )
+
+
+def _parse_deepseek_response_cases(data: str) -> list[SuggestedCase]:
+    try:
+        payload = _json_loads_loose(data)
+    except Exception as e:
+        raise RuntimeError(f"deepseek returned non-json response: {e}") from e
+
+    choices = payload.get("choices") if isinstance(payload, dict) else None
+    if not isinstance(choices, list) or not choices:
+        raise RuntimeError("deepseek response missing choices")
+
+    message = choices[0].get("message") if isinstance(choices[0], dict) else None
+    content = message.get("content") if isinstance(message, dict) else None
+    if isinstance(content, dict):
+        raw_obj = content
+    else:
+        raw_obj = _extract_json_object_from_text(str(content or ""))
+
+    normalized = _normalize_cases_payload(raw_obj)
+    if not normalized:
+        raise RuntimeError("deepseek returned empty/invalid cases")
+    return normalized
 
 
 def _gemini_generate_raw(
@@ -906,6 +963,7 @@ def _deepseek_generate_cases(prompt: str) -> list[SuggestedCase]:
     max_tokens = _safe_int_env("DEEPSEEK_MAX_TOKENS", 1400, 256, 8192)
     max_cases = _safe_int_env("DEEPSEEK_MAX_CASES", 10, 1, 30)
     prompt_max_chars = _safe_int_env("DEEPSEEK_PROMPT_MAX_CHARS", 4500, 500, 20000)
+    parse_retries = _safe_int_env("DEEPSEEK_PARSE_RETRIES", 1, 0, 5)
     prompt_text = (prompt or "").strip()
     if len(prompt_text) > prompt_max_chars:
         prompt_text = prompt_text[:prompt_max_chars]
@@ -941,76 +999,72 @@ def _deepseek_generate_cases(prompt: str) -> list[SuggestedCase]:
         },
     )
 
-    data = ""
-    for attempt in range(1, max_attempts + 1):
+    parse_attempts = parse_retries + 1
+    last_parse_error: Exception | None = None
+    for parse_attempt in range(1, parse_attempts + 1):
+        data = ""
+        for attempt in range(1, max_attempts + 1):
+            try:
+                with request.urlopen(req, timeout=timeout_s) as resp:  # nosec - fixed upstream endpoint
+                    data = resp.read().decode("utf-8", errors="replace")
+                    break
+            except IncompleteRead as e:
+                # Some upstream connections close early after sending most bytes.
+                # If the partial body is still valid JSON, accept it; otherwise retry.
+                partial_text = _try_decode_complete_json_text(getattr(e, "partial", b""))
+                if partial_text:
+                    data = partial_text
+                    break
+                if attempt < max_attempts:
+                    time.sleep(min(2 ** (attempt - 1), 4))
+                    continue
+                partial_size = len(getattr(e, "partial", b"") or b"")
+                raise RuntimeError(
+                    f"deepseek response interrupted (IncompleteRead) after {max_attempts} attempts; partial_bytes={partial_size}"
+                ) from e
+            except error.HTTPError as e:
+                code, msg = _parse_http_error(e)
+                if code == 402:
+                    raise RuntimeError("deepseek insufficient balance (402): top up DeepSeek account") from e
+                if code == 429:
+                    raise RuntimeError(
+                        "deepseek quota/rate limit exceeded (429): check plan/billing or wait for reset"
+                    ) from e
+                # Retry on transient 5xx errors.
+                if code in (500, 502, 503, 504) and attempt < max_attempts:
+                    time.sleep(min(2 ** (attempt - 1), 4))
+                    continue
+                raise RuntimeError(f"deepseek http error: {code} {msg}") from e
+            except Exception as e:  # pragma: no cover - environment/network dependent
+                if _is_timeout_error(e) and attempt < max_attempts:
+                    time.sleep(min(2 ** (attempt - 1), 4))
+                    continue
+                if _is_timeout_error(e):
+                    raise RuntimeError(
+                        f"deepseek request timed out after {max_attempts} attempts (timeout={timeout_s}s)"
+                    ) from e
+                if _is_retryable_transport_error(e) and attempt < max_attempts:
+                    time.sleep(min(2 ** (attempt - 1), 4))
+                    continue
+                if _is_retryable_transport_error(e):
+                    raise RuntimeError(
+                        f"deepseek transport interrupted after {max_attempts} attempts: {e.__class__.__name__}: {e}"
+                    ) from e
+                raise RuntimeError(f"deepseek request failed: {e}") from e
+
         try:
-            with request.urlopen(req, timeout=timeout_s) as resp:  # nosec - fixed upstream endpoint
-                data = resp.read().decode("utf-8", errors="replace")
-                break
-        except IncompleteRead as e:
-            # Some upstream connections close early after sending most bytes.
-            # If the partial body is still valid JSON, accept it; otherwise retry.
-            partial_text = _try_decode_complete_json_text(getattr(e, "partial", b""))
-            if partial_text:
-                data = partial_text
-                break
-            if attempt < max_attempts:
-                time.sleep(min(2 ** (attempt - 1), 4))
+            return _parse_deepseek_response_cases(data)
+        except Exception as parse_err:
+            last_parse_error = parse_err
+            if parse_attempt < parse_attempts:
+                time.sleep(min(2 ** (parse_attempt - 1), 3))
                 continue
-            partial_size = len(getattr(e, "partial", b"") or b"")
+            data_preview = re.sub(r"\s+", " ", str(data or ""))[:180]
             raise RuntimeError(
-                f"deepseek response interrupted (IncompleteRead) after {max_attempts} attempts; partial_bytes={partial_size}"
-            ) from e
-        except error.HTTPError as e:
-            code, msg = _parse_http_error(e)
-            if code == 402:
-                raise RuntimeError("deepseek insufficient balance (402): top up DeepSeek account") from e
-            if code == 429:
-                raise RuntimeError(
-                    "deepseek quota/rate limit exceeded (429): check plan/billing or wait for reset"
-                ) from e
-            # Retry on transient 5xx errors.
-            if code in (500, 502, 503, 504) and attempt < max_attempts:
-                time.sleep(min(2 ** (attempt - 1), 4))
-                continue
-            raise RuntimeError(f"deepseek http error: {code} {msg}") from e
-        except Exception as e:  # pragma: no cover - environment/network dependent
-            if _is_timeout_error(e) and attempt < max_attempts:
-                time.sleep(min(2 ** (attempt - 1), 4))
-                continue
-            if _is_timeout_error(e):
-                raise RuntimeError(
-                    f"deepseek request timed out after {max_attempts} attempts (timeout={timeout_s}s)"
-                ) from e
-            if _is_retryable_transport_error(e) and attempt < max_attempts:
-                time.sleep(min(2 ** (attempt - 1), 4))
-                continue
-            if _is_retryable_transport_error(e):
-                raise RuntimeError(
-                    f"deepseek transport interrupted after {max_attempts} attempts: {e.__class__.__name__}: {e}"
-                ) from e
-            raise RuntimeError(f"deepseek request failed: {e}") from e
+                f"deepseek invalid json content after {parse_attempts} attempts: {parse_err}; preview={data_preview}"
+            ) from parse_err
 
-    try:
-        payload = json.loads(data)
-    except json.JSONDecodeError as e:
-        raise RuntimeError("deepseek returned non-json response") from e
-
-    choices = payload.get("choices") if isinstance(payload, dict) else None
-    if not isinstance(choices, list) or not choices:
-        raise RuntimeError("deepseek response missing choices")
-
-    message = choices[0].get("message") if isinstance(choices[0], dict) else None
-    content = message.get("content") if isinstance(message, dict) else None
-    if isinstance(content, dict):
-        raw_obj = content
-    else:
-        raw_obj = _extract_json_object_from_text(str(content or ""))
-
-    normalized = _normalize_cases_payload(raw_obj)
-    if not normalized:
-        raise RuntimeError("deepseek returned empty/invalid cases")
-    return normalized
+    raise RuntimeError(f"deepseek parse retries exhausted: {last_parse_error}")
 
 
 def _infer_local_profile(line: str) -> tuple[str, str, str, list[str], str]:
@@ -1224,6 +1278,7 @@ def ai_runtime_status() -> dict[str, Any]:
         "deepseek_base_url": _deepseek_base_url(),
         "deepseek_timeout_s": float(os.environ.get("DEEPSEEK_TIMEOUT_S", "60") or "60"),
         "deepseek_retries": int(os.environ.get("DEEPSEEK_RETRIES", "2") or "2"),
+        "deepseek_parse_retries": _safe_int_env("DEEPSEEK_PARSE_RETRIES", 1, 0, 5),
         "deepseek_max_tokens": _safe_int_env("DEEPSEEK_MAX_TOKENS", 1400, 256, 8192),
         "deepseek_max_cases": _safe_int_env("DEEPSEEK_MAX_CASES", 10, 1, 30),
         "deepseek_prompt_max_chars": _safe_int_env("DEEPSEEK_PROMPT_MAX_CHARS", 4500, 500, 20000),
