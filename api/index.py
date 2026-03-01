@@ -385,11 +385,12 @@ def post_runs() -> tuple[Any, int] | Any:
 def post_ai_generate_cases() -> Any:
     body = _body()
     prompt = str(body.get("prompt") or "")
+    model_provider = str(body.get("model_provider") or "").strip().lower() or None
     project_id = str(body.get("project_id") or "").strip()
     suite_id = str(body.get("suite_id") or "").strip() or None
     create = bool(body.get("create"))
 
-    suggestions, provider, warning = generate_cases(prompt)
+    suggestions, provider, warning = generate_cases(prompt, model_provider=model_provider)
     created_ids: list[str] = []
     if create and project_id:
         now = utc_now_iso()
@@ -431,6 +432,7 @@ def post_ai_generate_cases() -> Any:
                 for s in suggestions
             ],
             "provider": provider,
+            "requested_provider": model_provider,
             "warning": warning,
             "runtime": ai_runtime_status(),
             "created_case_ids": created_ids,

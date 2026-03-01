@@ -36,6 +36,14 @@
 
       <section class="ai-card">
         <label class="ai-label" for="aiPrompt">需求文本</label>
+        <div class="ai-model-row">
+          <span class="ai-model-label">模型</span>
+          <select id="aiModel" class="ai-select">
+            <option value="deepseek" selected>DeepSeek（默认）</option>
+            <option value="qianwen">Qianwen</option>
+            <option value="gemini">Gemini</option>
+          </select>
+        </div>
         <textarea
           id="aiPrompt"
           placeholder="- 登录成功：手机号+密码+验证码正确&#10;- 登录失败：密码错误&#10;- 登录失败：验证码错误超过5次被锁定"
@@ -72,6 +80,6 @@
     </footer>
 
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-    <script src="/app.js?v=f22a89d-xlsx1"></script>
+    <script src="/app.js?v=model-selector-qianwen-1"></script>
   </body>
 </html>

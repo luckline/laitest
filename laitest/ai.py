@@ -466,12 +466,35 @@ def _deepseek_model() -> str:
     return raw
 
 
+def _qianwen_model() -> str:
+    raw = os.environ.get("QIANWEN_MODEL", "qwen-plus").strip() or "qwen-plus"
+    if raw.startswith("models/"):
+        raw = raw.removeprefix("models/")
+    return raw
+
+
 def _deepseek_base_url() -> str:
     return (os.environ.get("DEEPSEEK_BASE_URL", "https://api.deepseek.com").strip() or "https://api.deepseek.com").rstrip("/")
 
 
 def _deepseek_chat_url() -> str:
     base = _deepseek_base_url()
+    if base.endswith("/chat/completions"):
+        return base
+    if base.endswith("/v1"):
+        return f"{base}/chat/completions"
+    return f"{base}/v1/chat/completions"
+
+
+def _qianwen_base_url() -> str:
+    base = os.environ.get("QIANWEN_BASE_URL", "").strip()
+    if not base:
+        base = "https://dashscope.aliyuncs.com/compatible-mode/v1"
+    return base.rstrip("/")
+
+
+def _qianwen_chat_url() -> str:
+    base = _qianwen_base_url()
     if base.endswith("/chat/completions"):
         return base
     if base.endswith("/v1"):
@@ -519,6 +542,10 @@ def _extract_json_object_from_text(text: str) -> Any:
 
 def _deepseek_api_key() -> str:
     return _env_first("DEEPSEEK_API_KEY", "DeepSeek_API_KEY", "DEEPSEEK_KEY")
+
+
+def _qianwen_api_key() -> str:
+    return _env_first("QIANWEN_API_KEY", "DASHSCOPE_API_KEY")
 
 
 def _is_timeout_error(exc: Exception) -> bool:
@@ -789,6 +816,37 @@ def _parse_deepseek_response_cases(data: str) -> list[SuggestedCase]:
     normalized = _normalize_cases_payload(raw_obj)
     if not normalized:
         raise RuntimeError("deepseek returned empty/invalid cases")
+    return normalized
+
+
+def _parse_openai_compatible_response_cases(data: str, provider: str) -> list[SuggestedCase]:
+    try:
+        payload = _json_loads_loose(data)
+    except Exception as e:
+        raise RuntimeError(f"{provider} returned non-json response: {e}") from e
+
+    choices = payload.get("choices") if isinstance(payload, dict) else None
+    if not isinstance(choices, list) or not choices:
+        raise RuntimeError(f"{provider} response missing choices")
+
+    message = choices[0].get("message") if isinstance(choices[0], dict) else None
+    content = message.get("content") if isinstance(message, dict) else None
+    if isinstance(content, dict):
+        raw_obj = content
+    elif isinstance(content, list):
+        text = ""
+        for part in content:
+            if isinstance(part, dict) and isinstance(part.get("text"), str):
+                text += part["text"]
+            elif isinstance(part, str):
+                text += part
+        raw_obj = _extract_json_object_from_text(text)
+    else:
+        raw_obj = _extract_json_object_from_text(str(content or ""))
+
+    normalized = _normalize_cases_payload(raw_obj)
+    if not normalized:
+        raise RuntimeError(f"{provider} returned empty/invalid cases")
     return normalized
 
 
@@ -1219,6 +1277,83 @@ def _deepseek_generate_cases(prompt: str) -> list[SuggestedCase]:
     raise RuntimeError(f"deepseek parse retries exhausted: {last_parse_error}")
 
 
+def _qianwen_generate_cases(prompt: str) -> list[SuggestedCase]:
+    api_key = _qianwen_api_key()
+    if not api_key:
+        raise RuntimeError("missing QIANWEN_API_KEY")
+
+    model = _qianwen_model()
+    timeout_s = float(os.environ.get("QIANWEN_TIMEOUT_S", "30") or "30")
+    retries = _safe_int_env("QIANWEN_RETRIES", 1, 0, 5)
+    max_tokens = _safe_int_env("QIANWEN_MAX_TOKENS", 1400, 256, 8192)
+    max_cases = _safe_int_env("QIANWEN_MAX_CASES", 10, 1, 30)
+    prompt_max_chars = _safe_int_env("QIANWEN_PROMPT_MAX_CHARS", 4500, 500, 20000)
+
+    text = (prompt or "").strip()
+    if len(text) > prompt_max_chars:
+        text = text[:prompt_max_chars]
+
+    url = _qianwen_chat_url()
+    req_body = {
+        "model": model,
+        "messages": [
+            {"role": "system", "content": "你是资深QA测试工程师。默认输出简体中文，仅返回JSON。"},
+            {"role": "user", "content": _deepseek_prompt_text(text, max_cases=max_cases)},
+        ],
+        "temperature": 0.1,
+        "stream": False,
+        "max_tokens": max_tokens,
+    }
+    raw = json.dumps(req_body, ensure_ascii=True).encode("utf-8")
+    req = request.Request(
+        url,
+        data=raw,
+        method="POST",
+        headers={
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {api_key}",
+        },
+    )
+
+    max_attempts = retries + 1
+    data = ""
+    for attempt in range(1, max_attempts + 1):
+        try:
+            with request.urlopen(req, timeout=timeout_s) as resp:  # nosec - fixed upstream endpoint
+                data = resp.read().decode("utf-8", errors="replace")
+                break
+        except error.HTTPError as e:
+            code, msg = _parse_http_error(e)
+            if code in (401, 403):
+                raise RuntimeError(f"qianwen auth failed ({code}): check QIANWEN_API_KEY") from e
+            if code == 429:
+                raise RuntimeError(
+                    "qianwen quota/rate limit exceeded (429): check plan/billing or wait for reset"
+                ) from e
+            if code in (500, 502, 503, 504) and attempt < max_attempts:
+                time.sleep(min(2 ** (attempt - 1), 4))
+                continue
+            raise RuntimeError(f"qianwen http error: {code} {msg}") from e
+        except Exception as e:  # pragma: no cover - environment/network dependent
+            if _is_timeout_error(e) and attempt < max_attempts:
+                time.sleep(min(2 ** (attempt - 1), 4))
+                continue
+            if _is_timeout_error(e):
+                raise RuntimeError(
+                    f"qianwen request timed out after {max_attempts} attempts (timeout={timeout_s}s)"
+                ) from e
+            if _is_retryable_transport_error(e) and attempt < max_attempts:
+                time.sleep(min(2 ** (attempt - 1), 4))
+                continue
+            if _is_retryable_transport_error(e):
+                raise RuntimeError(
+                    f"qianwen transport interrupted after {max_attempts} attempts: {e.__class__.__name__}: {e}"
+                ) from e
+            raise RuntimeError(f"qianwen request failed: {e}") from e
+
+    return _parse_openai_compatible_response_cases(data, provider="qianwen")
+
+
 def _infer_local_profile(line: str) -> tuple[str, str, str, list[str], str]:
     low = line.lower()
     module = "通用模块"
@@ -1412,6 +1547,7 @@ def _coerce_cases_default_language(cases: list[SuggestedCase], prompt: str) -> l
 
 def ai_runtime_status() -> dict[str, Any]:
     has_deepseek = bool(_deepseek_api_key())
+    has_qianwen = bool(_qianwen_api_key())
     has_gemini = bool(os.environ.get("GEMINI_API_KEY", "").strip())
     deepseek_timeout_configured, deepseek_timeout_effective = _deepseek_timeout_effective()
     deepseek_retries_configured, deepseek_retries_effective = _deepseek_retries_effective()
@@ -1422,6 +1558,8 @@ def ai_runtime_status() -> dict[str, Any]:
     api_version = _GEMINI_API_VERSION_CACHE.get(configured, "v1beta")
     if has_deepseek:
         mode = "deepseek"
+    elif has_qianwen:
+        mode = "qianwen"
     elif has_gemini:
         mode = "gemini"
     else:
@@ -1441,20 +1579,27 @@ def ai_runtime_status() -> dict[str, Any]:
         "deepseek_max_tokens": _safe_int_env("DEEPSEEK_MAX_TOKENS", 1400, 256, 8192),
         "deepseek_max_cases": _safe_int_env("DEEPSEEK_MAX_CASES", 10, 1, 30),
         "deepseek_prompt_max_chars": _safe_int_env("DEEPSEEK_PROMPT_MAX_CHARS", 4500, 500, 20000),
+        "qianwen_api_key_configured": has_qianwen,
+        "qianwen_model": _qianwen_model(),
+        "qianwen_base_url": _qianwen_base_url(),
+        "qianwen_timeout_s": float(os.environ.get("QIANWEN_TIMEOUT_S", "30") or "30"),
+        "qianwen_retries": _safe_int_env("QIANWEN_RETRIES", 1, 0, 5),
+        "qianwen_max_tokens": _safe_int_env("QIANWEN_MAX_TOKENS", 1400, 256, 8192),
+        "qianwen_max_cases": _safe_int_env("QIANWEN_MAX_CASES", 10, 1, 30),
         "gemini_api_key_configured": has_gemini,
         "gemini_model": configured,
         "gemini_effective_model": effective,
         "gemini_api_version": api_version,
         "default_language": (os.environ.get("LAITEST_DEFAULT_LANG", "zh-CN").strip() or "zh-CN"),
-        "provider_order": ["deepseek", "gemini", "local"],
+        "provider_order": ["deepseek", "qianwen", "gemini", "local"],
         "mode": mode,
     }
 
 
-def generate_cases(prompt: str) -> tuple[list[SuggestedCase], str, str | None]:
+def generate_cases(prompt: str, model_provider: str | None = None) -> tuple[list[SuggestedCase], str, str | None]:
     """
     Preferred generator.
-    - Uses Gemini when GEMINI_API_KEY is configured.
+    - Supports explicit provider selection: deepseek / qianwen / gemini.
     - Falls back to local heuristic on failures.
     Returns: (suggestions, provider, warning)
     """
@@ -1463,13 +1608,84 @@ def generate_cases(prompt: str) -> tuple[list[SuggestedCase], str, str | None]:
         return [], "none", None
 
     has_deepseek = bool(_deepseek_api_key())
+    has_qianwen = bool(_qianwen_api_key())
     has_gemini = bool(os.environ.get("GEMINI_API_KEY", "").strip())
+    selected = str(model_provider or "").strip().lower()
+    supported = {"deepseek", "qianwen", "gemini"}
+    if selected and selected not in supported:
+        local = _coerce_cases_default_language(generate_cases_local(text), text)
+        return local, "local-fallback", f"unsupported model_provider: {selected}"
 
+    # Explicit provider path: only use the selected model, failover to local.
+    if selected == "deepseek":
+        if not has_deepseek:
+            local = _coerce_cases_default_language(generate_cases_local(text), text)
+            return local, "local-fallback", "missing DEEPSEEK_API_KEY/DeepSeek_API_KEY"
+        try:
+            rows = _deepseek_generate_cases(text)
+            return _coerce_cases_default_language(rows, text), "deepseek", None
+        except Exception as e:
+            local = _coerce_cases_default_language(generate_cases_local(text), text)
+            return local, "local-fallback", f"deepseek failed: {e}"
+
+    if selected == "qianwen":
+        if not has_qianwen:
+            local = _coerce_cases_default_language(generate_cases_local(text), text)
+            return local, "local-fallback", "missing QIANWEN_API_KEY"
+        try:
+            rows = _qianwen_generate_cases(text)
+            return _coerce_cases_default_language(rows, text), "qianwen", None
+        except Exception as e:
+            local = _coerce_cases_default_language(generate_cases_local(text), text)
+            return local, "local-fallback", f"qianwen failed: {e}"
+
+    if selected == "gemini":
+        if not has_gemini:
+            local = _coerce_cases_default_language(generate_cases_local(text), text)
+            return local, "local-fallback", "missing GEMINI_API_KEY"
+        try:
+            rows = _gemini_generate_cases(text)
+            return _coerce_cases_default_language(rows, text), "gemini", None
+        except Exception as e:
+            local = _coerce_cases_default_language(generate_cases_local(text), text)
+            return local, "local-fallback", f"gemini failed: {e}"
+
+    # Legacy/default path when provider is not specified.
     if has_deepseek:
         try:
             rows = _deepseek_generate_cases(text)
             return _coerce_cases_default_language(rows, text), "deepseek", None
         except Exception as deep_err:
+            if has_qianwen:
+                try:
+                    rows = _qianwen_generate_cases(text)
+                    return (
+                        _coerce_cases_default_language(rows, text),
+                        "qianwen-fallback",
+                        f"deepseek failed: {deep_err}",
+                    )
+                except Exception as qianwen_err:
+                    if has_gemini:
+                        try:
+                            rows = _gemini_generate_cases(text)
+                            return (
+                                _coerce_cases_default_language(rows, text),
+                                "gemini-fallback",
+                                f"deepseek failed: {deep_err}; qianwen failed: {qianwen_err}",
+                            )
+                        except Exception as gem_err:
+                            local = _coerce_cases_default_language(generate_cases_local(text), text)
+                            return (
+                                local,
+                                "local-fallback",
+                                f"deepseek failed: {deep_err}; qianwen failed: {qianwen_err}; gemini failed: {gem_err}",
+                            )
+                    local = _coerce_cases_default_language(generate_cases_local(text), text)
+                    return (
+                        local,
+                        "local-fallback",
+                        f"deepseek failed: {deep_err}; qianwen failed: {qianwen_err}",
+                    )
             if has_gemini:
                 try:
                     rows = _gemini_generate_cases(text)
@@ -1488,6 +1704,29 @@ def generate_cases(prompt: str) -> tuple[list[SuggestedCase], str, str | None]:
             local = _coerce_cases_default_language(generate_cases_local(text), text)
             return local, "local-fallback", f"deepseek failed: {deep_err}"
 
+    if has_qianwen:
+        try:
+            rows = _qianwen_generate_cases(text)
+            return _coerce_cases_default_language(rows, text), "qianwen", None
+        except Exception as qianwen_err:
+            if has_gemini:
+                try:
+                    rows = _gemini_generate_cases(text)
+                    return (
+                        _coerce_cases_default_language(rows, text),
+                        "gemini-fallback",
+                        f"qianwen failed: {qianwen_err}",
+                    )
+                except Exception as gem_err:
+                    local = _coerce_cases_default_language(generate_cases_local(text), text)
+                    return (
+                        local,
+                        "local-fallback",
+                        f"qianwen failed: {qianwen_err}; gemini failed: {gem_err}",
+                    )
+            local = _coerce_cases_default_language(generate_cases_local(text), text)
+            return local, "local-fallback", f"qianwen failed: {qianwen_err}"
+
     if has_gemini:
         try:
             rows = _gemini_generate_cases(text)
@@ -1499,5 +1738,5 @@ def generate_cases(prompt: str) -> tuple[list[SuggestedCase], str, str | None]:
     return (
         _coerce_cases_default_language(generate_cases_local(text), text),
         "local",
-        "DEEPSEEK_API_KEY/DeepSeek_API_KEY and GEMINI_API_KEY are not configured; using local generator",
+        "DEEPSEEK_API_KEY/DeepSeek_API_KEY, QIANWEN_API_KEY and GEMINI_API_KEY are not configured; using local generator",
     )

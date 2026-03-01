@@ -45,7 +45,7 @@ function setStatus(text, kind) {
 
 function setBusy(busy) {
   state.busy = busy;
-  ["aiGo", "fillSample", "clearPrompt", "copyJson", "toggleRaw", "downloadExcel"].forEach((id) => {
+  ["aiGo", "fillSample", "clearPrompt", "copyJson", "toggleRaw", "downloadExcel", "aiModel"].forEach((id) => {
     const node = el(id);
     if (node) {
       node.disabled = busy;
@@ -56,19 +56,23 @@ function setBusy(busy) {
 
 function renderSummary(out) {
   const provider = out.provider || "unknown";
+  const requestedProvider = out.requested_provider || "deepseek";
   const warning = out.warning || "";
   const count = Array.isArray(out.suggestions) ? out.suggestions.length : 0;
   const runtime = out.runtime && typeof out.runtime === "object" ? out.runtime : {};
   const mode = runtime.mode || "unknown";
   const deepseekKeyConfigured = runtime.deepseek_api_key_configured;
-  const keyConfigured = runtime.gemini_api_key_configured;
+  const qianwenKeyConfigured = runtime.qianwen_api_key_configured;
+  const geminiKeyConfigured = runtime.gemini_api_key_configured;
 
   const bits = [
     `<span><b>${count}</b> 条用例</span>`,
+    `<span>requested: <code>${escapeHtml(requestedProvider)}</code></span>`,
     `<span>provider: <code>${escapeHtml(provider)}</code></span>`,
     `<span>mode: <code>${escapeHtml(mode)}</code></span>`,
     `<span>deepseek_key: <code>${escapeHtml(String(Boolean(deepseekKeyConfigured)))}</code></span>`,
-    `<span>gemini_key: <code>${escapeHtml(String(Boolean(keyConfigured)))}</code></span>`,
+    `<span>qianwen_key: <code>${escapeHtml(String(Boolean(qianwenKeyConfigured)))}</code></span>`,
+    `<span>gemini_key: <code>${escapeHtml(String(Boolean(geminiKeyConfigured)))}</code></span>`,
     `<span>structure: <code>professional</code></span>`,
   ];
   if (warning) {
@@ -297,6 +301,7 @@ function renderOutput(out) {
 
 async function generate() {
   const prompt = el("aiPrompt").value.trim();
+  const selectedProvider = (el("aiModel") && el("aiModel").value ? el("aiModel").value : "deepseek").trim();
   if (!prompt) {
     setStatus("请输入需求文本后再生成。", "err");
     return;
@@ -309,6 +314,7 @@ async function generate() {
       method: "POST",
       body: JSON.stringify({
         prompt,
+        model_provider: selectedProvider,
         create: false,
       }),
     });

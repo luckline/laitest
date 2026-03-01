@@ -463,10 +463,11 @@ class Handler(BaseHTTPRequestHandler):
 
             if path == "/api/ai/generate_cases":
                 prompt = str(body.get("prompt") or "")
+                model_provider = str(body.get("model_provider") or "").strip().lower() or None
                 project_id = str(body.get("project_id") or "").strip()
                 suite_id = str(body.get("suite_id") or "").strip() or None
 
-                suggestions, provider, warning = generate_cases(prompt)
+                suggestions, provider, warning = generate_cases(prompt, model_provider=model_provider)
                 # Option: auto-create in DB when asked.
                 create = bool(body.get("create"))
                 created_ids: list[str] = []
@@ -510,6 +511,7 @@ class Handler(BaseHTTPRequestHandler):
                             for s in suggestions
                         ],
                         "provider": provider,
+                        "requested_provider": model_provider,
                         "warning": warning,
                         "runtime": ai_runtime_status(),
                         "created_case_ids": created_ids,

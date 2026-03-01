@@ -36,6 +36,35 @@
   font-weight: 700;
 }
 
+.ai-model-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.ai-model-label {
+  color: var(--app-muted);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.ai-select {
+  min-width: 190px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  border: 1px solid var(--app-line);
+  background: #fff;
+  color: var(--app-ink);
+  font: inherit;
+}
+
+.ai-select:focus {
+  outline: none;
+  border-color: #7aa7da;
+  box-shadow: 0 0 0 3px rgba(122, 167, 218, 0.18);
+}
+
 #aiPrompt {
   width: 100%;
   min-height: 170px;

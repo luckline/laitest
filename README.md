@@ -39,13 +39,20 @@ python3 -m laitest cli projects
 - `GET /api/runs` 查看执行
 - `POST /api/ai/generate_cases` 生成建议用例（本地启发式 or 外部模型）
 
-## AI 用例生成（DeepSeek / Gemini）
+## AI 用例生成（DeepSeek / Qianwen / Gemini）
 
 默认使用本地启发式生成；若配置了远程模型 key，则按以下顺序调用并在失败时自动回退：
 
 1. `DeepSeek`
-2. `Gemini`
-3. `local`（本地启发式）
+2. `Qianwen`
+3. `Gemini`
+4. `local`（本地启发式）
+
+`POST /api/ai/generate_cases` 支持可选请求字段：
+
+- `model_provider`：`deepseek` / `qianwen` / `gemini`
+  - 传入后将仅调用该模型生成（失败时仅回退 `local`）
+  - 不传时按上述顺序自动回退
 
 可选环境变量：
 
@@ -62,13 +69,22 @@ python3 -m laitest cli projects
 - `DEEPSEEK_MAX_TOKENS`：DeepSeek 最大输出 token（默认 `1400`，越小通常越快）
 - `DEEPSEEK_MAX_CASES`：单次最多生成用例条数（默认 `10`，越小通常越快）
 - `DEEPSEEK_PROMPT_MAX_CHARS`：发送给 DeepSeek 的需求文本最大字符数（默认 `4500`）
+- `QIANWEN_API_KEY`：Qianwen API Key（Vercel 环境变量）
+- `QIANWEN_MODEL`：模型名（默认 `qwen-plus`）
+- `QIANWEN_BASE_URL`：基础地址（默认 `https://dashscope.aliyuncs.com/compatible-mode/v1`）
+- `QIANWEN_TIMEOUT_S`：请求超时秒数（默认 `30`）
+- `QIANWEN_RETRIES`：超时/5xx 重试次数（默认 `1`）
+- `QIANWEN_MAX_TOKENS`：最大输出 token（默认 `1400`）
+- `QIANWEN_MAX_CASES`：单次最多生成用例条数（默认 `10`）
+- `QIANWEN_PROMPT_MAX_CHARS`：发送给 Qianwen 的需求文本最大字符数（默认 `4500`）
 - `GEMINI_API_KEY`：Gemini API Key（作为 DeepSeek 失败时回退）
 - `GEMINI_MODEL`：Gemini 模型名（默认 `gemini-2.0-flash`）
 - `GEMINI_TIMEOUT_S`：Gemini 请求超时秒数（默认 `25`）
 
 接口返回会包含：
 
-- `provider`：`deepseek` / `gemini` / `gemini-fallback` / `local` / `local-fallback`
+- `provider`：`deepseek` / `qianwen` / `gemini` / `qianwen-fallback` / `gemini-fallback` / `local` / `local-fallback`
+- `requested_provider`：请求中指定的 `model_provider`（未指定时为 `null`）
 - `warning`：当远程生成失败并回退时返回错误摘要
 
 ## 设计目标（后续可扩展）
