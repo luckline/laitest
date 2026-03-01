@@ -352,6 +352,33 @@ def _parse_http_error(e: error.HTTPError) -> tuple[int, str]:
     return int(e.code), message[:500]
 
 
+def _model_family(model: str) -> str:
+    if not model:
+        return ""
+    m = model.removeprefix("models/")
+    parts = m.split("-")
+    if len(parts) >= 3 and parts[0] == "gemini":
+        return "-".join(parts[:3])
+    return m
+
+
+def _candidate_model_aliases(requested: str) -> list[str]:
+    req = requested.removeprefix("models/")
+    out: list[str] = [req]
+    if req.endswith("-latest"):
+        out.append(req.removesuffix("-latest"))
+    else:
+        out.append(f"{req}-latest")
+    if not req.endswith("-001"):
+        out.append(f"{req}-001")
+    # dedupe while preserving order
+    dedup: list[str] = []
+    for m in out:
+        if m and m not in dedup:
+            dedup.append(m)
+    return dedup
+
+
 def _list_generate_models(api_key: str, timeout_s: float, api_version: str = "v1beta") -> list[str]:
     url = f"https://generativelanguage.googleapis.com/{api_version}/models?key={api_key}"
     req = request.Request(url, method="GET")
@@ -383,15 +410,27 @@ def _pick_fallback_model(requested: str, available: list[str]) -> str | None:
     if requested in available:
         return requested
 
-    prefixed = [m for m in available if m.startswith(requested + "-")]
-    if prefixed:
-        return prefixed[0]
+    # 1) strict preference: same family first (e.g. gemini-1.5-*)
+    req_family = _model_family(requested)
+    same_family = [m for m in available if _model_family(m) == req_family]
+    if same_family:
+        aliases = _candidate_model_aliases(requested)
+        for alias in aliases:
+            if alias in same_family:
+                return alias
+        prefixed = [m for m in same_family if m.startswith(requested + "-")]
+        if prefixed:
+            return prefixed[0]
+        return same_family[0]
+
+    # If user explicitly asks for 1.5 family, do not jump to 2.x automatically.
+    if req_family.startswith("gemini-1.5"):
+        return None
 
     preferred_order = [
-        "gemini-2.5-flash",
         "gemini-2.0-flash",
         "gemini-2.0-flash-lite",
-        "gemini-1.5-flash-001",
+        "gemini-2.5-flash",
     ]
     for p in preferred_order:
         if p in available:
@@ -424,7 +463,11 @@ def _gemini_generate_cases(prompt: str) -> list[SuggestedCase]:
         raise RuntimeError("missing GEMINI_API_KEY")
 
     requested_model = _gemini_model()
-    model = _GEMINI_MODEL_CACHE.get(requested_model, requested_model)
+    cached_model = _GEMINI_MODEL_CACHE.get(requested_model, requested_model)
+    # Do not reuse cache when it crosses model family (e.g. 1.5 -> 2.5).
+    if _model_family(cached_model) != _model_family(requested_model):
+        cached_model = requested_model
+    model = cached_model
     api_version = _GEMINI_API_VERSION_CACHE.get(requested_model, "v1beta")
     timeout_s = float(os.environ.get("GEMINI_TIMEOUT_S", "25"))
 
@@ -447,22 +490,33 @@ def _gemini_generate_cases(prompt: str) -> list[SuggestedCase]:
         # Auto-recover from stale/unsupported model aliases by probing model list once.
         if code == 404 and "not found" in msg.lower() and "models/" in msg:
             try:
-                # First try same model with a different API version.
+                # First try requested model aliases (same family) and version permutations.
                 alt_versions = [v for v in ("v1", "v1beta") if v != api_version]
-                for alt_ver in alt_versions:
-                    try:
-                        data = _gemini_generate_raw(
-                            api_key=api_key,
-                            model=model,
-                            prompt=prompt,
-                            timeout_s=timeout_s,
-                            api_version=alt_ver,
-                        )
-                        _GEMINI_MODEL_CACHE[requested_model] = model
-                        _GEMINI_API_VERSION_CACHE[requested_model] = alt_ver
+                aliases = _candidate_model_aliases(requested_model)
+                tried = set()
+                for alias in aliases:
+                    for ver in (api_version, *alt_versions):
+                        key = f"{alias}@{ver}"
+                        if key in tried:
+                            continue
+                        tried.add(key)
+                        try:
+                            data = _gemini_generate_raw(
+                                api_key=api_key,
+                                model=alias,
+                                prompt=prompt,
+                                timeout_s=timeout_s,
+                                api_version=ver,
+                            )
+                            model = alias
+                            api_version = ver
+                            _GEMINI_MODEL_CACHE[requested_model] = model
+                            _GEMINI_API_VERSION_CACHE[requested_model] = api_version
+                            break
+                        except error.HTTPError:
+                            continue
+                    if data:
                         break
-                    except error.HTTPError:
-                        continue
                 if data:
                     pass
                 else:
@@ -489,6 +543,7 @@ def _gemini_generate_cases(prompt: str) -> list[SuggestedCase]:
                             timeout_s=timeout_s,
                             api_version=api_version,
                         )
+                        model = fallback
                         _GEMINI_MODEL_CACHE[requested_model] = fallback
                         _GEMINI_API_VERSION_CACHE[requested_model] = api_version
                     else:
@@ -514,10 +569,8 @@ def _gemini_generate_cases(prompt: str) -> list[SuggestedCase]:
 
     # Persist current version for the requested model if we reached success path.
     if data:
-        _GEMINI_MODEL_CACHE[requested_model] = _GEMINI_MODEL_CACHE.get(requested_model, model)
-        _GEMINI_API_VERSION_CACHE[requested_model] = _GEMINI_API_VERSION_CACHE.get(
-            requested_model, api_version
-        )
+        _GEMINI_MODEL_CACHE[requested_model] = model
+        _GEMINI_API_VERSION_CACHE[requested_model] = api_version
 
     try:
         text = _extract_content_text(data)
@@ -662,6 +715,8 @@ def ai_runtime_status() -> dict[str, Any]:
     has_key = bool(os.environ.get("GEMINI_API_KEY", "").strip())
     configured = _gemini_model()
     effective = _GEMINI_MODEL_CACHE.get(configured, configured)
+    if _model_family(effective) != _model_family(configured):
+        effective = configured
     api_version = _GEMINI_API_VERSION_CACHE.get(configured, "v1beta")
     return {
         "gemini_api_key_configured": has_key,
