@@ -57,6 +57,8 @@ python3 -m laitest cli projects
 可选环境变量：
 
 - `AI_DEFAULT_CASES`：未在需求中显式写条数时的默认目标用例数（默认 `5`）
+- `AI_SYSTEM_PROMPT`：可选，自定义大模型 system prompt（未配置时使用内置资深测试架构师角色）
+- `AI_CASE_PROMPT_TEMPLATE`：可选，自定义用户提示词模板（支持占位符 `{target_cases}` / `{max_cases}` / `{prompt}` / `{schema}`）
 - `DEEPSEEK_API_KEY`：DeepSeek API Key（优先使用；兼容 `DeepSeek_API_KEY`）
 - `DEEPSEEK_MODEL`：模型名（默认 `deepseek-chat`）
 - `DEEPSEEK_BASE_URL`：DeepSeek 基础地址（默认 `https://api.deepseek.com`）

@@ -927,6 +927,9 @@ def _safe_int_env(name: str, default: int, min_v: int, max_v: int) -> int:
 
 
 def _llm_system_role_text() -> str:
+    custom = os.environ.get("AI_SYSTEM_PROMPT", "").strip()
+    if custom:
+        return custom
     return (
         "Role: 你是一名拥有 10 年经验的资深软件测试架构师，擅长利用等价类划分、边界值分析、因果图及错误推测法编写高质量测试用例。"
         "你必须只输出合法 JSON 对象，不要输出 Markdown 或额外解释。"
@@ -951,6 +954,18 @@ def _case_schema_text() -> str:
 
 
 def _case_generation_prompt_text(prompt: str, target_cases: int, max_cases: int) -> str:
+    custom = os.environ.get("AI_CASE_PROMPT_TEMPLATE", "").strip()
+    if custom:
+        try:
+            return custom.format(
+                target_cases=target_cases,
+                max_cases=max_cases,
+                prompt=prompt,
+                schema=_case_schema_text(),
+            )
+        except Exception:
+            # Fallback to default template when placeholder format is invalid.
+            pass
     return (
         "Task: 请根据我提供的【需求描述】，设计一套专业、严密且易于自动化的测试用例。\n"
         "Design Guidelines & Distribution:\n"
