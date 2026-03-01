@@ -479,6 +479,24 @@ def _deepseek_chat_url() -> str:
     return f"{base}/v1/chat/completions"
 
 
+def _deepseek_timeout_effective() -> tuple[float, float]:
+    configured = float(os.environ.get("DEEPSEEK_TIMEOUT_S", "60") or "60")
+    cap = float(os.environ.get("DEEPSEEK_TIMEOUT_CAP_S", "35") or "35")
+    if cap <= 0:
+        cap = configured
+    return configured, min(configured, cap)
+
+
+def _deepseek_retries_effective() -> tuple[int, int]:
+    configured = int(os.environ.get("DEEPSEEK_RETRIES", "2") or "2")
+    if configured < 0:
+        configured = 0
+    if configured > 5:
+        configured = 5
+    cap = _safe_int_env("DEEPSEEK_RETRIES_CAP", 1, 0, 5)
+    return configured, min(configured, cap)
+
+
 def _extract_json_object_from_text(text: str) -> Any:
     s = (text or "").strip()
     if not s:
@@ -1066,8 +1084,8 @@ def _deepseek_generate_cases(prompt: str) -> list[SuggestedCase]:
         raise RuntimeError("missing DEEPSEEK_API_KEY (or DeepSeek_API_KEY)")
 
     model = _deepseek_model()
-    timeout_s = float(os.environ.get("DEEPSEEK_TIMEOUT_S", "60"))
-    retries = int(os.environ.get("DEEPSEEK_RETRIES", "2") or "2")
+    _timeout_config, timeout_s = _deepseek_timeout_effective()
+    _retries_config, retries = _deepseek_retries_effective()
     max_tokens = _safe_int_env("DEEPSEEK_MAX_TOKENS", 1400, 256, 8192)
     max_cases = _safe_int_env("DEEPSEEK_MAX_CASES", 10, 1, 30)
     prompt_max_chars = _safe_int_env("DEEPSEEK_PROMPT_MAX_CHARS", 4500, 500, 20000)
@@ -1082,10 +1100,6 @@ def _deepseek_generate_cases(prompt: str) -> list[SuggestedCase]:
     if len(prompt_text) > prompt_max_chars:
         prompt_text = prompt_text[:prompt_max_chars]
 
-    if retries < 0:
-        retries = 0
-    if retries > 5:
-        retries = 5
     max_attempts = retries + 1
     url = _deepseek_chat_url()
 
@@ -1390,6 +1404,8 @@ def _coerce_cases_default_language(cases: list[SuggestedCase], prompt: str) -> l
 def ai_runtime_status() -> dict[str, Any]:
     has_deepseek = bool(_deepseek_api_key())
     has_gemini = bool(os.environ.get("GEMINI_API_KEY", "").strip())
+    deepseek_timeout_configured, deepseek_timeout_effective = _deepseek_timeout_effective()
+    deepseek_retries_configured, deepseek_retries_effective = _deepseek_retries_effective()
     configured = _gemini_model()
     effective = _GEMINI_MODEL_CACHE.get(configured, configured)
     if _model_family(effective) != _model_family(configured):
@@ -1405,8 +1421,10 @@ def ai_runtime_status() -> dict[str, Any]:
         "deepseek_api_key_configured": has_deepseek,
         "deepseek_model": _deepseek_model(),
         "deepseek_base_url": _deepseek_base_url(),
-        "deepseek_timeout_s": float(os.environ.get("DEEPSEEK_TIMEOUT_S", "60") or "60"),
-        "deepseek_retries": int(os.environ.get("DEEPSEEK_RETRIES", "2") or "2"),
+        "deepseek_timeout_s": deepseek_timeout_effective,
+        "deepseek_timeout_s_configured": deepseek_timeout_configured,
+        "deepseek_retries": deepseek_retries_effective,
+        "deepseek_retries_configured": deepseek_retries_configured,
         "deepseek_parse_retries": _safe_int_env("DEEPSEEK_PARSE_RETRIES", 2, 0, 5),
         "deepseek_force_json_object": str(os.environ.get("DEEPSEEK_FORCE_JSON_OBJECT", "0")).strip().lower()
         in ("1", "true", "yes", "on"),
