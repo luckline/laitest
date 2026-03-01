@@ -418,6 +418,12 @@ def post_ai_generate_cases() -> Any:
                 created_ids.append(cid)
             con.commit()
 
+    runtime = ai_runtime_status()
+    default_mode = runtime.get("mode")
+    runtime["default_mode"] = default_mode
+    runtime["mode"] = provider if model_provider else default_mode
+    runtime["active_provider"] = provider
+
     return jsonify(
         {
             "suggestions": [
@@ -434,7 +440,7 @@ def post_ai_generate_cases() -> Any:
             "provider": provider,
             "requested_provider": model_provider,
             "warning": warning,
-            "runtime": ai_runtime_status(),
+            "runtime": runtime,
             "created_case_ids": created_ids,
         }
     )

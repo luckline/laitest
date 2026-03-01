@@ -468,6 +468,11 @@ class Handler(BaseHTTPRequestHandler):
                 suite_id = str(body.get("suite_id") or "").strip() or None
 
                 suggestions, provider, warning = generate_cases(prompt, model_provider=model_provider)
+                runtime = ai_runtime_status()
+                default_mode = runtime.get("mode")
+                runtime["default_mode"] = default_mode
+                runtime["mode"] = provider if model_provider else default_mode
+                runtime["active_provider"] = provider
                 # Option: auto-create in DB when asked.
                 create = bool(body.get("create"))
                 created_ids: list[str] = []
@@ -513,7 +518,7 @@ class Handler(BaseHTTPRequestHandler):
                         "provider": provider,
                         "requested_provider": model_provider,
                         "warning": warning,
-                        "runtime": ai_runtime_status(),
+                        "runtime": runtime,
                         "created_case_ids": created_ids,
                     },
                 )
