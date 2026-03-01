@@ -7,6 +7,7 @@ import re
 import socket
 import time
 from dataclasses import dataclass
+from http.client import IncompleteRead, RemoteDisconnected
 from typing import Any
 from urllib import error, request
 
@@ -494,6 +495,58 @@ def _is_timeout_error(exc: Exception) -> bool:
     return "timed out" in str(exc).lower()
 
 
+def _is_retryable_transport_error(exc: Exception) -> bool:
+    retryable_types = (
+        IncompleteRead,
+        RemoteDisconnected,
+        ConnectionResetError,
+        ConnectionAbortedError,
+        BrokenPipeError,
+    )
+    if isinstance(exc, retryable_types):
+        return True
+    if isinstance(exc, error.URLError):
+        reason = getattr(exc, "reason", None)
+        if isinstance(reason, retryable_types + (TimeoutError, socket.timeout)):
+            return True
+        if isinstance(reason, str):
+            low_reason = reason.lower()
+            if any(
+                k in low_reason
+                for k in ("incompleteread", "connection reset", "connection aborted", "broken pipe")
+            ):
+                return True
+    low = str(exc).lower()
+    return any(
+        k in low
+        for k in (
+            "incompleteread",
+            "remote end closed connection",
+            "connection reset",
+            "connection aborted",
+            "broken pipe",
+            "connection broken",
+            "chunkedencodingerror",
+        )
+    )
+
+
+def _try_decode_complete_json_text(raw: Any) -> str | None:
+    if isinstance(raw, (bytes, bytearray)):
+        text = raw.decode("utf-8", errors="replace").strip()
+    elif isinstance(raw, str):
+        text = raw.strip()
+    else:
+        return None
+    if not text:
+        return None
+    try:
+        json.loads(text)
+        return text
+    except Exception:
+        return None
+
+
 def _gemini_prompt_text(prompt: str) -> str:
     return (
         "你是一名资深QA测试工程师，请根据需求生成高质量软件测试用例。\n"
@@ -852,6 +905,20 @@ def _deepseek_generate_cases(prompt: str) -> list[SuggestedCase]:
             with request.urlopen(req, timeout=timeout_s) as resp:  # nosec - fixed upstream endpoint
                 data = resp.read().decode("utf-8", errors="replace")
                 break
+        except IncompleteRead as e:
+            # Some upstream connections close early after sending most bytes.
+            # If the partial body is still valid JSON, accept it; otherwise retry.
+            partial_text = _try_decode_complete_json_text(getattr(e, "partial", b""))
+            if partial_text:
+                data = partial_text
+                break
+            if attempt < max_attempts:
+                time.sleep(min(2 ** (attempt - 1), 4))
+                continue
+            partial_size = len(getattr(e, "partial", b"") or b"")
+            raise RuntimeError(
+                f"deepseek response interrupted (IncompleteRead) after {max_attempts} attempts; partial_bytes={partial_size}"
+            ) from e
         except error.HTTPError as e:
             code, msg = _parse_http_error(e)
             if code == 402:
@@ -872,6 +939,13 @@ def _deepseek_generate_cases(prompt: str) -> list[SuggestedCase]:
             if _is_timeout_error(e):
                 raise RuntimeError(
                     f"deepseek request timed out after {max_attempts} attempts (timeout={timeout_s}s)"
+                ) from e
+            if _is_retryable_transport_error(e) and attempt < max_attempts:
+                time.sleep(min(2 ** (attempt - 1), 4))
+                continue
+            if _is_retryable_transport_error(e):
+                raise RuntimeError(
+                    f"deepseek transport interrupted after {max_attempts} attempts: {e.__class__.__name__}: {e}"
                 ) from e
             raise RuntimeError(f"deepseek request failed: {e}") from e
 
