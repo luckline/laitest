@@ -328,7 +328,23 @@ def _gemini_generate_cases(prompt: str) -> list[SuggestedCase]:
             data = resp.read().decode("utf-8", errors="replace")
     except error.HTTPError as e:
         detail = e.read().decode("utf-8", errors="replace") if hasattr(e, "read") else str(e)
-        raise RuntimeError(f"gemini http error: {e.code} {detail[:240]}") from e
+        message = ""
+        try:
+            payload = json.loads(detail)
+            if isinstance(payload, dict):
+                err = payload.get("error")
+                if isinstance(err, dict):
+                    message = str(err.get("message") or "").strip()
+        except Exception:
+            message = ""
+        if not message:
+            message = detail.strip()[:500]
+
+        if e.code == 429:
+            raise RuntimeError(
+                "gemini quota exceeded (429): check plan/billing or wait for quota reset"
+            ) from e
+        raise RuntimeError(f"gemini http error: {e.code} {message[:500]}") from e
     except Exception as e:  # pragma: no cover - environment/network dependent
         raise RuntimeError(f"gemini request failed: {e}") from e
 
