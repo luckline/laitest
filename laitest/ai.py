@@ -926,12 +926,15 @@ def _safe_int_env(name: str, default: int, min_v: int, max_v: int) -> int:
     return value
 
 
-def _gemini_prompt_text(prompt: str) -> str:
+def _llm_system_role_text() -> str:
     return (
-        "你是一名资深QA测试工程师，请根据需求生成高质量软件测试用例。\n"
-        "只返回合法 JSON，不要返回 Markdown，不要添加额外解释。\n"
-        "除非需求明确要求英文，否则所有自然语言字段一律使用简体中文。\n"
-        "Schema:\n"
+        "Role: 你是一名拥有 10 年经验的资深软件测试架构师，擅长利用等价类划分、边界值分析、因果图及错误推测法编写高质量测试用例。"
+        "你必须只输出合法 JSON 对象，不要输出 Markdown 或额外解释。"
+    )
+
+
+def _case_schema_text() -> str:
+    return (
         "{\"cases\":[{"
         "\"case_id\":\"string\","
         "\"module\":\"string\","
@@ -942,16 +945,37 @@ def _gemini_prompt_text(prompt: str) -> str:
         "\"steps\":[{\"step_no\":1,\"action\":\"string\",\"test_data\":\"string\",\"expected_result\":\"string\"}],"
         "\"expected_result\":\"string\","
         "\"tags\":[\"string\"],"
-        "\"automation\":{\"kind\":\"demo|http\",\"spec\":{\"steps\":[{\"type\":\"pass\",\"message\":\"string\"}]}},"
         "\"description\":\"string\""
-        "}]}\n"
-        "Rules:\n"
-        "- 默认输出语言：简体中文（需求明确要求英文时除外）。\n"
-        "- steps 中 action/test_data/expected_result 必须具体且可执行。\n"
-        "- expected_result 必须可验证、可判定。\n"
-        "- 尽可能覆盖正向、边界和异常场景。\n"
-        f"需求文本:\n{prompt}"
+        "}]}"
     )
+
+
+def _case_generation_prompt_text(prompt: str, target_cases: int, max_cases: int) -> str:
+    return (
+        "Task: 请根据我提供的【需求描述】，设计一套专业、严密且易于自动化的测试用例。\n"
+        "Design Guidelines & Distribution:\n"
+        "- 功能测试 (60%): 必须覆盖 Happy Path、Negative Testing、输入/数值边界值分析。\n"
+        "- 性能与可靠性 (10%): 关注响应耗时与高并发下数据一致性。\n"
+        "- 合规性与 UI (10%): 关注行业规范、文案准确性、多端兼容性。\n"
+        "- 异常容错 (10%): 覆盖网络波动、服务宕机、非法参数注入等健壮性场景。\n"
+        "- 安全性 (10%): 覆盖垂直/水平越权、SQL 注入、敏感数据脱敏。\n"
+        f"数量要求: 目标输出 {target_cases} 条，最多 {max_cases} 条；若需求未指定数量，按目标条数输出。\n"
+        "Output Requirements:\n"
+        "- 严谨性: 每个步骤必须提供具体可执行的测试数据建议（例如 11 位手机号、特殊字符字符串、越界数值）。\n"
+        "- 格式: 虽以前端表格展示，但你必须严格返回 JSON，字段与表格列一一对应："
+        "用例ID(case_id)、模块(module)、用例标题(title)、优先级(priority)、前置条件(preconditions)、执行步骤(steps)、预期结果(expected_result)。\n"
+        "- 执行步骤(steps) 为数组；每个步骤包含 step_no/action/test_data/expected_result。\n"
+        "- 默认使用简体中文（需求明确要求英文时除外）。\n"
+        "- JSON 必须可被标准 json.loads 直接解析，禁止尾逗号，字符串双引号必须转义。\n"
+        f"Schema:\n{_case_schema_text()}\n"
+        f"需求描述:\n{prompt}"
+    )
+
+
+def _gemini_prompt_text(prompt: str) -> str:
+    max_cases = _safe_int_env("GEMINI_MAX_CASES", 10, 1, 30)
+    target_cases = _requested_case_count(prompt, max_cases)
+    return _case_generation_prompt_text(prompt, target_cases=target_cases, max_cases=max_cases)
 
 
 def _requested_case_count(prompt: str, max_cases: int) -> int:
@@ -1012,28 +1036,7 @@ def _ensure_target_case_count(
 
 
 def _deepseek_prompt_text(prompt: str, max_cases: int, target_cases: int) -> str:
-    # Keep prompt concise to reduce latency/token usage on DeepSeek.
-    return (
-        "请扮演资深QA工程师，根据需求输出结构化测试用例。只返回JSON对象，不要Markdown。\n"
-        "输出格式:\n"
-        "{\"cases\":[{"
-        "\"case_id\":\"string\","
-        "\"title\":\"string\","
-        "\"module\":\"string\","
-        "\"priority\":\"P0|P1|P2|P3\","
-        "\"type\":\"functional|boundary|negative|security|performance|compatibility|api\","
-        "\"preconditions\":[\"string\"],"
-        "\"steps\":[{\"step_no\":1,\"action\":\"string\",\"test_data\":\"string\",\"expected_result\":\"string\"}],"
-        "\"expected_result\":\"string\","
-        "\"tags\":[\"string\"],"
-        "\"description\":\"string\""
-        "}]}\n"
-        f"要求: 目标输出{target_cases}条（未指定数量时按此目标），最多输出{max_cases}条；"
-        "若信息不足也要尽量覆盖正向/异常/边界；默认简体中文（需求明确要求英文除外）；步骤可执行，预期可验证。\n"
-        "- JSON 必须可被标准 json.loads 直接解析。\n"
-        "- 禁止尾逗号，字符串里的双引号必须转义。\n"
-        f"需求:\n{prompt}"
-    )
+    return _case_generation_prompt_text(prompt, target_cases=target_cases, max_cases=max_cases)
 
 
 def _parse_deepseek_response_cases(data: str) -> list[SuggestedCase]:
@@ -1155,9 +1158,7 @@ def _gemini_generate_raw(
     req_body = {
         "systemInstruction": {
             "parts": [
-                {
-                    "text": "除非用户明确要求英文，否则所有自然语言字段必须使用简体中文。只返回JSON。"
-                }
+                {"text": _llm_system_role_text()}
             ]
         },
         "contents": [{"role": "user", "parts": [{"text": user_prompt}]}],
@@ -1470,7 +1471,7 @@ def _deepseek_generate_cases(prompt: str) -> list[SuggestedCase]:
             "messages": [
                 {
                     "role": "system",
-                    "content": "你是资深QA测试工程师。默认输出简体中文，仅返回紧凑JSON，不要解释。",
+                    "content": _llm_system_role_text(),
                 },
                 {
                     "role": "user",
@@ -1598,7 +1599,7 @@ def _qianwen_generate_cases(prompt: str) -> list[SuggestedCase]:
         req_body = {
             "model": model,
             "messages": [
-                {"role": "system", "content": "你是资深QA测试工程师。默认输出简体中文，仅返回JSON。"},
+                {"role": "system", "content": _llm_system_role_text()},
                 {
                     "role": "user",
                     "content": _deepseek_prompt_text(text, max_cases=max_cases, target_cases=target_cases),
