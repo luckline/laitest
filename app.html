@@ -3,87 +3,71 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <title>laitest console</title>
+    <title>laitest | AI 测试用例生成</title>
+    <meta
+      name="description"
+      content="输入需求文本，调用 AI 生成结构化测试用例，覆盖正常流、边界流与异常流。"
+    />
+    <link rel="stylesheet" href="/css/marketing.css" />
     <link rel="stylesheet" href="/css/styles.css" />
   </head>
   <body>
-    <header class="top">
-      <div class="brand">
-        <div class="logo">LAI</div>
-        <div>
-          <div class="name">laitest</div>
-          <div class="tagline">智能测试平台控制台</div>
-        </div>
-      </div>
-      <div class="health" id="health">checking...</div>
+    <header class="nav">
+      <a class="brand" href="/">
+        <span class="mark">AI</span>
+        <span class="word">laitest</span>
+      </a>
+      <nav class="links">
+        <a href="/#product">产品</a>
+        <a href="/#integrations">集成</a>
+        <a href="/#pricing">定价</a>
+        <a href="/#security">安全</a>
+      </nav>
     </header>
 
-    <main class="grid">
-      <section class="card">
-        <h2>Projects</h2>
-        <div class="row">
-          <input id="projectName" placeholder="New project name" />
-          <button id="createProject">Create</button>
-        </div>
-        <div id="projects" class="list"></div>
+    <main class="ai-main">
+      <section class="ai-hero">
+        <p class="eyebrow">AI-native Software Testing</p>
+        <h1>AI 测试用例生成</h1>
+        <p class="sub">
+          输入需求、验收标准或用户故事，系统会自动输出结构化测试建议。
+        </p>
       </section>
 
-      <section class="card">
-        <h2>Suites</h2>
-        <div class="row">
-          <select id="suiteProject"></select>
-          <input id="suiteName" placeholder="New suite name" />
-          <button id="createSuite">Create</button>
+      <section class="ai-card">
+        <label class="ai-label" for="aiPrompt">需求文本</label>
+        <textarea
+          id="aiPrompt"
+          placeholder="- 登录成功：手机号+密码+验证码正确&#10;- 登录失败：密码错误&#10;- 登录失败：验证码错误超过5次被锁定"
+        ></textarea>
+        <div class="ai-toolbar">
+          <button id="fillSample" class="btn ghost" type="button">填充示例</button>
+          <button id="clearPrompt" class="btn ghost" type="button">清空</button>
+          <button id="aiGo" class="btn solid" type="button">生成结构化用例</button>
         </div>
-        <div id="suites" class="list"></div>
+        <p id="aiStatus" class="ai-status">就绪</p>
       </section>
 
-      <section class="card wide">
-        <h2>Cases</h2>
-        <div class="row">
-          <select id="caseProject"></select>
-          <select id="caseSuite"></select>
-          <input id="caseTitle" placeholder="Case title" />
-          <button id="createCase">Create</button>
+      <section class="ai-card">
+        <div class="ai-out-head">
+          <h2>结构化结果</h2>
+          <div class="ai-toolbar right">
+            <button id="copyJson" class="btn ghost" type="button">复制 JSON</button>
+            <button id="toggleRaw" class="btn ghost" type="button">显示原始 JSON</button>
+          </div>
         </div>
-        <div class="hint">
-          默认新建的是 demo 用例；你可以点开编辑 spec，改成 http_get 或更复杂流程。
-        </div>
-        <div id="cases" class="list"></div>
-      </section>
-
-      <section class="card wide">
-        <h2>Runs</h2>
-        <div class="row">
-          <select id="runProject"></select>
-          <select id="runSuite"></select>
-          <input id="runName" placeholder="Run name (optional)" />
-          <button id="createRun">Run selected cases</button>
-        </div>
-        <div class="hint">执行在后台异步运行，页面会自动刷新状态。</div>
-        <div id="runs" class="list"></div>
-      </section>
-
-      <section class="card wide">
-        <h2>AI Generate</h2>
-        <div class="hint">粘贴需求/验收标准，每行一个点，生成建议用例；可勾选“直接写入用例库”。</div>
-        <textarea id="aiPrompt" placeholder="- 登录成功\n- 登录失败（密码错误）\n- 忘记密码流程"></textarea>
-        <div class="row">
-          <select id="aiProject"></select>
-          <select id="aiSuite"></select>
-          <label class="check"><input type="checkbox" id="aiCreate" /> create cases</label>
-          <button id="aiGo">Generate</button>
-        </div>
-        <pre id="aiOut" class="pre"></pre>
+        <div id="aiSummary" class="ai-summary">暂无结果</div>
+        <div id="aiCards" class="ai-cards"></div>
+        <pre id="aiOut" class="ai-pre" hidden></pre>
       </section>
     </main>
 
-    <footer class="foot">
+    <footer class="app-foot">
       <span>官网首页：<a href="/">/</a></span>
       <span class="sep">|</span>
-      <span>Data: <code>./.laitest/laitest.db</code></span>
+      <span>API：<code>/api/ai/generate_cases</code></span>
       <span class="sep">|</span>
-      <span>Token: set <code>LAITEST_TOKEN</code> to enable bearer auth</span>
+      <span>输出：结构化建议用例 JSON</span>
     </footer>
 
     <script src="/app.js"></script>
