@@ -413,6 +413,16 @@ def _normalize_case(obj: dict[str, Any]) -> SuggestedCase | None:
     return SuggestedCase(title=title, description=description, tags=tags, kind=kind, spec=raw_spec)
 
 
+def _looks_like_case_dict(obj: Any) -> bool:
+    if not isinstance(obj, dict):
+        return False
+    title = str(obj.get("title") or "").strip()
+    if not title:
+        return False
+    has_case_fields = any(k in obj for k in ("module", "priority", "steps", "expected_result", "test_case"))
+    return has_case_fields
+
+
 def _normalize_cases_payload(payload: Any) -> list[SuggestedCase]:
     rows: list[Any]
     if isinstance(payload, list):
@@ -421,7 +431,14 @@ def _normalize_cases_payload(payload: Any) -> list[SuggestedCase]:
         raw = payload.get("cases")
         if not isinstance(raw, list):
             raw = payload.get("suggestions")
-        rows = raw if isinstance(raw, list) else []
+        if not isinstance(raw, list):
+            raw = payload.get("test_cases")
+        if isinstance(raw, list):
+            rows = raw
+        elif _looks_like_case_dict(payload):
+            rows = [payload]
+        else:
+            rows = []
     else:
         rows = []
 
@@ -462,6 +479,24 @@ def _deepseek_chat_url() -> str:
     return f"{base}/v1/chat/completions"
 
 
+def _deepseek_timeout_effective() -> tuple[float, float]:
+    configured = float(os.environ.get("DEEPSEEK_TIMEOUT_S", "60") or "60")
+    cap = float(os.environ.get("DEEPSEEK_TIMEOUT_CAP_S", "35") or "35")
+    if cap <= 0:
+        cap = configured
+    return configured, min(configured, cap)
+
+
+def _deepseek_retries_effective() -> tuple[int, int]:
+    configured = int(os.environ.get("DEEPSEEK_RETRIES", "2") or "2")
+    if configured < 0:
+        configured = 0
+    if configured > 5:
+        configured = 5
+    cap = _safe_int_env("DEEPSEEK_RETRIES_CAP", 1, 0, 5)
+    return configured, min(configured, cap)
+
+
 def _extract_json_object_from_text(text: str) -> Any:
     s = (text or "").strip()
     if not s:
@@ -471,14 +506,14 @@ def _extract_json_object_from_text(text: str) -> Any:
         s = re.sub(r"\s*```$", "", s)
         s = s.strip()
     try:
-        return json.loads(s)
-    except json.JSONDecodeError:
+        return _json_loads_loose(s)
+    except Exception:
         pass
 
     start = s.find("{")
     end = s.rfind("}")
     if start >= 0 and end > start:
-        return json.loads(s[start : end + 1])
+        return _json_loads_loose(s[start : end + 1])
     raise RuntimeError("model content did not contain valid json object")
 
 
@@ -547,6 +582,134 @@ def _try_decode_complete_json_text(raw: Any) -> str | None:
         return None
 
 
+def _looks_truncated_completion_payload(data: str) -> bool:
+    s = str(data or "").strip()
+    if not s:
+        return True
+    if s.count("{") > s.count("}"):
+        return True
+    if '"choices"' in s and '"content"' in s and '"finish_reason"' not in s:
+        return True
+    return False
+
+
+def _json_loads_loose(text: str) -> Any:
+    s = (text or "").strip()
+    if not s:
+        raise RuntimeError("empty json text")
+
+    candidates: list[str] = []
+    base = s.replace("\ufeff", "").strip()
+    candidates.append(base)
+    # Remove trailing commas before object/array endings.
+    candidates.append(re.sub(r",\s*([}\]])", r"\1", base))
+    # Remove accidental control chars that sometimes appear in streaming responses.
+    candidates.append(re.sub(r"[\x00-\x08\x0b\x0c\x0e-\x1f]", "", base))
+
+    last_err: Exception | None = None
+    dedup: list[str] = []
+    for c in candidates:
+        if c and c not in dedup:
+            dedup.append(c)
+    for c in dedup:
+        try:
+            return json.loads(c)
+        except Exception as e:
+            last_err = e
+        try:
+            return json.loads(c, strict=False)
+        except Exception as e:
+            last_err = e
+    if last_err is None:
+        raise RuntimeError("json parse failed")
+    raise last_err
+
+
+def _find_balanced_json_object(text: str, start: int) -> str | None:
+    if start < 0 or start >= len(text) or text[start] != "{":
+        return None
+    depth = 0
+    in_string = False
+    escape = False
+    for i in range(start, len(text)):
+        ch = text[i]
+        if in_string:
+            if escape:
+                escape = False
+            elif ch == "\\":
+                escape = True
+            elif ch == '"':
+                in_string = False
+            continue
+
+        if ch == '"':
+            in_string = True
+        elif ch == "{":
+            depth += 1
+        elif ch == "}":
+            depth -= 1
+            if depth == 0:
+                return text[start : i + 1]
+    return None
+
+
+def _extract_cases_obj_from_raw_response(data: str) -> Any | None:
+    s = str(data or "")
+
+    def _try_parse_obj_text(obj_text: str) -> Any | None:
+        if not obj_text:
+            return None
+        variants = [
+            obj_text,
+            obj_text.replace("\\\\n", "\n").replace('\\"', '"'),
+            obj_text.replace("\\\\", "\\"),
+        ]
+        for cand in variants:
+            try:
+                obj = _json_loads_loose(cand)
+            except Exception:
+                continue
+            if isinstance(obj, dict):
+                if "cases" in obj or "suggestions" in obj or "test_cases" in obj:
+                    return obj
+                if _looks_like_case_dict(obj):
+                    return {"cases": [obj]}
+            if isinstance(obj, list) and obj and all(isinstance(x, dict) for x in obj):
+                return {"cases": obj}
+        return None
+
+    # Fast path: common plain/escaped markers.
+    for marker in ('{"cases"', '{"suggestions"', '{\\"cases\\"', '{\\"suggestions\\"'):
+        idx = s.find(marker)
+        if idx >= 0:
+            obj_text = _find_balanced_json_object(s, idx)
+            parsed = _try_parse_obj_text(obj_text or "")
+            if parsed is not None:
+                return parsed
+
+    # Exhaustive path: scan every JSON object start.
+    for idx, ch in enumerate(s):
+        if ch != "{":
+            continue
+        obj_text = _find_balanced_json_object(s, idx)
+        parsed = _try_parse_obj_text(obj_text or "")
+        if parsed is not None:
+            return parsed
+    return None
+
+
+def _safe_int_env(name: str, default: int, min_v: int, max_v: int) -> int:
+    try:
+        value = int(os.environ.get(name, str(default)) or str(default))
+    except Exception:
+        value = default
+    if value < min_v:
+        return min_v
+    if value > max_v:
+        return max_v
+    return value
+
+
 def _gemini_prompt_text(prompt: str) -> str:
     return (
         "你是一名资深QA测试工程师，请根据需求生成高质量软件测试用例。\n"
@@ -573,6 +736,60 @@ def _gemini_prompt_text(prompt: str) -> str:
         "- 尽可能覆盖正向、边界和异常场景。\n"
         f"需求文本:\n{prompt}"
     )
+
+
+def _deepseek_prompt_text(prompt: str, max_cases: int) -> str:
+    # Keep prompt concise to reduce latency/token usage on DeepSeek.
+    return (
+        "请扮演资深QA工程师，根据需求输出结构化测试用例。只返回JSON对象，不要Markdown。\n"
+        "输出格式:\n"
+        "{\"cases\":[{"
+        "\"case_id\":\"string\","
+        "\"title\":\"string\","
+        "\"module\":\"string\","
+        "\"priority\":\"P0|P1|P2|P3\","
+        "\"type\":\"functional|boundary|negative|security|performance|compatibility|api\","
+        "\"preconditions\":[\"string\"],"
+        "\"steps\":[{\"step_no\":1,\"action\":\"string\",\"test_data\":\"string\",\"expected_result\":\"string\"}],"
+        "\"expected_result\":\"string\","
+        "\"tags\":[\"string\"],"
+        "\"description\":\"string\""
+        "}]}\n"
+        f"要求: 最多输出{max_cases}条；默认简体中文（需求明确要求英文除外）；步骤可执行，预期可验证。\n"
+        "- JSON 必须可被标准 json.loads 直接解析。\n"
+        "- 禁止尾逗号，字符串里的双引号必须转义。\n"
+        f"需求:\n{prompt}"
+    )
+
+
+def _parse_deepseek_response_cases(data: str) -> list[SuggestedCase]:
+    try:
+        payload = _json_loads_loose(data)
+    except Exception as e:
+        # Some responses may have broken outer completion JSON while still
+        # containing a valid inner {"cases":[...]} object. Try to recover it.
+        recovered = _extract_cases_obj_from_raw_response(data)
+        if recovered is not None:
+            normalized = _normalize_cases_payload(recovered)
+            if normalized:
+                return normalized
+        raise RuntimeError(f"deepseek returned non-json response: {e}") from e
+
+    choices = payload.get("choices") if isinstance(payload, dict) else None
+    if not isinstance(choices, list) or not choices:
+        raise RuntimeError("deepseek response missing choices")
+
+    message = choices[0].get("message") if isinstance(choices[0], dict) else None
+    content = message.get("content") if isinstance(message, dict) else None
+    if isinstance(content, dict):
+        raw_obj = content
+    else:
+        raw_obj = _extract_json_object_from_text(str(content or ""))
+
+    normalized = _normalize_cases_payload(raw_obj)
+    if not normalized:
+        raise RuntimeError("deepseek returned empty/invalid cases")
+    return normalized
 
 
 def _gemini_generate_raw(
@@ -867,108 +1084,139 @@ def _deepseek_generate_cases(prompt: str) -> list[SuggestedCase]:
         raise RuntimeError("missing DEEPSEEK_API_KEY (or DeepSeek_API_KEY)")
 
     model = _deepseek_model()
-    timeout_s = float(os.environ.get("DEEPSEEK_TIMEOUT_S", "60"))
-    retries = int(os.environ.get("DEEPSEEK_RETRIES", "2") or "2")
-    if retries < 0:
-        retries = 0
-    if retries > 5:
-        retries = 5
+    _timeout_config, timeout_s = _deepseek_timeout_effective()
+    _retries_config, retries = _deepseek_retries_effective()
+    max_tokens = _safe_int_env("DEEPSEEK_MAX_TOKENS", 1400, 256, 8192)
+    max_cases = _safe_int_env("DEEPSEEK_MAX_CASES", 10, 1, 30)
+    prompt_max_chars = _safe_int_env("DEEPSEEK_PROMPT_MAX_CHARS", 4500, 500, 20000)
+    parse_retries = _safe_int_env("DEEPSEEK_PARSE_RETRIES", 2, 0, 5)
+    total_deadline_s = float(_safe_int_env("DEEPSEEK_TOTAL_DEADLINE_S", 45, 10, 300))
+    force_json_object = str(os.environ.get("DEEPSEEK_FORCE_JSON_OBJECT", "0")).strip().lower() in (
+        "1",
+        "true",
+        "yes",
+        "on",
+    )
+    prompt_text = (prompt or "").strip()
+    if len(prompt_text) > prompt_max_chars:
+        prompt_text = prompt_text[:prompt_max_chars]
+
     max_attempts = retries + 1
     url = _deepseek_chat_url()
-    req_body = {
-        "model": model,
-        "messages": [
-            {
-                "role": "system",
-                "content": "你是资深QA测试工程师。除非用户明确要求英文，否则所有自然语言字段请使用简体中文，并严格返回JSON。",
+
+    parse_attempts = parse_retries + 1
+    last_parse_error: Exception | None = None
+    t0 = time.monotonic()
+    for parse_attempt in range(1, parse_attempts + 1):
+        # If prior parse failed, reduce output size to lower truncation risk.
+        scale = 0.7 ** (parse_attempt - 1)
+        attempt_max_tokens = max(256, int(max_tokens * scale))
+        attempt_max_cases = max(1, int(max_cases * scale))
+        req_body = {
+            "model": model,
+            "messages": [
+                {
+                    "role": "system",
+                    "content": "你是资深QA测试工程师。默认输出简体中文，仅返回紧凑JSON，不要解释。",
+                },
+                {"role": "user", "content": _deepseek_prompt_text(prompt_text, max_cases=attempt_max_cases)},
+            ],
+            "temperature": 0.0,
+            "stream": False,
+            "max_tokens": attempt_max_tokens,
+        }
+        if force_json_object:
+            req_body["response_format"] = {"type": "json_object"}
+        raw = json.dumps(req_body, ensure_ascii=True).encode("utf-8")
+        req = request.Request(
+            url,
+            data=raw,
+            method="POST",
+            headers={
+                "Content-Type": "application/json",
+                "Authorization": f"Bearer {api_key}",
+                "Accept-Encoding": "identity",
+                "Connection": "close",
             },
-            {"role": "user", "content": _gemini_prompt_text(prompt)},
-        ],
-        "temperature": 0.2,
-        "stream": False,
-        "response_format": {"type": "json_object"},
-    }
-    raw = json.dumps(req_body, ensure_ascii=True).encode("utf-8")
-    req = request.Request(
-        url,
-        data=raw,
-        method="POST",
-        headers={
-            "Content-Type": "application/json",
-            "Authorization": f"Bearer {api_key}",
-        },
-    )
+        )
 
-    data = ""
-    for attempt in range(1, max_attempts + 1):
+        data = ""
+        for attempt in range(1, max_attempts + 1):
+            try:
+                elapsed = time.monotonic() - t0
+                remaining = total_deadline_s - elapsed
+                if remaining <= 0:
+                    raise RuntimeError(
+                        f"deepseek deadline exceeded ({total_deadline_s}s)"
+                    )
+                attempt_timeout = min(timeout_s, max(3.0, remaining))
+                with request.urlopen(req, timeout=attempt_timeout) as resp:  # nosec - fixed upstream endpoint
+                    data = resp.read().decode("utf-8", errors="replace")
+                    if _looks_truncated_completion_payload(data):
+                        if attempt < max_attempts:
+                            time.sleep(min(2 ** (attempt - 1), 4))
+                            continue
+                        raise RuntimeError(
+                            f"deepseek response appears truncated after {max_attempts} attempts"
+                        )
+                    break
+            except IncompleteRead as e:
+                # Some upstream connections close early after sending most bytes.
+                # If the partial body is still valid JSON, accept it; otherwise retry.
+                partial_text = _try_decode_complete_json_text(getattr(e, "partial", b""))
+                if partial_text:
+                    data = partial_text
+                    break
+                if attempt < max_attempts:
+                    time.sleep(min(2 ** (attempt - 1), 4))
+                    continue
+                partial_size = len(getattr(e, "partial", b"") or b"")
+                raise RuntimeError(
+                    f"deepseek response interrupted (IncompleteRead) after {max_attempts} attempts; partial_bytes={partial_size}"
+                ) from e
+            except error.HTTPError as e:
+                code, msg = _parse_http_error(e)
+                if code == 402:
+                    raise RuntimeError("deepseek insufficient balance (402): top up DeepSeek account") from e
+                if code == 429:
+                    raise RuntimeError(
+                        "deepseek quota/rate limit exceeded (429): check plan/billing or wait for reset"
+                    ) from e
+                # Retry on transient 5xx errors.
+                if code in (500, 502, 503, 504) and attempt < max_attempts:
+                    time.sleep(min(2 ** (attempt - 1), 4))
+                    continue
+                raise RuntimeError(f"deepseek http error: {code} {msg}") from e
+            except Exception as e:  # pragma: no cover - environment/network dependent
+                if _is_timeout_error(e) and attempt < max_attempts:
+                    time.sleep(min(2 ** (attempt - 1), 4))
+                    continue
+                if _is_timeout_error(e):
+                    raise RuntimeError(
+                        f"deepseek request timed out after {max_attempts} attempts (timeout={timeout_s}s)"
+                    ) from e
+                if _is_retryable_transport_error(e) and attempt < max_attempts:
+                    time.sleep(min(2 ** (attempt - 1), 4))
+                    continue
+                if _is_retryable_transport_error(e):
+                    raise RuntimeError(
+                        f"deepseek transport interrupted after {max_attempts} attempts: {e.__class__.__name__}: {e}"
+                    ) from e
+                raise RuntimeError(f"deepseek request failed: {e}") from e
+
         try:
-            with request.urlopen(req, timeout=timeout_s) as resp:  # nosec - fixed upstream endpoint
-                data = resp.read().decode("utf-8", errors="replace")
-                break
-        except IncompleteRead as e:
-            # Some upstream connections close early after sending most bytes.
-            # If the partial body is still valid JSON, accept it; otherwise retry.
-            partial_text = _try_decode_complete_json_text(getattr(e, "partial", b""))
-            if partial_text:
-                data = partial_text
-                break
-            if attempt < max_attempts:
-                time.sleep(min(2 ** (attempt - 1), 4))
+            return _parse_deepseek_response_cases(data)
+        except Exception as parse_err:
+            last_parse_error = parse_err
+            if parse_attempt < parse_attempts:
+                time.sleep(min(2 ** (parse_attempt - 1), 3))
                 continue
-            partial_size = len(getattr(e, "partial", b"") or b"")
+            data_preview = re.sub(r"\s+", " ", str(data or ""))[:180]
             raise RuntimeError(
-                f"deepseek response interrupted (IncompleteRead) after {max_attempts} attempts; partial_bytes={partial_size}"
-            ) from e
-        except error.HTTPError as e:
-            code, msg = _parse_http_error(e)
-            if code == 402:
-                raise RuntimeError("deepseek insufficient balance (402): top up DeepSeek account") from e
-            if code == 429:
-                raise RuntimeError(
-                    "deepseek quota/rate limit exceeded (429): check plan/billing or wait for reset"
-                ) from e
-            # Retry on transient 5xx errors.
-            if code in (500, 502, 503, 504) and attempt < max_attempts:
-                time.sleep(min(2 ** (attempt - 1), 4))
-                continue
-            raise RuntimeError(f"deepseek http error: {code} {msg}") from e
-        except Exception as e:  # pragma: no cover - environment/network dependent
-            if _is_timeout_error(e) and attempt < max_attempts:
-                time.sleep(min(2 ** (attempt - 1), 4))
-                continue
-            if _is_timeout_error(e):
-                raise RuntimeError(
-                    f"deepseek request timed out after {max_attempts} attempts (timeout={timeout_s}s)"
-                ) from e
-            if _is_retryable_transport_error(e) and attempt < max_attempts:
-                time.sleep(min(2 ** (attempt - 1), 4))
-                continue
-            if _is_retryable_transport_error(e):
-                raise RuntimeError(
-                    f"deepseek transport interrupted after {max_attempts} attempts: {e.__class__.__name__}: {e}"
-                ) from e
-            raise RuntimeError(f"deepseek request failed: {e}") from e
+                f"deepseek invalid json content after {parse_attempts} attempts: {parse_err}; preview={data_preview}"
+            ) from parse_err
 
-    try:
-        payload = json.loads(data)
-    except json.JSONDecodeError as e:
-        raise RuntimeError("deepseek returned non-json response") from e
-
-    choices = payload.get("choices") if isinstance(payload, dict) else None
-    if not isinstance(choices, list) or not choices:
-        raise RuntimeError("deepseek response missing choices")
-
-    message = choices[0].get("message") if isinstance(choices[0], dict) else None
-    content = message.get("content") if isinstance(message, dict) else None
-    if isinstance(content, dict):
-        raw_obj = content
-    else:
-        raw_obj = _extract_json_object_from_text(str(content or ""))
-
-    normalized = _normalize_cases_payload(raw_obj)
-    if not normalized:
-        raise RuntimeError("deepseek returned empty/invalid cases")
-    return normalized
+    raise RuntimeError(f"deepseek parse retries exhausted: {last_parse_error}")
 
 
 def _infer_local_profile(line: str) -> tuple[str, str, str, list[str], str]:
@@ -1165,6 +1413,8 @@ def _coerce_cases_default_language(cases: list[SuggestedCase], prompt: str) -> l
 def ai_runtime_status() -> dict[str, Any]:
     has_deepseek = bool(_deepseek_api_key())
     has_gemini = bool(os.environ.get("GEMINI_API_KEY", "").strip())
+    deepseek_timeout_configured, deepseek_timeout_effective = _deepseek_timeout_effective()
+    deepseek_retries_configured, deepseek_retries_effective = _deepseek_retries_effective()
     configured = _gemini_model()
     effective = _GEMINI_MODEL_CACHE.get(configured, configured)
     if _model_family(effective) != _model_family(configured):
@@ -1180,8 +1430,17 @@ def ai_runtime_status() -> dict[str, Any]:
         "deepseek_api_key_configured": has_deepseek,
         "deepseek_model": _deepseek_model(),
         "deepseek_base_url": _deepseek_base_url(),
-        "deepseek_timeout_s": float(os.environ.get("DEEPSEEK_TIMEOUT_S", "60") or "60"),
-        "deepseek_retries": int(os.environ.get("DEEPSEEK_RETRIES", "2") or "2"),
+        "deepseek_timeout_s": deepseek_timeout_effective,
+        "deepseek_timeout_s_configured": deepseek_timeout_configured,
+        "deepseek_retries": deepseek_retries_effective,
+        "deepseek_retries_configured": deepseek_retries_configured,
+        "deepseek_parse_retries": _safe_int_env("DEEPSEEK_PARSE_RETRIES", 2, 0, 5),
+        "deepseek_total_deadline_s": float(_safe_int_env("DEEPSEEK_TOTAL_DEADLINE_S", 45, 10, 300)),
+        "deepseek_force_json_object": str(os.environ.get("DEEPSEEK_FORCE_JSON_OBJECT", "0")).strip().lower()
+        in ("1", "true", "yes", "on"),
+        "deepseek_max_tokens": _safe_int_env("DEEPSEEK_MAX_TOKENS", 1400, 256, 8192),
+        "deepseek_max_cases": _safe_int_env("DEEPSEEK_MAX_CASES", 10, 1, 30),
+        "deepseek_prompt_max_chars": _safe_int_env("DEEPSEEK_PROMPT_MAX_CHARS", 4500, 500, 20000),
         "gemini_api_key_configured": has_gemini,
         "gemini_model": configured,
         "gemini_effective_model": effective,
