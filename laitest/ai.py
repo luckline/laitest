@@ -490,7 +490,17 @@ def _qianwen_base_urls() -> list[str]:
     raw = os.environ.get("QIANWEN_BASE_URL", "").strip()
     if raw:
         parts = [x.strip().rstrip("/") for x in raw.split(",") if x.strip()]
-        return parts or ["https://dashscope.aliyuncs.com/compatible-mode/v1"]
+        if not parts:
+            return ["https://dashscope.aliyuncs.com/compatible-mode/v1"]
+        # If China endpoint exists in configured list, force using China endpoints only.
+        cn_parts = [p for p in parts if "dashscope.aliyuncs.com" in p]
+        if cn_parts:
+            dedup: list[str] = []
+            for p in cn_parts:
+                if p not in dedup:
+                    dedup.append(p)
+            return dedup
+        return parts
     # Default to DashScope China endpoint.
     return ["https://dashscope.aliyuncs.com/compatible-mode/v1"]
 
