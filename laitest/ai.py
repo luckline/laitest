@@ -279,16 +279,8 @@ def _gemini_model() -> str:
     return os.environ.get("GEMINI_MODEL", "gemini-2.0-flash").strip() or "gemini-2.0-flash"
 
 
-def _gemini_generate_cases(prompt: str) -> list[SuggestedCase]:
-    api_key = os.environ.get("GEMINI_API_KEY", "").strip()
-    if not api_key:
-        raise RuntimeError("missing GEMINI_API_KEY")
-
-    model = _gemini_model()
-    timeout_s = float(os.environ.get("GEMINI_TIMEOUT_S", "25"))
-    url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={api_key}"
-
-    user_prompt = (
+def _gemini_prompt_text(prompt: str) -> str:
+    return (
         "You are a senior QA engineer generating high-quality software test cases.\n"
         "Return ONLY valid JSON, no markdown.\n"
         "Schema:\n"
@@ -311,6 +303,14 @@ def _gemini_generate_cases(prompt: str) -> list[SuggestedCase]:
         "- include positive, boundary and negative scenarios when possible.\n"
         f"Requirement text:\n{prompt}"
     )
+
+
+def _gemini_generate_raw(api_key: str, model: str, prompt: str, timeout_s: float) -> str:
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={api_key}"
+    user_prompt = _gemini_prompt_text(prompt)
+    user_prompt = (
+        user_prompt
+    )
     req_body = {
         "contents": [{"role": "user", "parts": [{"text": user_prompt}]}],
         "generationConfig": {"responseMimeType": "application/json"},
@@ -323,36 +323,79 @@ def _gemini_generate_cases(prompt: str) -> list[SuggestedCase]:
         headers={"Content-Type": "application/json"},
     )
 
+    with request.urlopen(req, timeout=timeout_s) as resp:  # nosec - fixed upstream endpoint
+        return resp.read().decode("utf-8", errors="replace")
+
+
+def _parse_http_error(e: error.HTTPError) -> tuple[int, str]:
+    detail = e.read().decode("utf-8", errors="replace") if hasattr(e, "read") else str(e)
+    message = ""
     try:
-        with request.urlopen(req, timeout=timeout_s) as resp:  # nosec - fixed upstream endpoint
-            data = resp.read().decode("utf-8", errors="replace")
-    except error.HTTPError as e:
-        detail = e.read().decode("utf-8", errors="replace") if hasattr(e, "read") else str(e)
+        payload = json.loads(detail)
+        if isinstance(payload, dict):
+            err = payload.get("error")
+            if isinstance(err, dict):
+                message = str(err.get("message") or "").strip()
+    except Exception:
         message = ""
-        try:
-            payload = json.loads(detail)
-            if isinstance(payload, dict):
-                err = payload.get("error")
-                if isinstance(err, dict):
-                    message = str(err.get("message") or "").strip()
-        except Exception:
-            message = ""
-        if not message:
-            message = detail.strip()[:500]
+    if not message:
+        message = detail.strip()[:500]
+    return int(e.code), message[:500]
 
-        if e.code == 429:
-            raise RuntimeError(
-                "gemini quota exceeded (429): check plan/billing or wait for quota reset"
-            ) from e
-        raise RuntimeError(f"gemini http error: {e.code} {message[:500]}") from e
-    except Exception as e:  # pragma: no cover - environment/network dependent
-        raise RuntimeError(f"gemini request failed: {e}") from e
 
-    try:
-        payload = json.loads(data)
-    except json.JSONDecodeError as e:
-        raise RuntimeError("gemini returned non-json response") from e
+def _list_generate_models(api_key: str, timeout_s: float) -> list[str]:
+    url = f"https://generativelanguage.googleapis.com/v1beta/models?key={api_key}"
+    req = request.Request(url, method="GET")
+    with request.urlopen(req, timeout=timeout_s) as resp:  # nosec - fixed upstream endpoint
+        raw = resp.read().decode("utf-8", errors="replace")
+    payload = json.loads(raw)
+    models = payload.get("models") if isinstance(payload, dict) else []
+    if not isinstance(models, list):
+        return []
 
+    out: list[str] = []
+    for m in models:
+        if not isinstance(m, dict):
+            continue
+        supported = m.get("supportedGenerationMethods")
+        if not isinstance(supported, list) or "generateContent" not in supported:
+            continue
+        name = str(m.get("name") or "")
+        if name.startswith("models/"):
+            name = name.removeprefix("models/")
+        if name:
+            out.append(name)
+    return out
+
+
+def _pick_fallback_model(requested: str, available: list[str]) -> str | None:
+    if not available:
+        return None
+    if requested in available:
+        return requested
+
+    prefixed = [m for m in available if m.startswith(requested + "-")]
+    if prefixed:
+        return prefixed[0]
+
+    preferred_order = [
+        "gemini-2.5-flash",
+        "gemini-2.0-flash",
+        "gemini-2.0-flash-lite",
+        "gemini-1.5-flash-001",
+    ]
+    for p in preferred_order:
+        if p in available:
+            return p
+
+    for m in available:
+        if "flash" in m:
+            return m
+    return available[0]
+
+
+def _extract_content_text(data: str) -> str:
+    payload = json.loads(data)
     parts = (
         ((payload.get("candidates") or [{}])[0].get("content") or {}).get("parts")
         if isinstance(payload, dict)
@@ -363,6 +406,56 @@ def _gemini_generate_cases(prompt: str) -> list[SuggestedCase]:
         for part in parts:
             if isinstance(part, dict) and isinstance(part.get("text"), str):
                 text += part["text"]
+    return text
+
+
+def _gemini_generate_cases(prompt: str) -> list[SuggestedCase]:
+    api_key = os.environ.get("GEMINI_API_KEY", "").strip()
+    if not api_key:
+        raise RuntimeError("missing GEMINI_API_KEY")
+
+    model = _gemini_model()
+    timeout_s = float(os.environ.get("GEMINI_TIMEOUT_S", "25"))
+
+    data = ""
+    try:
+        data = _gemini_generate_raw(api_key=api_key, model=model, prompt=prompt, timeout_s=timeout_s)
+    except error.HTTPError as e:
+        code, msg = _parse_http_error(e)
+        if code == 429:
+            raise RuntimeError(
+                "gemini quota exceeded (429): check plan/billing or wait for quota reset"
+            ) from e
+
+        # Auto-recover from stale/unsupported model aliases by probing model list once.
+        if code == 404 and "not found" in msg.lower() and "models/" in msg:
+            try:
+                available = _list_generate_models(api_key=api_key, timeout_s=timeout_s)
+                fallback = _pick_fallback_model(requested=model, available=available)
+                if fallback and fallback != model:
+                    data = _gemini_generate_raw(
+                        api_key=api_key, model=fallback, prompt=prompt, timeout_s=timeout_s
+                    )
+                else:
+                    sample = ", ".join(available[:6]) if available else "(empty)"
+                    raise RuntimeError(
+                        f"gemini model not found (404): requested={model}; available={sample}"
+                    ) from e
+            except RuntimeError:
+                raise
+            except Exception as list_err:
+                raise RuntimeError(
+                    f"gemini model not found (404) and list-models failed: {list_err}"
+                ) from e
+        else:
+            raise RuntimeError(f"gemini http error: {code} {msg}") from e
+    except Exception as e:  # pragma: no cover - environment/network dependent
+        raise RuntimeError(f"gemini request failed: {e}") from e
+
+    try:
+        text = _extract_content_text(data)
+    except json.JSONDecodeError as e:
+        raise RuntimeError("gemini returned non-json response") from e
 
     if not text.strip():
         raise RuntimeError("gemini response missing content text")
