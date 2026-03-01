@@ -1038,34 +1038,39 @@ def _deepseek_generate_cases(prompt: str) -> list[SuggestedCase]:
         retries = 5
     max_attempts = retries + 1
     url = _deepseek_chat_url()
-    req_body = {
-        "model": model,
-        "messages": [
-            {
-                "role": "system",
-                "content": "你是资深QA测试工程师。默认输出简体中文，仅返回JSON。",
-            },
-            {"role": "user", "content": _deepseek_prompt_text(prompt_text, max_cases=max_cases)},
-        ],
-        "temperature": 0.1,
-        "stream": False,
-        "response_format": {"type": "json_object"},
-        "max_tokens": max_tokens,
-    }
-    raw = json.dumps(req_body, ensure_ascii=True).encode("utf-8")
-    req = request.Request(
-        url,
-        data=raw,
-        method="POST",
-        headers={
-            "Content-Type": "application/json",
-            "Authorization": f"Bearer {api_key}",
-        },
-    )
 
     parse_attempts = parse_retries + 1
     last_parse_error: Exception | None = None
     for parse_attempt in range(1, parse_attempts + 1):
+        # If prior parse failed, reduce output size to lower truncation risk.
+        scale = 0.7 ** (parse_attempt - 1)
+        attempt_max_tokens = max(256, int(max_tokens * scale))
+        attempt_max_cases = max(1, int(max_cases * scale))
+        req_body = {
+            "model": model,
+            "messages": [
+                {
+                    "role": "system",
+                    "content": "你是资深QA测试工程师。默认输出简体中文，仅返回紧凑JSON，不要解释。",
+                },
+                {"role": "user", "content": _deepseek_prompt_text(prompt_text, max_cases=attempt_max_cases)},
+            ],
+            "temperature": 0.0,
+            "stream": False,
+            "response_format": {"type": "json_object"},
+            "max_tokens": attempt_max_tokens,
+        }
+        raw = json.dumps(req_body, ensure_ascii=True).encode("utf-8")
+        req = request.Request(
+            url,
+            data=raw,
+            method="POST",
+            headers={
+                "Content-Type": "application/json",
+                "Authorization": f"Bearer {api_key}",
+            },
+        )
+
         data = ""
         for attempt in range(1, max_attempts + 1):
             try:
