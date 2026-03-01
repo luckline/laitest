@@ -658,23 +658,9 @@ def _extract_cases_obj_from_raw_response(data: str) -> Any | None:
             if parsed is not None:
                 return parsed
 
-    # Exhaustive path: scan every JSON object start and keep objects that
-    # mention cases/suggestions near the head.
+    # Exhaustive path: scan every JSON object start.
     for idx, ch in enumerate(s):
         if ch != "{":
-            continue
-        head = s[idx : idx + 260]
-        if not any(
-            k in head
-            for k in (
-                '"cases"',
-                '"suggestions"',
-                '\\"cases\\"',
-                '\\"suggestions\\"',
-                '"title"',
-                '\\"title\\"',
-            )
-        ):
             continue
         obj_text = _find_balanced_json_object(s, idx)
         parsed = _try_parse_obj_text(obj_text or "")
