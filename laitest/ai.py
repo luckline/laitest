@@ -954,7 +954,64 @@ def _gemini_prompt_text(prompt: str) -> str:
     )
 
 
-def _deepseek_prompt_text(prompt: str, max_cases: int) -> str:
+def _requested_case_count(prompt: str, max_cases: int) -> int:
+    default_target = _safe_int_env("AI_DEFAULT_CASES", 5, 1, 30)
+    default_target = min(default_target, max_cases)
+    text = str(prompt or "")
+    m = re.search(r"(\d{1,2})\s*(?:条|个)\s*(?:测试)?用例", text)
+    if not m:
+        m = re.search(r"(?:输出|生成|给我|提供)\s*(\d{1,2})\s*(?:条|个)", text)
+    if m:
+        try:
+            req = int(m.group(1))
+            return min(max(req, 1), max_cases)
+        except Exception:
+            pass
+    return default_target
+
+
+def _ensure_target_case_count(
+    cases: list[SuggestedCase], prompt: str, target_cases: int, max_cases: int
+) -> list[SuggestedCase]:
+    if target_cases <= 1 or len(cases) >= target_cases:
+        return cases
+
+    base = (str(prompt or "").splitlines()[0].strip() or "需求场景")
+    base = re.sub(r"\s+", " ", base)[:80]
+    labels = [
+        "正常流程",
+        "错误输入",
+        "边界值校验",
+        "异常恢复",
+        "权限与安全",
+        "重复提交",
+        "并发与稳定性",
+        "兼容性检查",
+        "回归冒烟",
+    ]
+    need = min(max_cases, target_cases) - len(cases)
+    if need <= 0:
+        return cases
+
+    seed_lines = [f"{base} - {x}" for x in labels[: max(need * 2, need)]]
+    supplemental = generate_cases_local("\n".join(seed_lines))
+    if not supplemental:
+        return cases
+
+    out = list(cases)
+    seen = {f"{s.title.strip().lower()}|{professional_case_from_suggested(s).get('module','')}" for s in out}
+    for s in supplemental:
+        key = f"{s.title.strip().lower()}|{professional_case_from_suggested(s).get('module','')}"
+        if key in seen:
+            continue
+        out.append(s)
+        seen.add(key)
+        if len(out) >= min(max_cases, target_cases):
+            break
+    return out
+
+
+def _deepseek_prompt_text(prompt: str, max_cases: int, target_cases: int) -> str:
     # Keep prompt concise to reduce latency/token usage on DeepSeek.
     return (
         "请扮演资深QA工程师，根据需求输出结构化测试用例。只返回JSON对象，不要Markdown。\n"
@@ -971,7 +1028,8 @@ def _deepseek_prompt_text(prompt: str, max_cases: int) -> str:
         "\"tags\":[\"string\"],"
         "\"description\":\"string\""
         "}]}\n"
-        f"要求: 最多输出{max_cases}条；默认简体中文（需求明确要求英文除外）；步骤可执行，预期可验证。\n"
+        f"要求: 目标输出{target_cases}条（未指定数量时按此目标），最多输出{max_cases}条；"
+        "若信息不足也要尽量覆盖正向/异常/边界；默认简体中文（需求明确要求英文除外）；步骤可执行，预期可验证。\n"
         "- JSON 必须可被标准 json.loads 直接解析。\n"
         "- 禁止尾逗号，字符串里的双引号必须转义。\n"
         f"需求:\n{prompt}"
@@ -1382,6 +1440,7 @@ def _deepseek_generate_cases(prompt: str) -> list[SuggestedCase]:
     max_tokens = _safe_int_env("DEEPSEEK_MAX_TOKENS", 1400, 256, 8192)
     max_cases = _safe_int_env("DEEPSEEK_MAX_CASES", 10, 1, 30)
     prompt_max_chars = _safe_int_env("DEEPSEEK_PROMPT_MAX_CHARS", 4500, 500, 20000)
+    target_cases = _requested_case_count(prompt, max_cases)
     parse_retries = _safe_int_env("DEEPSEEK_PARSE_RETRIES", 2, 0, 5)
     total_deadline_s = _deepseek_total_deadline_effective(timeout_s, retries)
     force_json_object = str(os.environ.get("DEEPSEEK_FORCE_JSON_OBJECT", "0")).strip().lower() in (
@@ -1404,7 +1463,8 @@ def _deepseek_generate_cases(prompt: str) -> list[SuggestedCase]:
         # If prior parse failed, reduce output size to lower truncation risk.
         scale = 0.7 ** (parse_attempt - 1)
         attempt_max_tokens = max(256, int(max_tokens * scale))
-        attempt_max_cases = max(1, int(max_cases * scale))
+        attempt_max_cases = max(target_cases, int(max_cases * scale))
+        attempt_max_cases = min(max_cases, max(1, attempt_max_cases))
         req_body = {
             "model": model,
             "messages": [
@@ -1412,7 +1472,12 @@ def _deepseek_generate_cases(prompt: str) -> list[SuggestedCase]:
                     "role": "system",
                     "content": "你是资深QA测试工程师。默认输出简体中文，仅返回紧凑JSON，不要解释。",
                 },
-                {"role": "user", "content": _deepseek_prompt_text(prompt_text, max_cases=attempt_max_cases)},
+                {
+                    "role": "user",
+                    "content": _deepseek_prompt_text(
+                        prompt_text, max_cases=attempt_max_cases, target_cases=target_cases
+                    ),
+                },
             ],
             "temperature": 0.0,
             "stream": False,
@@ -1491,7 +1556,8 @@ def _deepseek_generate_cases(prompt: str) -> list[SuggestedCase]:
                 raise RuntimeError(f"deepseek request failed: {e}") from e
 
         try:
-            return _parse_deepseek_response_cases(data)
+            rows = _parse_deepseek_response_cases(data)
+            return _ensure_target_case_count(rows, prompt_text, target_cases=target_cases, max_cases=max_cases)
         except Exception as parse_err:
             last_parse_error = parse_err
             if parse_attempt < parse_attempts:
@@ -1516,6 +1582,7 @@ def _qianwen_generate_cases(prompt: str) -> list[SuggestedCase]:
     total_deadline_s = _qianwen_total_deadline_effective(timeout_s, retries)
     max_tokens = _safe_int_env("QIANWEN_MAX_TOKENS", 1400, 256, 8192)
     max_cases = _safe_int_env("QIANWEN_MAX_CASES", 10, 1, 30)
+    target_cases = _requested_case_count(prompt, max_cases)
     prompt_max_chars = _safe_int_env("QIANWEN_PROMPT_MAX_CHARS", 4500, 500, 20000)
 
     text = (prompt or "").strip()
@@ -1532,7 +1599,10 @@ def _qianwen_generate_cases(prompt: str) -> list[SuggestedCase]:
             "model": model,
             "messages": [
                 {"role": "system", "content": "你是资深QA测试工程师。默认输出简体中文，仅返回JSON。"},
-                {"role": "user", "content": _deepseek_prompt_text(text, max_cases=max_cases)},
+                {
+                    "role": "user",
+                    "content": _deepseek_prompt_text(text, max_cases=max_cases, target_cases=target_cases),
+                },
             ],
             "temperature": 0.1,
             "stream": False,
@@ -1604,7 +1674,8 @@ def _qianwen_generate_cases(prompt: str) -> list[SuggestedCase]:
         if not endpoint_ok:
             continue
         try:
-            return _parse_openai_compatible_response_cases(data, provider="qianwen")
+            rows = _parse_openai_compatible_response_cases(data, provider="qianwen")
+            return _ensure_target_case_count(rows, text, target_cases=target_cases, max_cases=max_cases)
         except Exception as e:
             preview = re.sub(r"\s+", " ", str(data or ""))[:120]
             errors.append(f"{url} parse failed: {e}; preview={preview}")
@@ -1864,6 +1935,7 @@ def ai_runtime_status() -> dict[str, Any]:
         "qianwen_total_deadline_s": qianwen_total_deadline_s,
         "qianwen_max_tokens": _safe_int_env("QIANWEN_MAX_TOKENS", 1400, 256, 8192),
         "qianwen_max_cases": _safe_int_env("QIANWEN_MAX_CASES", 10, 1, 30),
+        "default_target_cases": _safe_int_env("AI_DEFAULT_CASES", 5, 1, 30),
         "gemini_api_key_configured": has_gemini,
         "gemini_model": configured,
         "gemini_effective_model": effective,
