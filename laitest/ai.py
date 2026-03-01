@@ -562,6 +562,50 @@ def _deepseek_total_deadline_effective(timeout_s: float, retries: int) -> float:
     return min(max((timeout_s * (retries + 1)) + 10.0, 45.0), 300.0)
 
 
+def _qianwen_timeout_effective() -> tuple[float, float]:
+    try:
+        configured = float(os.environ.get("QIANWEN_TIMEOUT_S", "60") or "60")
+    except Exception:
+        configured = 60.0
+    if configured <= 0:
+        configured = 60.0
+    raw_cap = os.environ.get("QIANWEN_TIMEOUT_CAP_S", "").strip()
+    if not raw_cap:
+        return configured, configured
+    try:
+        cap = float(raw_cap)
+    except Exception:
+        return configured, configured
+    if cap <= 0:
+        return configured, configured
+    return configured, min(configured, cap)
+
+
+def _qianwen_retries_effective() -> tuple[int, int]:
+    configured = int(os.environ.get("QIANWEN_RETRIES", "1") or "1")
+    if configured < 0:
+        configured = 0
+    if configured > 5:
+        configured = 5
+    raw_cap = os.environ.get("QIANWEN_RETRIES_CAP", "").strip()
+    if not raw_cap:
+        return configured, configured
+    cap = _safe_int_env("QIANWEN_RETRIES_CAP", configured, 0, 5)
+    return configured, min(configured, cap)
+
+
+def _qianwen_total_deadline_effective(timeout_s: float, retries: int) -> float:
+    raw = os.environ.get("QIANWEN_TOTAL_DEADLINE_S", "").strip()
+    if raw:
+        try:
+            val = float(raw)
+            return min(max(val, 10.0), 300.0)
+        except Exception:
+            pass
+    # By default, allow enough wall time to finish all attempts.
+    return min(max((timeout_s * (retries + 1)) + 8.0, 60.0), 300.0)
+
+
 def _extract_json_object_from_text(text: str) -> Any:
     s = (text or "").strip()
     if not s:
@@ -1438,8 +1482,9 @@ def _qianwen_generate_cases(prompt: str) -> list[SuggestedCase]:
         raise RuntimeError("missing QIANWEN_API_KEY")
 
     model = _qianwen_model()
-    timeout_s = float(os.environ.get("QIANWEN_TIMEOUT_S", "30") or "30")
-    retries = _safe_int_env("QIANWEN_RETRIES", 1, 0, 5)
+    _timeout_config, timeout_s = _qianwen_timeout_effective()
+    _retries_config, retries = _qianwen_retries_effective()
+    total_deadline_s = _qianwen_total_deadline_effective(timeout_s, retries)
     max_tokens = _safe_int_env("QIANWEN_MAX_TOKENS", 1400, 256, 8192)
     max_cases = _safe_int_env("QIANWEN_MAX_CASES", 10, 1, 30)
     prompt_max_chars = _safe_int_env("QIANWEN_PROMPT_MAX_CHARS", 4500, 500, 20000)
@@ -1452,6 +1497,7 @@ def _qianwen_generate_cases(prompt: str) -> list[SuggestedCase]:
     max_attempts = retries + 1
     errors: list[str] = []
     auth_failures: list[str] = []
+    t0 = time.monotonic()
     for url in urls:
         req_body = {
             "model": model,
@@ -1480,7 +1526,13 @@ def _qianwen_generate_cases(prompt: str) -> list[SuggestedCase]:
         endpoint_ok = False
         for attempt in range(1, max_attempts + 1):
             try:
-                with request.urlopen(req, timeout=timeout_s) as resp:  # nosec - fixed upstream endpoint
+                elapsed = time.monotonic() - t0
+                remaining = total_deadline_s - elapsed
+                if remaining <= 0:
+                    errors.append(f"{url} deadline exceeded ({total_deadline_s}s)")
+                    break
+                attempt_timeout = min(timeout_s, max(3.0, remaining))
+                with request.urlopen(req, timeout=attempt_timeout) as resp:  # nosec - fixed upstream endpoint
                     data = resp.read().decode("utf-8", errors="replace")
                     endpoint_ok = True
                     break
@@ -1505,7 +1557,9 @@ def _qianwen_generate_cases(prompt: str) -> list[SuggestedCase]:
                     time.sleep(min(2 ** (attempt - 1), 4))
                     continue
                 if _is_timeout_error(e):
-                    errors.append(f"{url} timeout after {max_attempts} attempts (timeout={timeout_s}s)")
+                    errors.append(
+                        f"{url} timeout after {max_attempts} attempts (timeout={timeout_s}s, deadline={total_deadline_s}s)"
+                    )
                     break
                 if _is_retryable_transport_error(e) and attempt < max_attempts:
                     time.sleep(min(2 ** (attempt - 1), 4))
@@ -1737,6 +1791,11 @@ def ai_runtime_status() -> dict[str, Any]:
     deepseek_total_deadline_s = _deepseek_total_deadline_effective(
         deepseek_timeout_effective, deepseek_retries_effective
     )
+    qianwen_timeout_configured, qianwen_timeout_effective = _qianwen_timeout_effective()
+    qianwen_retries_configured, qianwen_retries_effective = _qianwen_retries_effective()
+    qianwen_total_deadline_s = _qianwen_total_deadline_effective(
+        qianwen_timeout_effective, qianwen_retries_effective
+    )
     configured = _gemini_model()
     effective = _GEMINI_MODEL_CACHE.get(configured, configured)
     if _model_family(effective) != _model_family(configured):
@@ -1769,8 +1828,11 @@ def ai_runtime_status() -> dict[str, Any]:
         "qianwen_model": _qianwen_model(),
         "qianwen_base_url": _qianwen_base_url(),
         "qianwen_base_urls": _qianwen_base_urls(),
-        "qianwen_timeout_s": float(os.environ.get("QIANWEN_TIMEOUT_S", "30") or "30"),
-        "qianwen_retries": _safe_int_env("QIANWEN_RETRIES", 1, 0, 5),
+        "qianwen_timeout_s": qianwen_timeout_effective,
+        "qianwen_timeout_s_configured": qianwen_timeout_configured,
+        "qianwen_retries": qianwen_retries_effective,
+        "qianwen_retries_configured": qianwen_retries_configured,
+        "qianwen_total_deadline_s": qianwen_total_deadline_s,
         "qianwen_max_tokens": _safe_int_env("QIANWEN_MAX_TOKENS", 1400, 256, 8192),
         "qianwen_max_cases": _safe_int_env("QIANWEN_MAX_CASES", 10, 1, 30),
         "gemini_api_key_configured": has_gemini,

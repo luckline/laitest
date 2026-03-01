@@ -72,8 +72,11 @@ python3 -m laitest cli projects
 - `QIANWEN_API_KEY`：Qianwen API Key（Vercel 环境变量）
 - `QIANWEN_MODEL`：模型名（默认 `qwen-plus`）
 - `QIANWEN_BASE_URL`：基础地址；可用逗号配置多个端点（默认 `https://dashscope.aliyuncs.com/compatible-mode/v1`，即 DashScope 中国站）
-- `QIANWEN_TIMEOUT_S`：请求超时秒数（默认 `30`）
+- `QIANWEN_TIMEOUT_S`：请求超时秒数（默认 `60`）
 - `QIANWEN_RETRIES`：超时/5xx 重试次数（默认 `1`）
+- `QIANWEN_TIMEOUT_CAP_S`：有效超时上限（默认不启用；仅在你显式配置时生效）
+- `QIANWEN_RETRIES_CAP`：有效重试上限（默认不启用；仅在你显式配置时生效）
+- `QIANWEN_TOTAL_DEADLINE_S`：Qianwen 单次生成总时长上限（默认自动按 `timeout*(retries+1)+8s` 推导，超时即回退）
 - `QIANWEN_MAX_TOKENS`：最大输出 token（默认 `1400`）
 - `QIANWEN_MAX_CASES`：单次最多生成用例条数（默认 `10`）
 - `QIANWEN_PROMPT_MAX_CHARS`：发送给 Qianwen 的需求文本最大字符数（默认 `4500`）
