@@ -749,6 +749,120 @@ def _extract_cases_obj_from_raw_response(data: str) -> Any | None:
     return None
 
 
+def _read_json_string_loose(text: str, start_quote: int) -> tuple[str, int, bool]:
+    if start_quote < 0 or start_quote >= len(text) or text[start_quote] != '"':
+        return "", start_quote, False
+    i = start_quote + 1
+    buf: list[str] = []
+    escaped = False
+    while i < len(text):
+        ch = text[i]
+        if escaped:
+            buf.append(ch)
+            escaped = False
+            i += 1
+            continue
+        if ch == "\\":
+            buf.append(ch)
+            escaped = True
+            i += 1
+            continue
+        if ch == '"':
+            return "".join(buf), i + 1, True
+        buf.append(ch)
+        i += 1
+    return "".join(buf), i, False
+
+
+def _decode_json_like_string(raw: str) -> str:
+    if not raw:
+        return ""
+    try:
+        return json.loads(f'"{raw}"')
+    except Exception:
+        pass
+
+    out: list[str] = []
+    i = 0
+    while i < len(raw):
+        ch = raw[i]
+        if ch != "\\":
+            out.append(ch)
+            i += 1
+            continue
+        if i + 1 >= len(raw):
+            break
+        nxt = raw[i + 1]
+        escape_map = {
+            '"': '"',
+            "\\": "\\",
+            "/": "/",
+            "b": "\b",
+            "f": "\f",
+            "n": "\n",
+            "r": "\r",
+            "t": "\t",
+        }
+        if nxt in escape_map:
+            out.append(escape_map[nxt])
+            i += 2
+            continue
+        if nxt == "u" and i + 5 < len(raw):
+            hex_part = raw[i + 2 : i + 6]
+            if re.fullmatch(r"[0-9a-fA-F]{4}", hex_part):
+                out.append(chr(int(hex_part, 16)))
+                i += 6
+                continue
+        # Unknown escape: drop backslash, keep next char.
+        out.append(nxt)
+        i += 2
+    return "".join(out)
+
+
+def _extract_content_text_from_broken_openai_payload(data: str) -> str:
+    s = str(data or "")
+    if not s:
+        return ""
+    needle = '"content"'
+    candidates: list[str] = []
+    pos = 0
+    while True:
+        idx = s.find(needle, pos)
+        if idx < 0:
+            break
+        colon = s.find(":", idx + len(needle))
+        if colon < 0:
+            break
+        i = colon + 1
+        while i < len(s) and s[i] in " \t\r\n":
+            i += 1
+        if i >= len(s):
+            break
+        if s[i] == '"':
+            raw, end, _closed = _read_json_string_loose(s, i)
+            decoded = _decode_json_like_string(raw).strip()
+            if decoded:
+                candidates.append(decoded)
+            pos = max(end, i + 1)
+            continue
+        if s[i] == "{":
+            obj_text = _find_balanced_json_object(s, i)
+            if obj_text:
+                candidates.append(obj_text)
+                pos = i + len(obj_text)
+                continue
+        pos = i + 1
+
+    if not candidates:
+        return ""
+    # Prefer candidate that looks like test-cases payload.
+    for c in candidates:
+        low = c.lower()
+        if '"cases"' in c or "test_cases" in low or '"suggestions"' in c:
+            return c
+    return max(candidates, key=len)
+
+
 def _safe_int_env(name: str, default: int, min_v: int, max_v: int) -> int:
     try:
         value = int(os.environ.get(name, str(default)) or str(default))
@@ -824,6 +938,16 @@ def _parse_deepseek_response_cases(data: str) -> list[SuggestedCase]:
             normalized = _normalize_cases_payload(recovered)
             if normalized:
                 return normalized
+        content_text = _extract_content_text_from_broken_openai_payload(data)
+        if content_text:
+            try:
+                raw_obj = _extract_json_object_from_text(content_text)
+            except Exception:
+                raw_obj = _extract_cases_obj_from_raw_response(content_text)
+            if raw_obj is not None:
+                normalized = _normalize_cases_payload(raw_obj)
+                if normalized:
+                    return normalized
         raise RuntimeError(f"deepseek returned non-json response: {e}") from e
 
     choices = payload.get("choices") if isinstance(payload, dict) else None
@@ -835,7 +959,14 @@ def _parse_deepseek_response_cases(data: str) -> list[SuggestedCase]:
     if isinstance(content, dict):
         raw_obj = content
     else:
-        raw_obj = _extract_json_object_from_text(str(content or ""))
+        try:
+            raw_obj = _extract_json_object_from_text(str(content or ""))
+        except Exception:
+            raw_obj = _extract_cases_obj_from_raw_response(str(content or ""))
+            if raw_obj is None:
+                raw_obj = _extract_cases_obj_from_raw_response(data)
+            if raw_obj is None:
+                raise
 
     normalized = _normalize_cases_payload(raw_obj)
     if not normalized:
