@@ -9,23 +9,24 @@
       content="输入需求文本，调用 AI 生成结构化测试用例，覆盖正常流、边界流与异常流。"
     />
     <link rel="stylesheet" href="/css/marketing.css" />
-    <link rel="stylesheet" href="/css/styles.css" />
+    <link rel="stylesheet" href="/css/styles.css?v=app-layout-1" />
   </head>
-  <body>
-    <header class="nav">
-      <a class="brand" href="/">
-        <span class="mark">AI</span>
-        <span class="word">laitest</span>
-      </a>
-      <nav class="links">
-        <a href="/#product">产品</a>
-        <a href="/#integrations">集成</a>
-        <a href="/#pricing">定价</a>
-        <a href="/#security">安全</a>
-      </nav>
-    </header>
+  <body class="app-page">
+    <div class="app-shell">
+      <header class="nav">
+        <a class="brand" href="/">
+          <span class="mark">AI</span>
+          <span class="word">laitest</span>
+        </a>
+        <nav class="links">
+          <a href="/#product">产品</a>
+          <a href="/#integrations">集成</a>
+          <a href="/#pricing">定价</a>
+          <a href="/#security">安全</a>
+        </nav>
+      </header>
 
-    <main class="ai-main">
+      <main class="ai-main">
       <section class="ai-hero">
         <p class="eyebrow">AI-native Software Testing</p>
         <h1>AI 测试用例生成</h1>
@@ -69,15 +70,16 @@
         <div id="aiCards" class="ai-cards"></div>
         <pre id="aiOut" class="ai-pre" hidden></pre>
       </section>
-    </main>
+      </main>
 
-    <footer class="app-foot">
-      <span>官网首页：<a href="/">/</a></span>
-      <span class="sep">|</span>
-      <span>API：<code>/api/ai/generate_cases</code></span>
-      <span class="sep">|</span>
-      <span>输出：结构化建议用例 JSON</span>
-    </footer>
+      <footer class="app-foot">
+        <span>官网首页：<a href="/">/</a></span>
+        <span class="sep">|</span>
+        <span>API：<code>/api/ai/generate_cases</code></span>
+        <span class="sep">|</span>
+        <span>输出：结构化建议用例 JSON</span>
+      </footer>
+    </div>
 
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <script src="/app.js?v=model-selector-qianwen-2"></script>

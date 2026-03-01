@@ -9,12 +9,34 @@
   --app-err: #b91c1c;
 }
 
+.app-shell {
+  width: min(1160px, calc(100% - 32px));
+  margin: 14px auto 0;
+}
+
+.app-page .nav,
+.app-page .ai-main,
+.app-page .app-foot {
+  width: 100%;
+  margin-left: 0;
+  margin-right: 0;
+}
+
+.app-page .nav {
+  margin-top: 0;
+}
+
 .ai-main {
   width: min(1160px, calc(100% - 32px));
   margin: 0 auto;
   padding: 22px 14px 32px;
   display: grid;
   gap: 14px;
+}
+
+.app-page .ai-main {
+  padding-left: 0;
+  padding-right: 0;
 }
 
 .ai-hero h1 {
@@ -389,6 +411,11 @@
   font-size: 13px;
 }
 
+.app-page .app-foot {
+  padding-left: 0;
+  padding-right: 0;
+}
+
 .sep {
   margin: 0 9px;
   opacity: 0.6;
@@ -407,5 +434,12 @@
 
   .ai-result-table {
     min-width: 860px;
+  }
+}
+
+@media (max-width: 640px) {
+  .app-shell {
+    width: calc(100% - 20px);
+    margin-top: 10px;
   }
 }
