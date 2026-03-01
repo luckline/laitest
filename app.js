@@ -73,7 +73,6 @@ function renderSummary(out) {
     `<span>deepseek_key: <code>${escapeHtml(String(Boolean(deepseekKeyConfigured)))}</code></span>`,
     `<span>qianwen_key: <code>${escapeHtml(String(Boolean(qianwenKeyConfigured)))}</code></span>`,
     `<span>gemini_key: <code>${escapeHtml(String(Boolean(geminiKeyConfigured)))}</code></span>`,
-    `<span>structure: <code>professional</code></span>`,
   ];
   if (warning) {
     bits.push(`<span class="warn">warning: ${escapeHtml(warning)}</span>`);
