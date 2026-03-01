@@ -49,7 +49,7 @@ python3 -m laitest cli projects
 
 可选环境变量：
 
-- `DEEPSEEK_API_KEY`：DeepSeek API Key（优先使用）
+- `DEEPSEEK_API_KEY`：DeepSeek API Key（优先使用；兼容 `DeepSeek_API_KEY`）
 - `DEEPSEEK_MODEL`：模型名（默认 `deepseek-chat`）
 - `DEEPSEEK_BASE_URL`：DeepSeek 基础地址（默认 `https://api.deepseek.com`）
 - `DEEPSEEK_TIMEOUT_S`：DeepSeek 请求超时秒数（默认 `25`）

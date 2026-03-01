@@ -33,6 +33,14 @@ _GEMINI_MODEL_CACHE: dict[str, str] = {}
 _GEMINI_API_VERSION_CACHE: dict[str, str] = {}
 
 
+def _env_first(*keys: str) -> str:
+    for k in keys:
+        v = os.environ.get(k, "").strip()
+        if v:
+            return v
+    return ""
+
+
 def _clean_text(value: Any, default: str = "", max_len: int = 300) -> str:
     s = str(value or "").strip()
     if not s:
@@ -323,6 +331,10 @@ def _extract_json_object_from_text(text: str) -> Any:
     if start >= 0 and end > start:
         return json.loads(s[start : end + 1])
     raise RuntimeError("model content did not contain valid json object")
+
+
+def _deepseek_api_key() -> str:
+    return _env_first("DEEPSEEK_API_KEY", "DeepSeek_API_KEY", "DEEPSEEK_KEY")
 
 
 def _gemini_prompt_text(prompt: str) -> str:
@@ -631,9 +643,9 @@ def _gemini_generate_cases(prompt: str) -> list[SuggestedCase]:
 
 
 def _deepseek_generate_cases(prompt: str) -> list[SuggestedCase]:
-    api_key = os.environ.get("DEEPSEEK_API_KEY", "").strip()
+    api_key = _deepseek_api_key()
     if not api_key:
-        raise RuntimeError("missing DEEPSEEK_API_KEY")
+        raise RuntimeError("missing DEEPSEEK_API_KEY (or DeepSeek_API_KEY)")
 
     model = _deepseek_model()
     timeout_s = float(os.environ.get("DEEPSEEK_TIMEOUT_S", "25"))
@@ -814,7 +826,7 @@ def professional_case_from_suggested(s: SuggestedCase) -> dict[str, Any]:
 
 
 def ai_runtime_status() -> dict[str, Any]:
-    has_deepseek = bool(os.environ.get("DEEPSEEK_API_KEY", "").strip())
+    has_deepseek = bool(_deepseek_api_key())
     has_gemini = bool(os.environ.get("GEMINI_API_KEY", "").strip())
     configured = _gemini_model()
     effective = _GEMINI_MODEL_CACHE.get(configured, configured)
@@ -851,7 +863,7 @@ def generate_cases(prompt: str) -> tuple[list[SuggestedCase], str, str | None]:
     if not text:
         return [], "none", None
 
-    has_deepseek = bool(os.environ.get("DEEPSEEK_API_KEY", "").strip())
+    has_deepseek = bool(_deepseek_api_key())
     has_gemini = bool(os.environ.get("GEMINI_API_KEY", "").strip())
 
     if has_deepseek:
@@ -885,5 +897,5 @@ def generate_cases(prompt: str) -> tuple[list[SuggestedCase], str, str | None]:
     return (
         generate_cases_local(text),
         "local",
-        "DEEPSEEK_API_KEY and GEMINI_API_KEY are not configured; using local generator",
+        "DEEPSEEK_API_KEY/DeepSeek_API_KEY and GEMINI_API_KEY are not configured; using local generator",
     )
