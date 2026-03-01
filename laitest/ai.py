@@ -564,6 +564,17 @@ def _try_decode_complete_json_text(raw: Any) -> str | None:
         return None
 
 
+def _looks_truncated_completion_payload(data: str) -> bool:
+    s = str(data or "").strip()
+    if not s:
+        return True
+    if s.count("{") > s.count("}"):
+        return True
+    if '"choices"' in s and '"content"' in s and '"finish_reason"' not in s:
+        return True
+    return False
+
+
 def _json_loads_loose(text: str) -> Any:
     s = (text or "").strip()
     if not s:
@@ -1108,6 +1119,8 @@ def _deepseek_generate_cases(prompt: str) -> list[SuggestedCase]:
             headers={
                 "Content-Type": "application/json",
                 "Authorization": f"Bearer {api_key}",
+                "Accept-Encoding": "identity",
+                "Connection": "close",
             },
         )
 
@@ -1116,6 +1129,13 @@ def _deepseek_generate_cases(prompt: str) -> list[SuggestedCase]:
             try:
                 with request.urlopen(req, timeout=timeout_s) as resp:  # nosec - fixed upstream endpoint
                     data = resp.read().decode("utf-8", errors="replace")
+                    if _looks_truncated_completion_payload(data):
+                        if attempt < max_attempts:
+                            time.sleep(min(2 ** (attempt - 1), 4))
+                            continue
+                        raise RuntimeError(
+                            f"deepseek response appears truncated after {max_attempts} attempts"
+                        )
                     break
             except IncompleteRead as e:
                 # Some upstream connections close early after sending most bytes.
