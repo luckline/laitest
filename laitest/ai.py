@@ -609,30 +609,45 @@ def _find_balanced_json_object(text: str, start: int) -> str | None:
 
 def _extract_cases_obj_from_raw_response(data: str) -> Any | None:
     s = str(data or "")
-    markers = ['{"cases"', '{"suggestions"']
-    for marker in markers:
-        idx = s.find(marker)
-        if idx >= 0:
-            obj_text = _find_balanced_json_object(s, idx)
-            if obj_text:
-                try:
-                    return _json_loads_loose(obj_text)
-                except Exception:
-                    pass
 
-    # Fallback for heavily escaped JSON strings inside raw completion payloads.
-    escaped_markers = ['{\\\"cases\\\"', '{\\\"suggestions\\\"']
-    for marker in escaped_markers:
-        idx = s.find(marker)
-        if idx >= 0:
-            obj_text = _find_balanced_json_object(s, idx)
-            if not obj_text:
-                continue
-            unescaped = obj_text.replace("\\\\n", "\n").replace('\\"', '"')
+    def _try_parse_obj_text(obj_text: str) -> Any | None:
+        if not obj_text:
+            return None
+        variants = [
+            obj_text,
+            obj_text.replace("\\\\n", "\n").replace('\\"', '"'),
+            obj_text.replace("\\\\", "\\"),
+        ]
+        for cand in variants:
             try:
-                return _json_loads_loose(unescaped)
+                obj = _json_loads_loose(cand)
             except Exception:
                 continue
+            if isinstance(obj, dict) and ("cases" in obj or "suggestions" in obj):
+                return obj
+        return None
+
+    # Fast path: common plain/escaped markers.
+    for marker in ('{"cases"', '{"suggestions"', '{\\"cases\\"', '{\\"suggestions\\"'):
+        idx = s.find(marker)
+        if idx >= 0:
+            obj_text = _find_balanced_json_object(s, idx)
+            parsed = _try_parse_obj_text(obj_text or "")
+            if parsed is not None:
+                return parsed
+
+    # Exhaustive path: scan every JSON object start and keep objects that
+    # mention cases/suggestions near the head.
+    for idx, ch in enumerate(s):
+        if ch != "{":
+            continue
+        head = s[idx : idx + 260]
+        if not any(k in head for k in ('"cases"', '"suggestions"', '\\"cases\\"', '\\"suggestions\\"')):
+            continue
+        obj_text = _find_balanced_json_object(s, idx)
+        parsed = _try_parse_obj_text(obj_text or "")
+        if parsed is not None:
+            return parsed
     return None
 
 
