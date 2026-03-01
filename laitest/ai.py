@@ -674,6 +674,8 @@ def _deepseek_generate_cases(prompt: str) -> list[SuggestedCase]:
             data = resp.read().decode("utf-8", errors="replace")
     except error.HTTPError as e:
         code, msg = _parse_http_error(e)
+        if code == 402:
+            raise RuntimeError("deepseek insufficient balance (402): top up DeepSeek account") from e
         if code == 429:
             raise RuntimeError(
                 "deepseek quota/rate limit exceeded (429): check plan/billing or wait for reset"
