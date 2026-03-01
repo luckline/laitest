@@ -4,6 +4,8 @@ import hashlib
 import json
 import os
 import re
+import socket
+import time
 from dataclasses import dataclass
 from typing import Any
 from urllib import error, request
@@ -337,6 +339,15 @@ def _deepseek_api_key() -> str:
     return _env_first("DEEPSEEK_API_KEY", "DeepSeek_API_KEY", "DEEPSEEK_KEY")
 
 
+def _is_timeout_error(exc: Exception) -> bool:
+    if isinstance(exc, (TimeoutError, socket.timeout)):
+        return True
+    if isinstance(exc, error.URLError):
+        reason = getattr(exc, "reason", None)
+        return isinstance(reason, (TimeoutError, socket.timeout))
+    return "timed out" in str(exc).lower()
+
+
 def _gemini_prompt_text(prompt: str) -> str:
     return (
         "You are a senior QA engineer generating high-quality software test cases.\n"
@@ -648,7 +659,13 @@ def _deepseek_generate_cases(prompt: str) -> list[SuggestedCase]:
         raise RuntimeError("missing DEEPSEEK_API_KEY (or DeepSeek_API_KEY)")
 
     model = _deepseek_model()
-    timeout_s = float(os.environ.get("DEEPSEEK_TIMEOUT_S", "25"))
+    timeout_s = float(os.environ.get("DEEPSEEK_TIMEOUT_S", "60"))
+    retries = int(os.environ.get("DEEPSEEK_RETRIES", "2") or "2")
+    if retries < 0:
+        retries = 0
+    if retries > 5:
+        retries = 5
+    max_attempts = retries + 1
     url = _deepseek_chat_url()
     req_body = {
         "model": model,
@@ -657,6 +674,7 @@ def _deepseek_generate_cases(prompt: str) -> list[SuggestedCase]:
         ],
         "temperature": 0.2,
         "stream": False,
+        "response_format": {"type": "json_object"},
     }
     raw = json.dumps(req_body, ensure_ascii=True).encode("utf-8")
     req = request.Request(
@@ -669,20 +687,34 @@ def _deepseek_generate_cases(prompt: str) -> list[SuggestedCase]:
         },
     )
 
-    try:
-        with request.urlopen(req, timeout=timeout_s) as resp:  # nosec - fixed upstream endpoint
-            data = resp.read().decode("utf-8", errors="replace")
-    except error.HTTPError as e:
-        code, msg = _parse_http_error(e)
-        if code == 402:
-            raise RuntimeError("deepseek insufficient balance (402): top up DeepSeek account") from e
-        if code == 429:
-            raise RuntimeError(
-                "deepseek quota/rate limit exceeded (429): check plan/billing or wait for reset"
-            ) from e
-        raise RuntimeError(f"deepseek http error: {code} {msg}") from e
-    except Exception as e:  # pragma: no cover - environment/network dependent
-        raise RuntimeError(f"deepseek request failed: {e}") from e
+    data = ""
+    for attempt in range(1, max_attempts + 1):
+        try:
+            with request.urlopen(req, timeout=timeout_s) as resp:  # nosec - fixed upstream endpoint
+                data = resp.read().decode("utf-8", errors="replace")
+                break
+        except error.HTTPError as e:
+            code, msg = _parse_http_error(e)
+            if code == 402:
+                raise RuntimeError("deepseek insufficient balance (402): top up DeepSeek account") from e
+            if code == 429:
+                raise RuntimeError(
+                    "deepseek quota/rate limit exceeded (429): check plan/billing or wait for reset"
+                ) from e
+            # Retry on transient 5xx errors.
+            if code in (500, 502, 503, 504) and attempt < max_attempts:
+                time.sleep(min(2 ** (attempt - 1), 4))
+                continue
+            raise RuntimeError(f"deepseek http error: {code} {msg}") from e
+        except Exception as e:  # pragma: no cover - environment/network dependent
+            if _is_timeout_error(e) and attempt < max_attempts:
+                time.sleep(min(2 ** (attempt - 1), 4))
+                continue
+            if _is_timeout_error(e):
+                raise RuntimeError(
+                    f"deepseek request timed out after {max_attempts} attempts (timeout={timeout_s}s)"
+                ) from e
+            raise RuntimeError(f"deepseek request failed: {e}") from e
 
     try:
         payload = json.loads(data)
@@ -845,6 +877,8 @@ def ai_runtime_status() -> dict[str, Any]:
         "deepseek_api_key_configured": has_deepseek,
         "deepseek_model": _deepseek_model(),
         "deepseek_base_url": _deepseek_base_url(),
+        "deepseek_timeout_s": float(os.environ.get("DEEPSEEK_TIMEOUT_S", "60") or "60"),
+        "deepseek_retries": int(os.environ.get("DEEPSEEK_RETRIES", "2") or "2"),
         "gemini_api_key_configured": has_gemini,
         "gemini_model": configured,
         "gemini_effective_model": effective,

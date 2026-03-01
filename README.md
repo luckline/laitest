@@ -52,7 +52,8 @@ python3 -m laitest cli projects
 - `DEEPSEEK_API_KEY`：DeepSeek API Key（优先使用；兼容 `DeepSeek_API_KEY`）
 - `DEEPSEEK_MODEL`：模型名（默认 `deepseek-chat`）
 - `DEEPSEEK_BASE_URL`：DeepSeek 基础地址（默认 `https://api.deepseek.com`）
-- `DEEPSEEK_TIMEOUT_S`：DeepSeek 请求超时秒数（默认 `25`）
+- `DEEPSEEK_TIMEOUT_S`：DeepSeek 请求超时秒数（默认 `60`）
+- `DEEPSEEK_RETRIES`：DeepSeek 超时/5xx 重试次数（默认 `2`，总尝试次数=重试+1）
 - `GEMINI_API_KEY`：Gemini API Key（作为 DeepSeek 失败时回退）
 - `GEMINI_MODEL`：Gemini 模型名（默认 `gemini-2.0-flash`）
 - `GEMINI_TIMEOUT_S`：Gemini 请求超时秒数（默认 `25`）
