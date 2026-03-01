@@ -27,6 +27,7 @@ const state = {
   busy: false,
   showRaw: false,
   lastOutput: null,
+  lastRows: [],
 };
 
 const SAMPLE_PROMPT = [
@@ -44,7 +45,7 @@ function setStatus(text, kind) {
 
 function setBusy(busy) {
   state.busy = busy;
-  ["aiGo", "fillSample", "clearPrompt", "copyJson", "toggleRaw"].forEach((id) => {
+  ["aiGo", "fillSample", "clearPrompt", "copyJson", "toggleRaw", "downloadExcel"].forEach((id) => {
     const node = el(id);
     if (node) {
       node.disabled = busy;
@@ -125,7 +126,7 @@ function renderLines(lines) {
   if (!Array.isArray(lines) || lines.length === 0) {
     return "无";
   }
-  return lines.map((line) => escapeHtml(line)).join("<br />");
+  return lines.map((line) => String(line)).join("\n");
 }
 
 function renderStepLines(steps) {
@@ -141,14 +142,15 @@ function renderStepLines(steps) {
       if (step.expected_result) {
         parts.push(`expect: ${step.expected_result}`);
       }
-      return escapeHtml(parts.join(" | "));
+      return parts.join(" | ");
     })
-    .join("<br />");
+    .join("\n");
 }
 
 function renderSuggestions(list) {
   const box = el("aiCards");
   if (!Array.isArray(list) || list.length === 0) {
+    state.lastRows = [];
     box.innerHTML = '<div class="ai-empty">未生成到可展示用例，请调整需求描述后重试。</div>';
     return;
   }
@@ -162,12 +164,25 @@ function renderSuggestions(list) {
         <td><div class="ai-cell-lines">${escapeHtml(tc.module)}</div></td>
         <td><div class="ai-cell-lines">${escapeHtml(tc.title)}</div></td>
         <td><div class="ai-cell-lines">${escapeHtml(tc.priority)}</div></td>
-        <td><div class="ai-cell-lines">${renderLines(tc.preconditions)}</div></td>
-        <td><div class="ai-cell-lines">${renderStepLines(tc.steps)}</div></td>
+        <td><div class="ai-cell-lines">${escapeHtml(renderLines(tc.preconditions)).replaceAll("\n", "<br />")}</div></td>
+        <td><div class="ai-cell-lines">${escapeHtml(renderStepLines(tc.steps)).replaceAll("\n", "<br />")}</div></td>
         <td><div class="ai-cell-lines">${escapeHtml(tc.expected_result || "无")}</div></td>
       </tr>`;
     })
     .join("");
+
+  state.lastRows = list.map((item, idx) => {
+    const tc = normalizeTestCase(item, idx);
+    return {
+      id: tc.case_id,
+      module: tc.module,
+      title: tc.title,
+      priority: tc.priority,
+      precondition: renderLines(tc.preconditions),
+      steps: renderStepLines(tc.steps),
+      expectedResult: tc.expected_result || "无",
+    };
+  });
 
   box.innerHTML = `
     <div class="ai-table-wrap">
@@ -186,6 +201,74 @@ function renderSuggestions(list) {
         <tbody>${rows}</tbody>
       </table>
     </div>`;
+}
+
+function cellToExcelHtml(text) {
+  return escapeHtml(String(text || "")).replaceAll("\n", "<br />");
+}
+
+function buildExcelHtml(rows) {
+  const body = rows
+    .map(
+      (row) => `<tr>
+        <td>${cellToExcelHtml(row.id)}</td>
+        <td>${cellToExcelHtml(row.module)}</td>
+        <td>${cellToExcelHtml(row.title)}</td>
+        <td>${cellToExcelHtml(row.priority)}</td>
+        <td>${cellToExcelHtml(row.precondition)}</td>
+        <td>${cellToExcelHtml(row.steps)}</td>
+        <td>${cellToExcelHtml(row.expectedResult)}</td>
+      </tr>`
+    )
+    .join("");
+
+  return `<!doctype html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <style>
+      table { border-collapse: collapse; width: 100%; font-family: Arial, sans-serif; font-size: 12px; }
+      th, td { border: 1px solid #c9d6e8; padding: 8px; vertical-align: top; text-align: left; }
+      th { background: #f3f8ff; font-weight: 700; }
+    </style>
+  </head>
+  <body>
+    <table>
+      <thead>
+        <tr>
+          <th>id</th>
+          <th>module</th>
+          <th>title</th>
+          <th>priority</th>
+          <th>precondition</th>
+          <th>steps</th>
+          <th>expectedResult</th>
+        </tr>
+      </thead>
+      <tbody>${body}</tbody>
+    </table>
+  </body>
+</html>`;
+}
+
+function downloadExcel() {
+  if (!Array.isArray(state.lastRows) || state.lastRows.length === 0) {
+    setStatus("暂无可下载结果，请先生成用例。", "err");
+    return;
+  }
+
+  const html = buildExcelHtml(state.lastRows);
+  const blob = new Blob(["\ufeff", html], { type: "application/vnd.ms-excel;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  const ts = new Date().toISOString().replaceAll(":", "-").slice(0, 19);
+  link.href = url;
+  link.download = `ai_test_cases_${ts}.xls`;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
+  setStatus("Excel 已下载。", "ok");
 }
 
 function renderOutput(out) {
@@ -256,6 +339,7 @@ function clearPrompt() {
 
 function bindEvents() {
   el("aiGo").addEventListener("click", generate);
+  el("downloadExcel").addEventListener("click", downloadExcel);
   el("copyJson").addEventListener("click", copyJson);
   el("toggleRaw").addEventListener("click", toggleRaw);
   el("fillSample").addEventListener("click", fillSample);
