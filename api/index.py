@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import os
+import time
 import traceback
 from typing import Any
 
@@ -390,7 +391,9 @@ def post_ai_generate_cases() -> Any:
     suite_id = str(body.get("suite_id") or "").strip() or None
     create = bool(body.get("create"))
 
+    t0 = time.monotonic()
     suggestions, provider, warning = generate_cases(prompt, model_provider=model_provider)
+    elapsed_ms = int((time.monotonic() - t0) * 1000)
     created_ids: list[str] = []
     if create and project_id:
         now = utc_now_iso()
@@ -440,6 +443,7 @@ def post_ai_generate_cases() -> Any:
             "provider": provider,
             "requested_provider": model_provider,
             "warning": warning,
+            "elapsed_ms": elapsed_ms,
             "runtime": runtime,
             "created_case_ids": created_ids,
         }

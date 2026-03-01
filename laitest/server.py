@@ -4,6 +4,7 @@ import json
 import mimetypes
 import os
 import threading
+import time
 import traceback
 from http import HTTPStatus
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -467,7 +468,9 @@ class Handler(BaseHTTPRequestHandler):
                 project_id = str(body.get("project_id") or "").strip()
                 suite_id = str(body.get("suite_id") or "").strip() or None
 
+                t0 = time.monotonic()
                 suggestions, provider, warning = generate_cases(prompt, model_provider=model_provider)
+                elapsed_ms = int((time.monotonic() - t0) * 1000)
                 runtime = ai_runtime_status()
                 default_mode = runtime.get("mode")
                 runtime["default_mode"] = default_mode
@@ -518,6 +521,7 @@ class Handler(BaseHTTPRequestHandler):
                         "provider": provider,
                         "requested_provider": model_provider,
                         "warning": warning,
+                        "elapsed_ms": elapsed_ms,
                         "runtime": runtime,
                         "created_case_ids": created_ids,
                     },

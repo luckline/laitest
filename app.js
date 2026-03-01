@@ -54,26 +54,65 @@ function setBusy(busy) {
   el("aiGo").textContent = busy ? "生成中..." : "生成结构化用例";
 }
 
+function baseProviderName(name) {
+  const raw = String(name || "").trim().toLowerCase();
+  if (!raw) {
+    return "";
+  }
+  if (raw.endsWith("-fallback")) {
+    return raw.slice(0, -"-fallback".length);
+  }
+  return raw;
+}
+
+function formatElapsed(ms) {
+  const n = Number(ms);
+  if (!Number.isFinite(n) || n <= 0) {
+    return "";
+  }
+  if (n >= 1000) {
+    const sec = n / 1000;
+    return sec >= 10 ? `${sec.toFixed(1)}s` : `${sec.toFixed(2)}s`;
+  }
+  return `${Math.round(n)}ms`;
+}
+
 function renderSummary(out) {
   const provider = out.provider || "unknown";
-  const requestedProvider = out.requested_provider || "deepseek";
+  const requestedProviderRaw = out.requested_provider || "";
+  const requestedProvider = requestedProviderRaw || "auto";
   const warning = out.warning || "";
   const count = Array.isArray(out.suggestions) ? out.suggestions.length : 0;
   const runtime = out.runtime && typeof out.runtime === "object" ? out.runtime : {};
   const mode = runtime.mode || "unknown";
+  const defaultMode = runtime.default_mode || mode;
   const deepseekKeyConfigured = runtime.deepseek_api_key_configured;
   const qianwenKeyConfigured = runtime.qianwen_api_key_configured;
   const geminiKeyConfigured = runtime.gemini_api_key_configured;
+  const activeKeyProvider = baseProviderName(requestedProviderRaw || provider || mode);
+  let activeKeyConfigured = null;
+  if (activeKeyProvider === "deepseek") {
+    activeKeyConfigured = deepseekKeyConfigured;
+  } else if (activeKeyProvider === "qianwen") {
+    activeKeyConfigured = qianwenKeyConfigured;
+  } else if (activeKeyProvider === "gemini") {
+    activeKeyConfigured = geminiKeyConfigured;
+  }
+  const elapsedLabel = formatElapsed(out.elapsed_ms || out.client_elapsed_ms || 0);
 
   const bits = [
     `<span><b>${count}</b> 条用例</span>`,
     `<span>requested: <code>${escapeHtml(requestedProvider)}</code></span>`,
     `<span>provider: <code>${escapeHtml(provider)}</code></span>`,
     `<span>mode: <code>${escapeHtml(mode)}</code></span>`,
-    `<span>deepseek_key: <code>${escapeHtml(String(Boolean(deepseekKeyConfigured)))}</code></span>`,
-    `<span>qianwen_key: <code>${escapeHtml(String(Boolean(qianwenKeyConfigured)))}</code></span>`,
-    `<span>gemini_key: <code>${escapeHtml(String(Boolean(geminiKeyConfigured)))}</code></span>`,
+    `<span>default_mode: <code>${escapeHtml(defaultMode)}</code></span>`,
   ];
+  if (activeKeyProvider && activeKeyConfigured !== null) {
+    bits.push(`<span>${escapeHtml(activeKeyProvider)}_key: <code>${escapeHtml(String(Boolean(activeKeyConfigured)))}</code></span>`);
+  }
+  if (elapsedLabel) {
+    bits.push(`<span>耗时: <code>${escapeHtml(elapsedLabel)}</code></span>`);
+  }
   if (warning) {
     bits.push(`<span class="warn">warning: ${escapeHtml(warning)}</span>`);
   }
@@ -308,6 +347,7 @@ async function generate() {
 
   setBusy(true);
   setStatus("正在调用 AI 生成...", "");
+  const t0 = typeof performance !== "undefined" ? performance.now() : Date.now();
   try {
     const out = await api("/api/ai/generate_cases", {
       method: "POST",
@@ -317,9 +357,15 @@ async function generate() {
         create: false,
       }),
     });
+    const t1 = typeof performance !== "undefined" ? performance.now() : Date.now();
+    out.client_elapsed_ms = Math.max(0, Math.round(t1 - t0));
     renderOutput(out);
     const count = Array.isArray(out.suggestions) ? out.suggestions.length : 0;
-    setStatus(`生成完成：${count} 条用例。`, out.warning ? "warn" : "ok");
+    const elapsedLabel = formatElapsed(out.elapsed_ms || out.client_elapsed_ms || 0);
+    setStatus(
+      elapsedLabel ? `生成完成：${count} 条用例，耗时 ${elapsedLabel}。` : `生成完成：${count} 条用例。`,
+      out.warning ? "warn" : "ok"
+    );
   } catch (e) {
     setStatus("生成失败：" + String(e && e.message ? e.message : e), "err");
   } finally {
