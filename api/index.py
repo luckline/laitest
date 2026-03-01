@@ -7,7 +7,7 @@ from typing import Any
 
 from flask import Flask, jsonify, request
 
-from laitest.ai import generate_cases
+from laitest.ai import generate_cases, professional_case_from_suggested
 from laitest.db import db_conn, json_loads, row_to_dict, utc_now_iso
 from laitest.ids import new_id
 from laitest.runner import analyze_failures, run_case, summarize_run
@@ -421,6 +421,7 @@ def post_ai_generate_cases() -> Any:
                     "tags": s.tags,
                     "kind": s.kind,
                     "spec": s.spec,
+                    "test_case": professional_case_from_suggested(s),
                 }
                 for s in suggestions
             ],

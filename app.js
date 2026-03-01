@@ -61,56 +61,152 @@ function renderSummary(out) {
   const bits = [
     `<span><b>${count}</b> 条用例</span>`,
     `<span>provider: <code>${escapeHtml(provider)}</code></span>`,
+    `<span>structure: <code>professional</code></span>`,
   ];
   if (warning) {
     bits.push(`<span class="warn">warning: ${escapeHtml(warning)}</span>`);
   }
-  el("aiSummary").innerHTML = bits.join("<span class=\"dot\">•</span>");
+  el("aiSummary").innerHTML = bits.join('<span class="dot">•</span>');
 }
 
-function normalizeSteps(spec) {
+function normalizeLegacySteps(spec) {
   if (!spec || typeof spec !== "object") {
     return [];
   }
   const rows = spec.steps;
-  return Array.isArray(rows) ? rows.filter((x) => x && typeof x === "object") : [];
+  if (!Array.isArray(rows)) {
+    return [];
+  }
+  return rows
+    .filter((x) => x && typeof x === "object")
+    .map((x, i) => ({
+      step_no: i + 1,
+      action: String(x.message || x.type || "step"),
+      test_data: "",
+      expected_result: "",
+    }));
+}
+
+function normalizeTestCase(item, idx) {
+  const tc = item && typeof item.test_case === "object" ? item.test_case : {};
+  const steps = Array.isArray(tc.steps)
+    ? tc.steps
+        .filter((x) => x && typeof x === "object")
+        .map((x, i) => ({
+          step_no: Number(x.step_no || i + 1),
+          action: String(x.action || "").trim(),
+          test_data: String(x.test_data || "").trim(),
+          expected_result: String(x.expected_result || "").trim(),
+        }))
+        .filter((x) => x.action)
+    : [];
+
+  const fallbackSteps = normalizeLegacySteps(item.spec);
+
+  return {
+    case_id: String(tc.case_id || `TC-GEN-${idx + 1}`),
+    title: String(tc.title || item.title || `用例 ${idx + 1}`),
+    module: String(tc.module || "general"),
+    priority: String(tc.priority || "P1"),
+    type: String(tc.type || "functional"),
+    preconditions: Array.isArray(tc.preconditions)
+      ? tc.preconditions.map((x) => String(x)).filter(Boolean)
+      : [],
+    steps: steps.length ? steps : fallbackSteps,
+    expected_result: String(tc.expected_result || ""),
+    automation_candidate: Boolean(tc.automation_candidate),
+    description: String(item.description || ""),
+    tags: Array.isArray(item.tags) ? item.tags.map((x) => String(x)).filter(Boolean) : [],
+    kind: String(item.kind || "demo"),
+  };
+}
+
+function renderPreconditions(preconditions) {
+  if (!preconditions.length) {
+    return '<div class="ai-empty-inline">无</div>';
+  }
+  return `<ul class="ai-list">${preconditions
+    .map((row) => `<li>${escapeHtml(row)}</li>`)
+    .join("")}</ul>`;
+}
+
+function renderSteps(steps) {
+  if (!steps.length) {
+    return '<div class="ai-empty-inline">无</div>';
+  }
+
+  const rows = steps
+    .map(
+      (step) => `<tr>
+        <td>${escapeHtml(step.step_no)}</td>
+        <td>${escapeHtml(step.action)}</td>
+        <td>${escapeHtml(step.test_data || "-")}</td>
+        <td>${escapeHtml(step.expected_result || "-")}</td>
+      </tr>`
+    )
+    .join("");
+
+  return `<div class="ai-step-wrap"><table class="ai-step-table">
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>Action</th>
+        <th>Test Data</th>
+        <th>Expected</th>
+      </tr>
+    </thead>
+    <tbody>${rows}</tbody>
+  </table></div>`;
 }
 
 function renderSuggestions(list) {
   const box = el("aiCards");
   if (!Array.isArray(list) || list.length === 0) {
-    box.innerHTML = `<div class="ai-empty">未生成到可展示用例，请调整需求描述后重试。</div>`;
+    box.innerHTML = '<div class="ai-empty">未生成到可展示用例，请调整需求描述后重试。</div>';
     return;
   }
 
   box.innerHTML = list
     .map((item, idx) => {
-      const title = escapeHtml(item.title || `用例 ${idx + 1}`);
-      const description = escapeHtml(item.description || "(no description)");
-      const kind = escapeHtml(item.kind || "demo");
-      const tags = Array.isArray(item.tags) ? item.tags : [];
-      const tagHtml = tags.length
-        ? tags.map((tag) => `<span class="ai-tag">${escapeHtml(tag)}</span>`).join("")
+      const tc = normalizeTestCase(item, idx);
+      const tagsHtml = tc.tags.length
+        ? tc.tags.map((tag) => `<span class="ai-tag">${escapeHtml(tag)}</span>`).join("")
         : '<span class="ai-tag muted">无标签</span>';
-
-      const steps = normalizeSteps(item.spec);
-      const stepText = steps.length
-        ? steps
-            .slice(0, 3)
-            .map((s, i) => `${i + 1}. ${escapeHtml(s.type || "step")}`)
-            .join("<br />")
-        : "无 steps";
 
       return `
       <article class="ai-case">
-        <h3>${title}</h3>
-        <p class="ai-desc">${description}</p>
-        <div class="ai-meta">
-          <span>kind: <code>${kind}</code></span>
-          <span>steps: <b>${steps.length}</b></span>
+        <div class="ai-case-head">
+          <h3>${escapeHtml(tc.title)}</h3>
+          <div class="ai-badges">
+            <span class="ai-badge prio">${escapeHtml(tc.priority)}</span>
+            <span class="ai-badge type">${escapeHtml(tc.type)}</span>
+          </div>
         </div>
-        <div class="ai-tags">${tagHtml}</div>
-        <div class="ai-steps">${stepText}</div>
+
+        <div class="ai-meta">
+          <span>case_id: <code>${escapeHtml(tc.case_id)}</code></span>
+          <span>module: <code>${escapeHtml(tc.module)}</code></span>
+          <span>automation: <code>${escapeHtml(tc.kind)}</code></span>
+          <span>auto-candidate: <code>${tc.automation_candidate ? "yes" : "no"}</code></span>
+        </div>
+
+        ${tc.description ? `<p class="ai-desc">${escapeHtml(tc.description)}</p>` : ""}
+        <div class="ai-tags">${tagsHtml}</div>
+
+        <div class="ai-section">
+          <h4>前置条件</h4>
+          ${renderPreconditions(tc.preconditions)}
+        </div>
+
+        <div class="ai-section">
+          <h4>测试步骤</h4>
+          ${renderSteps(tc.steps)}
+        </div>
+
+        <div class="ai-section">
+          <h4>预期结果</h4>
+          <p class="ai-expected">${escapeHtml(tc.expected_result || "未提供")}</p>
+        </div>
       </article>`;
     })
     .join("");
