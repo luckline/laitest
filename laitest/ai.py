@@ -1090,6 +1090,7 @@ def _deepseek_generate_cases(prompt: str) -> list[SuggestedCase]:
     max_cases = _safe_int_env("DEEPSEEK_MAX_CASES", 10, 1, 30)
     prompt_max_chars = _safe_int_env("DEEPSEEK_PROMPT_MAX_CHARS", 4500, 500, 20000)
     parse_retries = _safe_int_env("DEEPSEEK_PARSE_RETRIES", 2, 0, 5)
+    total_deadline_s = float(_safe_int_env("DEEPSEEK_TOTAL_DEADLINE_S", 45, 10, 300))
     force_json_object = str(os.environ.get("DEEPSEEK_FORCE_JSON_OBJECT", "0")).strip().lower() in (
         "1",
         "true",
@@ -1105,6 +1106,7 @@ def _deepseek_generate_cases(prompt: str) -> list[SuggestedCase]:
 
     parse_attempts = parse_retries + 1
     last_parse_error: Exception | None = None
+    t0 = time.monotonic()
     for parse_attempt in range(1, parse_attempts + 1):
         # If prior parse failed, reduce output size to lower truncation risk.
         scale = 0.7 ** (parse_attempt - 1)
@@ -1141,7 +1143,14 @@ def _deepseek_generate_cases(prompt: str) -> list[SuggestedCase]:
         data = ""
         for attempt in range(1, max_attempts + 1):
             try:
-                with request.urlopen(req, timeout=timeout_s) as resp:  # nosec - fixed upstream endpoint
+                elapsed = time.monotonic() - t0
+                remaining = total_deadline_s - elapsed
+                if remaining <= 0:
+                    raise RuntimeError(
+                        f"deepseek deadline exceeded ({total_deadline_s}s)"
+                    )
+                attempt_timeout = min(timeout_s, max(3.0, remaining))
+                with request.urlopen(req, timeout=attempt_timeout) as resp:  # nosec - fixed upstream endpoint
                     data = resp.read().decode("utf-8", errors="replace")
                     if _looks_truncated_completion_payload(data):
                         if attempt < max_attempts:
@@ -1426,6 +1435,7 @@ def ai_runtime_status() -> dict[str, Any]:
         "deepseek_retries": deepseek_retries_effective,
         "deepseek_retries_configured": deepseek_retries_configured,
         "deepseek_parse_retries": _safe_int_env("DEEPSEEK_PARSE_RETRIES", 2, 0, 5),
+        "deepseek_total_deadline_s": float(_safe_int_env("DEEPSEEK_TOTAL_DEADLINE_S", 45, 10, 300)),
         "deepseek_force_json_object": str(os.environ.get("DEEPSEEK_FORCE_JSON_OBJECT", "0")).strip().lower()
         in ("1", "true", "yes", "on"),
         "deepseek_max_tokens": _safe_int_env("DEEPSEEK_MAX_TOKENS", 1400, 256, 8192),
