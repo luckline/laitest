@@ -39,20 +39,28 @@ python3 -m laitest cli projects
 - `GET /api/runs` 查看执行
 - `POST /api/ai/generate_cases` 生成建议用例（本地启发式 or 外部模型）
 
-## AI 用例生成（Gemini）
+## AI 用例生成（DeepSeek / Gemini）
 
-默认使用本地启发式生成；若配置了 `GEMINI_API_KEY`，会优先调用 Gemini 并返回结构化用例，失败时自动回退本地生成。
+默认使用本地启发式生成；若配置了远程模型 key，则按以下顺序调用并在失败时自动回退：
+
+1. `DeepSeek`
+2. `Gemini`
+3. `local`（本地启发式）
 
 可选环境变量：
 
-- `GEMINI_API_KEY`：Gemini API Key（启用远程生成）
-- `GEMINI_MODEL`：模型名（默认 `gemini-2.0-flash`）
-- `GEMINI_TIMEOUT_S`：请求超时秒数（默认 `25`）
+- `DEEPSEEK_API_KEY`：DeepSeek API Key（优先使用）
+- `DEEPSEEK_MODEL`：模型名（默认 `deepseek-chat`）
+- `DEEPSEEK_BASE_URL`：DeepSeek 基础地址（默认 `https://api.deepseek.com`）
+- `DEEPSEEK_TIMEOUT_S`：DeepSeek 请求超时秒数（默认 `25`）
+- `GEMINI_API_KEY`：Gemini API Key（作为 DeepSeek 失败时回退）
+- `GEMINI_MODEL`：Gemini 模型名（默认 `gemini-2.0-flash`）
+- `GEMINI_TIMEOUT_S`：Gemini 请求超时秒数（默认 `25`）
 
 接口返回会包含：
 
-- `provider`：`gemini` / `local` / `local-fallback`
-- `warning`：当 Gemini 失败并回退时返回错误摘要
+- `provider`：`deepseek` / `gemini` / `gemini-fallback` / `local` / `local-fallback`
+- `warning`：当远程生成失败并回退时返回错误摘要
 
 ## 设计目标（后续可扩展）
 

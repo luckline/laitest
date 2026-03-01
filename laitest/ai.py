@@ -285,6 +285,46 @@ def _gemini_model() -> str:
     return raw
 
 
+def _deepseek_model() -> str:
+    raw = os.environ.get("DEEPSEEK_MODEL", "deepseek-chat").strip() or "deepseek-chat"
+    if raw.startswith("models/"):
+        raw = raw.removeprefix("models/")
+    return raw
+
+
+def _deepseek_base_url() -> str:
+    return (os.environ.get("DEEPSEEK_BASE_URL", "https://api.deepseek.com").strip() or "https://api.deepseek.com").rstrip("/")
+
+
+def _deepseek_chat_url() -> str:
+    base = _deepseek_base_url()
+    if base.endswith("/chat/completions"):
+        return base
+    if base.endswith("/v1"):
+        return f"{base}/chat/completions"
+    return f"{base}/v1/chat/completions"
+
+
+def _extract_json_object_from_text(text: str) -> Any:
+    s = (text or "").strip()
+    if not s:
+        raise RuntimeError("empty model content")
+    if s.startswith("```"):
+        s = re.sub(r"^```(?:json)?\s*", "", s, flags=re.IGNORECASE)
+        s = re.sub(r"\s*```$", "", s)
+        s = s.strip()
+    try:
+        return json.loads(s)
+    except json.JSONDecodeError:
+        pass
+
+    start = s.find("{")
+    end = s.rfind("}")
+    if start >= 0 and end > start:
+        return json.loads(s[start : end + 1])
+    raise RuntimeError("model content did not contain valid json object")
+
+
 def _gemini_prompt_text(prompt: str) -> str:
     return (
         "You are a senior QA engineer generating high-quality software test cases.\n"
@@ -590,6 +630,68 @@ def _gemini_generate_cases(prompt: str) -> list[SuggestedCase]:
     return normalized
 
 
+def _deepseek_generate_cases(prompt: str) -> list[SuggestedCase]:
+    api_key = os.environ.get("DEEPSEEK_API_KEY", "").strip()
+    if not api_key:
+        raise RuntimeError("missing DEEPSEEK_API_KEY")
+
+    model = _deepseek_model()
+    timeout_s = float(os.environ.get("DEEPSEEK_TIMEOUT_S", "25"))
+    url = _deepseek_chat_url()
+    req_body = {
+        "model": model,
+        "messages": [
+            {"role": "user", "content": _gemini_prompt_text(prompt)},
+        ],
+        "temperature": 0.2,
+        "stream": False,
+    }
+    raw = json.dumps(req_body, ensure_ascii=True).encode("utf-8")
+    req = request.Request(
+        url,
+        data=raw,
+        method="POST",
+        headers={
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {api_key}",
+        },
+    )
+
+    try:
+        with request.urlopen(req, timeout=timeout_s) as resp:  # nosec - fixed upstream endpoint
+            data = resp.read().decode("utf-8", errors="replace")
+    except error.HTTPError as e:
+        code, msg = _parse_http_error(e)
+        if code == 429:
+            raise RuntimeError(
+                "deepseek quota/rate limit exceeded (429): check plan/billing or wait for reset"
+            ) from e
+        raise RuntimeError(f"deepseek http error: {code} {msg}") from e
+    except Exception as e:  # pragma: no cover - environment/network dependent
+        raise RuntimeError(f"deepseek request failed: {e}") from e
+
+    try:
+        payload = json.loads(data)
+    except json.JSONDecodeError as e:
+        raise RuntimeError("deepseek returned non-json response") from e
+
+    choices = payload.get("choices") if isinstance(payload, dict) else None
+    if not isinstance(choices, list) or not choices:
+        raise RuntimeError("deepseek response missing choices")
+
+    message = choices[0].get("message") if isinstance(choices[0], dict) else None
+    content = message.get("content") if isinstance(message, dict) else None
+    if isinstance(content, dict):
+        raw_obj = content
+    else:
+        raw_obj = _extract_json_object_from_text(str(content or ""))
+
+    normalized = _normalize_cases_payload(raw_obj)
+    if not normalized:
+        raise RuntimeError("deepseek returned empty/invalid cases")
+    return normalized
+
+
 def _infer_local_profile(line: str) -> tuple[str, str, str, list[str], str]:
     low = line.lower()
     module = "general"
@@ -712,18 +814,29 @@ def professional_case_from_suggested(s: SuggestedCase) -> dict[str, Any]:
 
 
 def ai_runtime_status() -> dict[str, Any]:
-    has_key = bool(os.environ.get("GEMINI_API_KEY", "").strip())
+    has_deepseek = bool(os.environ.get("DEEPSEEK_API_KEY", "").strip())
+    has_gemini = bool(os.environ.get("GEMINI_API_KEY", "").strip())
     configured = _gemini_model()
     effective = _GEMINI_MODEL_CACHE.get(configured, configured)
     if _model_family(effective) != _model_family(configured):
         effective = configured
     api_version = _GEMINI_API_VERSION_CACHE.get(configured, "v1beta")
+    if has_deepseek:
+        mode = "deepseek"
+    elif has_gemini:
+        mode = "gemini"
+    else:
+        mode = "local"
     return {
-        "gemini_api_key_configured": has_key,
+        "deepseek_api_key_configured": has_deepseek,
+        "deepseek_model": _deepseek_model(),
+        "deepseek_base_url": _deepseek_base_url(),
+        "gemini_api_key_configured": has_gemini,
         "gemini_model": configured,
         "gemini_effective_model": effective,
         "gemini_api_version": api_version,
-        "mode": "gemini" if has_key else "local",
+        "provider_order": ["deepseek", "gemini", "local"],
+        "mode": mode,
     }
 
 
@@ -738,7 +851,31 @@ def generate_cases(prompt: str) -> tuple[list[SuggestedCase], str, str | None]:
     if not text:
         return [], "none", None
 
-    if os.environ.get("GEMINI_API_KEY", "").strip():
+    has_deepseek = bool(os.environ.get("DEEPSEEK_API_KEY", "").strip())
+    has_gemini = bool(os.environ.get("GEMINI_API_KEY", "").strip())
+
+    if has_deepseek:
+        try:
+            return _deepseek_generate_cases(text), "deepseek", None
+        except Exception as deep_err:
+            if has_gemini:
+                try:
+                    return (
+                        _gemini_generate_cases(text),
+                        "gemini-fallback",
+                        f"deepseek failed: {deep_err}",
+                    )
+                except Exception as gem_err:
+                    local = generate_cases_local(text)
+                    return (
+                        local,
+                        "local-fallback",
+                        f"deepseek failed: {deep_err}; gemini failed: {gem_err}",
+                    )
+            local = generate_cases_local(text)
+            return local, "local-fallback", f"deepseek failed: {deep_err}"
+
+    if has_gemini:
         try:
             return _gemini_generate_cases(text), "gemini", None
         except Exception as e:
@@ -748,5 +885,5 @@ def generate_cases(prompt: str) -> tuple[list[SuggestedCase], str, str | None]:
     return (
         generate_cases_local(text),
         "local",
-        "GEMINI_API_KEY not configured; using local generator",
+        "DEEPSEEK_API_KEY and GEMINI_API_KEY are not configured; using local generator",
     )
