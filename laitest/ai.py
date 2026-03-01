@@ -512,10 +512,21 @@ def _qianwen_chat_url(base: str | None = None) -> str:
 
 
 def _deepseek_timeout_effective() -> tuple[float, float]:
-    configured = float(os.environ.get("DEEPSEEK_TIMEOUT_S", "60") or "60")
-    cap = float(os.environ.get("DEEPSEEK_TIMEOUT_CAP_S", "35") or "35")
+    try:
+        configured = float(os.environ.get("DEEPSEEK_TIMEOUT_S", "60") or "60")
+    except Exception:
+        configured = 60.0
+    if configured <= 0:
+        configured = 60.0
+    raw_cap = os.environ.get("DEEPSEEK_TIMEOUT_CAP_S", "").strip()
+    if not raw_cap:
+        return configured, configured
+    try:
+        cap = float(raw_cap)
+    except Exception:
+        return configured, configured
     if cap <= 0:
-        cap = configured
+        return configured, configured
     return configured, min(configured, cap)
 
 
@@ -525,8 +536,23 @@ def _deepseek_retries_effective() -> tuple[int, int]:
         configured = 0
     if configured > 5:
         configured = 5
-    cap = _safe_int_env("DEEPSEEK_RETRIES_CAP", 1, 0, 5)
+    raw_cap = os.environ.get("DEEPSEEK_RETRIES_CAP", "").strip()
+    if not raw_cap:
+        return configured, configured
+    cap = _safe_int_env("DEEPSEEK_RETRIES_CAP", configured, 0, 5)
     return configured, min(configured, cap)
+
+
+def _deepseek_total_deadline_effective(timeout_s: float, retries: int) -> float:
+    raw = os.environ.get("DEEPSEEK_TOTAL_DEADLINE_S", "").strip()
+    if raw:
+        try:
+            val = float(raw)
+            return min(max(val, 10.0), 300.0)
+        except Exception:
+            pass
+    # By default, allow enough wall time to finish all attempts.
+    return min(max((timeout_s * (retries + 1)) + 10.0, 45.0), 300.0)
 
 
 def _extract_json_object_from_text(text: str) -> Any:
@@ -1157,7 +1183,7 @@ def _deepseek_generate_cases(prompt: str) -> list[SuggestedCase]:
     max_cases = _safe_int_env("DEEPSEEK_MAX_CASES", 10, 1, 30)
     prompt_max_chars = _safe_int_env("DEEPSEEK_PROMPT_MAX_CHARS", 4500, 500, 20000)
     parse_retries = _safe_int_env("DEEPSEEK_PARSE_RETRIES", 2, 0, 5)
-    total_deadline_s = float(_safe_int_env("DEEPSEEK_TOTAL_DEADLINE_S", 45, 10, 300))
+    total_deadline_s = _deepseek_total_deadline_effective(timeout_s, retries)
     force_json_object = str(os.environ.get("DEEPSEEK_FORCE_JSON_OBJECT", "0")).strip().lower() in (
         "1",
         "true",
@@ -1579,6 +1605,9 @@ def ai_runtime_status() -> dict[str, Any]:
     has_gemini = bool(os.environ.get("GEMINI_API_KEY", "").strip())
     deepseek_timeout_configured, deepseek_timeout_effective = _deepseek_timeout_effective()
     deepseek_retries_configured, deepseek_retries_effective = _deepseek_retries_effective()
+    deepseek_total_deadline_s = _deepseek_total_deadline_effective(
+        deepseek_timeout_effective, deepseek_retries_effective
+    )
     configured = _gemini_model()
     effective = _GEMINI_MODEL_CACHE.get(configured, configured)
     if _model_family(effective) != _model_family(configured):
@@ -1601,7 +1630,7 @@ def ai_runtime_status() -> dict[str, Any]:
         "deepseek_retries": deepseek_retries_effective,
         "deepseek_retries_configured": deepseek_retries_configured,
         "deepseek_parse_retries": _safe_int_env("DEEPSEEK_PARSE_RETRIES", 2, 0, 5),
-        "deepseek_total_deadline_s": float(_safe_int_env("DEEPSEEK_TOTAL_DEADLINE_S", 45, 10, 300)),
+        "deepseek_total_deadline_s": deepseek_total_deadline_s,
         "deepseek_force_json_object": str(os.environ.get("DEEPSEEK_FORCE_JSON_OBJECT", "0")).strip().lower()
         in ("1", "true", "yes", "on"),
         "deepseek_max_tokens": _safe_int_env("DEEPSEEK_MAX_TOKENS", 1400, 256, 8192),
