@@ -102,10 +102,8 @@ function renderSummary(out) {
 
   const bits = [
     `<span><b>${count}</b> 条用例</span>`,
-    `<span>requested: <code>${escapeHtml(requestedProvider)}</code></span>`,
     `<span>provider: <code>${escapeHtml(provider)}</code></span>`,
     `<span>mode: <code>${escapeHtml(mode)}</code></span>`,
-    `<span>default_mode: <code>${escapeHtml(defaultMode)}</code></span>`,
   ];
   if (activeKeyProvider && activeKeyConfigured !== null) {
     bits.push(`<span>${escapeHtml(activeKeyProvider)}_key: <code>${escapeHtml(String(Boolean(activeKeyConfigured)))}</code></span>`);
