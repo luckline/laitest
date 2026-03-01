@@ -71,7 +71,7 @@ python3 -m laitest cli projects
 - `DEEPSEEK_PROMPT_MAX_CHARS`：发送给 DeepSeek 的需求文本最大字符数（默认 `4500`）
 - `QIANWEN_API_KEY`：Qianwen API Key（Vercel 环境变量）
 - `QIANWEN_MODEL`：模型名（默认 `qwen-plus`）
-- `QIANWEN_BASE_URL`：基础地址（默认 `https://dashscope.aliyuncs.com/compatible-mode/v1`）
+- `QIANWEN_BASE_URL`：基础地址；可用逗号配置多个端点（默认按 `https://dashscope-intl.aliyuncs.com/compatible-mode/v1, https://dashscope.aliyuncs.com/compatible-mode/v1` 顺序尝试）
 - `QIANWEN_TIMEOUT_S`：请求超时秒数（默认 `30`）
 - `QIANWEN_RETRIES`：超时/5xx 重试次数（默认 `1`）
 - `QIANWEN_MAX_TOKENS`：最大输出 token（默认 `1400`）

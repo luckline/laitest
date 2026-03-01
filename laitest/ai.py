@@ -486,15 +486,24 @@ def _deepseek_chat_url() -> str:
     return f"{base}/v1/chat/completions"
 
 
+def _qianwen_base_urls() -> list[str]:
+    raw = os.environ.get("QIANWEN_BASE_URL", "").strip()
+    if raw:
+        parts = [x.strip().rstrip("/") for x in raw.split(",") if x.strip()]
+        return parts or ["https://dashscope-intl.aliyuncs.com/compatible-mode/v1"]
+    # Prefer intl first for better reachability from non-mainland regions.
+    return [
+        "https://dashscope-intl.aliyuncs.com/compatible-mode/v1",
+        "https://dashscope.aliyuncs.com/compatible-mode/v1",
+    ]
+
+
 def _qianwen_base_url() -> str:
-    base = os.environ.get("QIANWEN_BASE_URL", "").strip()
-    if not base:
-        base = "https://dashscope.aliyuncs.com/compatible-mode/v1"
-    return base.rstrip("/")
+    return _qianwen_base_urls()[0]
 
 
-def _qianwen_chat_url() -> str:
-    base = _qianwen_base_url()
+def _qianwen_chat_url(base: str | None = None) -> str:
+    base = (base or _qianwen_base_url()).rstrip("/")
     if base.endswith("/chat/completions"):
         return base
     if base.endswith("/v1"):
@@ -1293,65 +1302,84 @@ def _qianwen_generate_cases(prompt: str) -> list[SuggestedCase]:
     if len(text) > prompt_max_chars:
         text = text[:prompt_max_chars]
 
-    url = _qianwen_chat_url()
-    req_body = {
-        "model": model,
-        "messages": [
-            {"role": "system", "content": "你是资深QA测试工程师。默认输出简体中文，仅返回JSON。"},
-            {"role": "user", "content": _deepseek_prompt_text(text, max_cases=max_cases)},
-        ],
-        "temperature": 0.1,
-        "stream": False,
-        "max_tokens": max_tokens,
-    }
-    raw = json.dumps(req_body, ensure_ascii=True).encode("utf-8")
-    req = request.Request(
-        url,
-        data=raw,
-        method="POST",
-        headers={
-            "Content-Type": "application/json",
-            "Authorization": f"Bearer {api_key}",
-        },
-    )
-
+    urls = [_qianwen_chat_url(base) for base in _qianwen_base_urls()]
     max_attempts = retries + 1
-    data = ""
-    for attempt in range(1, max_attempts + 1):
-        try:
-            with request.urlopen(req, timeout=timeout_s) as resp:  # nosec - fixed upstream endpoint
-                data = resp.read().decode("utf-8", errors="replace")
-                break
-        except error.HTTPError as e:
-            code, msg = _parse_http_error(e)
-            if code in (401, 403):
-                raise RuntimeError(f"qianwen auth failed ({code}): check QIANWEN_API_KEY") from e
-            if code == 429:
-                raise RuntimeError(
-                    "qianwen quota/rate limit exceeded (429): check plan/billing or wait for reset"
-                ) from e
-            if code in (500, 502, 503, 504) and attempt < max_attempts:
-                time.sleep(min(2 ** (attempt - 1), 4))
-                continue
-            raise RuntimeError(f"qianwen http error: {code} {msg}") from e
-        except Exception as e:  # pragma: no cover - environment/network dependent
-            if _is_timeout_error(e) and attempt < max_attempts:
-                time.sleep(min(2 ** (attempt - 1), 4))
-                continue
-            if _is_timeout_error(e):
-                raise RuntimeError(
-                    f"qianwen request timed out after {max_attempts} attempts (timeout={timeout_s}s)"
-                ) from e
-            if _is_retryable_transport_error(e) and attempt < max_attempts:
-                time.sleep(min(2 ** (attempt - 1), 4))
-                continue
-            if _is_retryable_transport_error(e):
-                raise RuntimeError(
-                    f"qianwen transport interrupted after {max_attempts} attempts: {e.__class__.__name__}: {e}"
-                ) from e
-            raise RuntimeError(f"qianwen request failed: {e}") from e
+    errors: list[str] = []
+    for url in urls:
+        req_body = {
+            "model": model,
+            "messages": [
+                {"role": "system", "content": "你是资深QA测试工程师。默认输出简体中文，仅返回JSON。"},
+                {"role": "user", "content": _deepseek_prompt_text(text, max_cases=max_cases)},
+            ],
+            "temperature": 0.1,
+            "stream": False,
+            "max_tokens": max_tokens,
+        }
+        raw = json.dumps(req_body, ensure_ascii=True).encode("utf-8")
+        req = request.Request(
+            url,
+            data=raw,
+            method="POST",
+            headers={
+                "Content-Type": "application/json",
+                "Authorization": f"Bearer {api_key}",
+                "Accept-Encoding": "identity",
+                "Connection": "close",
+            },
+        )
 
-    return _parse_openai_compatible_response_cases(data, provider="qianwen")
+        data = ""
+        endpoint_ok = False
+        for attempt in range(1, max_attempts + 1):
+            try:
+                with request.urlopen(req, timeout=timeout_s) as resp:  # nosec - fixed upstream endpoint
+                    data = resp.read().decode("utf-8", errors="replace")
+                    endpoint_ok = True
+                    break
+            except error.HTTPError as e:
+                code, msg = _parse_http_error(e)
+                if code in (401, 403):
+                    raise RuntimeError(f"qianwen auth failed ({code}): check QIANWEN_API_KEY") from e
+                if code == 429:
+                    raise RuntimeError(
+                        "qianwen quota/rate limit exceeded (429): check plan/billing or wait for reset"
+                    ) from e
+                if code in (500, 502, 503, 504) and attempt < max_attempts:
+                    time.sleep(min(2 ** (attempt - 1), 4))
+                    continue
+                errors.append(f"{url} http {code}: {msg}")
+                break
+            except Exception as e:  # pragma: no cover - environment/network dependent
+                if _is_timeout_error(e) and attempt < max_attempts:
+                    time.sleep(min(2 ** (attempt - 1), 4))
+                    continue
+                if _is_timeout_error(e):
+                    errors.append(f"{url} timeout after {max_attempts} attempts (timeout={timeout_s}s)")
+                    break
+                if _is_retryable_transport_error(e) and attempt < max_attempts:
+                    time.sleep(min(2 ** (attempt - 1), 4))
+                    continue
+                if _is_retryable_transport_error(e):
+                    errors.append(
+                        f"{url} transport interrupted after {max_attempts} attempts: {e.__class__.__name__}: {e}"
+                    )
+                    break
+                errors.append(f"{url} request failed: {e}")
+                break
+
+        if not endpoint_ok:
+            continue
+        try:
+            return _parse_openai_compatible_response_cases(data, provider="qianwen")
+        except Exception as e:
+            preview = re.sub(r"\s+", " ", str(data or ""))[:120]
+            errors.append(f"{url} parse failed: {e}; preview={preview}")
+            continue
+
+    if errors:
+        raise RuntimeError(f"qianwen failed across endpoints: {'; '.join(errors)[:900]}")
+    raise RuntimeError("qianwen request failed")
 
 
 def _infer_local_profile(line: str) -> tuple[str, str, str, list[str], str]:
@@ -1582,6 +1610,7 @@ def ai_runtime_status() -> dict[str, Any]:
         "qianwen_api_key_configured": has_qianwen,
         "qianwen_model": _qianwen_model(),
         "qianwen_base_url": _qianwen_base_url(),
+        "qianwen_base_urls": _qianwen_base_urls(),
         "qianwen_timeout_s": float(os.environ.get("QIANWEN_TIMEOUT_S", "30") or "30"),
         "qianwen_retries": _safe_int_env("QIANWEN_RETRIES", 1, 0, 5),
         "qianwen_max_tokens": _safe_int_env("QIANWEN_MAX_TOKENS", 1400, 256, 8192),
