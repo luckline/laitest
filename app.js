@@ -210,52 +210,43 @@ function renderSuggestions(list) {
     </div>`;
 }
 
-function cellToExcelHtml(text) {
-  return escapeHtml(String(text || "")).replaceAll("\n", "<br />");
+function downloadBlob(blob, filename) {
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
 }
 
-function buildExcelHtml(rows) {
-  const body = rows
-    .map(
-      (row) => `<tr>
-        <td>${cellToExcelHtml(row.id)}</td>
-        <td>${cellToExcelHtml(row.module)}</td>
-        <td>${cellToExcelHtml(row.title)}</td>
-        <td>${cellToExcelHtml(row.priority)}</td>
-        <td>${cellToExcelHtml(row.precondition)}</td>
-        <td>${cellToExcelHtml(row.steps)}</td>
-        <td>${cellToExcelHtml(row.expectedResult)}</td>
-      </tr>`
-    )
-    .join("");
-
-  return `<!doctype html>
-<html>
-  <head>
-    <meta charset="UTF-8" />
-    <style>
-      table { border-collapse: collapse; width: 100%; font-family: Arial, sans-serif; font-size: 12px; }
-      th, td { border: 1px solid #c9d6e8; padding: 8px; vertical-align: top; text-align: left; }
-      th { background: #f3f8ff; font-weight: 700; }
-    </style>
-  </head>
-  <body>
-    <table>
-      <thead>
-        <tr>
-          <th>用例ID</th>
-          <th>模块</th>
-          <th>标题</th>
-          <th>优先级</th>
-          <th>前置条件</th>
-          <th>执行步骤</th>
-          <th>预期结果</th>
-        </tr>
-      </thead>
-      <tbody>${body}</tbody>
-    </table>
-  </body>
-</html>`;
+function buildCsv(rows) {
+  const headers = ["用例ID", "模块", "标题", "优先级", "前置条件", "执行步骤", "预期结果"];
+  const esc = (v) => {
+    const s = String(v == null ? "" : v).replaceAll('"', '""');
+    if (s.includes(",") || s.includes("\n") || s.includes("\r") || s.includes('"')) {
+      return `"${s}"`;
+    }
+    return s;
+  };
+  const lines = [
+    headers.join(","),
+    ...rows.map((row) =>
+      [
+        row.id,
+        row.module,
+        row.title,
+        row.priority,
+        row.precondition,
+        row.steps,
+        row.expectedResult,
+      ]
+        .map(esc)
+        .join(",")
+    ),
+  ];
+  return lines.join("\r\n");
 }
 
 function downloadExcel() {
@@ -264,18 +255,37 @@ function downloadExcel() {
     return;
   }
 
-  const html = buildExcelHtml(state.lastRows);
-  const blob = new Blob(["\ufeff", html], { type: "application/vnd.ms-excel;charset=utf-8;" });
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement("a");
   const ts = new Date().toISOString().replaceAll(":", "-").slice(0, 19);
-  link.href = url;
-  link.download = `ai_test_cases_${ts}.xls`;
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
-  URL.revokeObjectURL(url);
-  setStatus("Excel 已下载。", "ok");
+  if (window.XLSX && window.XLSX.utils && window.XLSX.write) {
+    const sheetData = [
+      ["用例ID", "模块", "标题", "优先级", "前置条件", "执行步骤", "预期结果"],
+      ...state.lastRows.map((row) => [
+        row.id,
+        row.module,
+        row.title,
+        row.priority,
+        row.precondition,
+        row.steps,
+        row.expectedResult,
+      ]),
+    ];
+    const wb = window.XLSX.utils.book_new();
+    const ws = window.XLSX.utils.aoa_to_sheet(sheetData);
+    ws["!cols"] = [{ wch: 18 }, { wch: 14 }, { wch: 24 }, { wch: 10 }, { wch: 30 }, { wch: 46 }, { wch: 30 }];
+    window.XLSX.utils.book_append_sheet(wb, ws, "测试用例");
+    const arrayBuf = window.XLSX.write(wb, { bookType: "xlsx", type: "array" });
+    const blob = new Blob([arrayBuf], {
+      type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    });
+    downloadBlob(blob, `ai_test_cases_${ts}.xlsx`);
+    setStatus("Excel 已下载。", "ok");
+    return;
+  }
+
+  const csv = buildCsv(state.lastRows);
+  const csvBlob = new Blob(["\ufeff", csv], { type: "text/csv;charset=utf-8;" });
+  downloadBlob(csvBlob, `ai_test_cases_${ts}.csv`);
+  setStatus("未加载 Excel 引擎，已下载 CSV。", "warn");
 }
 
 function renderOutput(out) {
