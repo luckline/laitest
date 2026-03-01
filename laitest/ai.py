@@ -974,6 +974,8 @@ def _case_generation_prompt_text(prompt: str, target_cases: int, max_cases: int)
         "- 合规性与 UI (10%): 关注行业规范、文案准确性、多端兼容性。\n"
         "- 异常容错 (10%): 覆盖网络波动、服务宕机、非法参数注入等健壮性场景。\n"
         "- 安全性 (10%): 覆盖垂直/水平越权、SQL 注入、敏感数据脱敏。\n"
+        "- 输出数量允许时，必须覆盖以上五大维度；当数量受限时优先保证每个非功能维度至少 1 条。\n"
+        "- 当输出数量 >= 10 时，优先按 6/1/1/1/1（功能/性能与可靠性/合规UI/异常容错/安全）分配。\n"
         f"数量要求: 目标输出 {target_cases} 条，最多 {max_cases} 条；若需求未指定数量，按目标条数输出。\n"
         "Output Requirements:\n"
         "- 严谨性: 每个步骤必须提供具体可执行的测试数据建议（例如 11 位手机号、特殊字符字符串、越界数值）。\n"
@@ -994,7 +996,7 @@ def _gemini_prompt_text(prompt: str) -> str:
 
 
 def _requested_case_count(prompt: str, max_cases: int) -> int:
-    default_target = _safe_int_env("AI_DEFAULT_CASES", 5, 1, 30)
+    default_target = _safe_int_env("AI_DEFAULT_CASES", 10, 1, 30)
     default_target = min(default_target, max_cases)
     text = str(prompt or "")
     m = re.search(r"(\d{1,2})\s*(?:条|个)\s*(?:测试)?用例", text)
@@ -1047,6 +1049,132 @@ def _ensure_target_case_count(
         seen.add(key)
         if len(out) >= min(max_cases, target_cases):
             break
+    return out
+
+
+def _case_dimension_tags(s: SuggestedCase) -> set[str]:
+    pro = professional_case_from_suggested(s)
+    low_type = str(pro.get("type") or "").strip().lower()
+    tags = [str(x).lower() for x in _clean_list_str(pro.get("tags"), default=[], max_items=20)]
+    steps = pro.get("steps") if isinstance(pro.get("steps"), list) else []
+    step_texts: list[str] = []
+    for row in steps[:20]:
+        if not isinstance(row, dict):
+            continue
+        step_texts.append(str(row.get("action") or ""))
+        step_texts.append(str(row.get("test_data") or ""))
+        step_texts.append(str(row.get("expected_result") or ""))
+    pool = " ".join(
+        [
+            str(pro.get("title") or ""),
+            str(pro.get("module") or ""),
+            str(pro.get("expected_result") or ""),
+            " ".join(tags),
+            " ".join(step_texts),
+        ]
+    ).lower()
+
+    out: set[str] = set()
+    if low_type in ("functional", "boundary", "negative", "api"):
+        out.add("functional")
+    if low_type == "performance" or any(
+        k in pool
+        for k in ("性能", "并发", "耗时", "响应时间", "一致性", "可靠", "稳定", "latency", "throughput", "load", "stress")
+    ):
+        out.add("performance")
+    if low_type == "compatibility" or any(
+        k in pool for k in ("ui", "界面", "文案", "兼容", "多端", "合规", "compliance", "compatibility")
+    ):
+        out.add("compliance_ui")
+    if any(
+        k in pool
+        for k in ("异常", "容错", "网络波动", "宕机", "降级", "恢复", "重试", "超时", "timeout", "故障", "非法参数")
+    ):
+        out.add("resilience")
+    if low_type == "security" or any(
+        k in pool
+        for k in ("安全", "越权", "sql", "注入", "xss", "csrf", "脱敏", "敏感数据", "鉴权", "权限", "vertical", "horizontal")
+    ):
+        out.add("security")
+    if not out:
+        out.add("functional")
+    return out
+
+
+def _ensure_dimension_coverage(
+    cases: list[SuggestedCase], prompt: str, target_cases: int, max_cases: int
+) -> list[SuggestedCase]:
+    if not cases:
+        return cases
+    target = min(max_cases, max(target_cases, len(cases)))
+    # Too few slots cannot represent all major dimensions.
+    if target < 5:
+        return cases
+
+    required_dims = ["functional", "performance", "compliance_ui", "resilience", "security"]
+    present: set[str] = set()
+    for s in cases:
+        present.update(_case_dimension_tags(s))
+    missing = [d for d in required_dims if d not in present]
+    if not missing:
+        return cases
+
+    base = (str(prompt or "").splitlines()[0].strip() or "核心业务流程")
+    base = re.sub(r"\s+", " ", base)[:80]
+    seeds_by_dim = {
+        "functional": f"{base} - 正向流程、反向校验与边界值分析",
+        "performance": f"{base} - 高并发下响应耗时与数据一致性",
+        "compliance_ui": f"{base} - UI文案合规与多端兼容性",
+        "resilience": f"{base} - 网络波动、服务宕机与非法参数容错",
+        "security": f"{base} - 垂直/水平越权、SQL注入与敏感数据脱敏",
+    }
+    seed_lines = [seeds_by_dim[d] for d in missing if d in seeds_by_dim]
+    if not seed_lines:
+        return cases
+
+    supplemental = generate_cases_local("\n".join(seed_lines))
+    if not supplemental:
+        return cases
+
+    out = list(cases)
+    seen = {f"{s.title.strip().lower()}|{professional_case_from_suggested(s).get('module', '')}" for s in out}
+
+    def _recompute_missing(rows: list[SuggestedCase]) -> list[str]:
+        got: set[str] = set()
+        for item in rows:
+            got.update(_case_dimension_tags(item))
+        return [d for d in required_dims if d not in got]
+
+    missing_now = _recompute_missing(out)
+    for s in supplemental:
+        dims = _case_dimension_tags(s)
+        if not any(d in missing_now for d in dims):
+            continue
+        key = f"{s.title.strip().lower()}|{professional_case_from_suggested(s).get('module', '')}"
+        if key in seen:
+            continue
+        if len(out) < target:
+            out.append(s)
+            seen.add(key)
+        else:
+            # Keep total count stable: replace a pure functional case first.
+            replace_idx = -1
+            for i in range(len(out) - 1, -1, -1):
+                d = _case_dimension_tags(out[i])
+                if d <= {"functional"}:
+                    replace_idx = i
+                    break
+            if replace_idx < 0:
+                replace_idx = len(out) - 1
+            old_key = f"{out[replace_idx].title.strip().lower()}|{professional_case_from_suggested(out[replace_idx]).get('module', '')}"
+            out[replace_idx] = s
+            seen.discard(old_key)
+            seen.add(key)
+
+        missing_now = _recompute_missing(out)
+        if not missing_now:
+            break
+
     return out
 
 
@@ -1573,7 +1701,9 @@ def _deepseek_generate_cases(prompt: str) -> list[SuggestedCase]:
 
         try:
             rows = _parse_deepseek_response_cases(data)
-            return _ensure_target_case_count(rows, prompt_text, target_cases=target_cases, max_cases=max_cases)
+            rows = _ensure_target_case_count(rows, prompt_text, target_cases=target_cases, max_cases=max_cases)
+            rows = _ensure_dimension_coverage(rows, prompt_text, target_cases=target_cases, max_cases=max_cases)
+            return rows
         except Exception as parse_err:
             last_parse_error = parse_err
             if parse_attempt < parse_attempts:
@@ -1691,7 +1821,9 @@ def _qianwen_generate_cases(prompt: str) -> list[SuggestedCase]:
             continue
         try:
             rows = _parse_openai_compatible_response_cases(data, provider="qianwen")
-            return _ensure_target_case_count(rows, text, target_cases=target_cases, max_cases=max_cases)
+            rows = _ensure_target_case_count(rows, text, target_cases=target_cases, max_cases=max_cases)
+            rows = _ensure_dimension_coverage(rows, text, target_cases=target_cases, max_cases=max_cases)
+            return rows
         except Exception as e:
             preview = re.sub(r"\s+", " ", str(data or ""))[:120]
             errors.append(f"{url} parse failed: {e}; preview={preview}")
@@ -1737,6 +1869,18 @@ def _infer_local_profile(line: str) -> tuple[str, str, str, list[str], str]:
     ):
         case_type = "boundary"
         expected = "系统可正确处理边界输入，且不破坏约束。"
+
+    if any(k in low for k in ["ui", "compatibility", "compliance", "copywriting"]) or any(
+        k in line for k in ["界面", "兼容", "合规", "文案", "多端"]
+    ):
+        case_type = "compatibility"
+        expected = "界面展示、文案与多端兼容性符合规范要求。"
+
+    if any(k in low for k in ["resilience", "fault", "chaos", "timeout", "retry", "degrade"]) or any(
+        k in line for k in ["容错", "网络波动", "宕机", "降级", "超时", "重试", "故障恢复"]
+    ):
+        case_type = "negative"
+        expected = "系统在异常条件下具备可观测、可恢复的容错能力。"
 
     if any(k in low for k in ["security", "permission", "csrf", "xss", "sql injection"]) or any(
         k in line for k in ["安全", "权限", "注入", "越权", "风控"]
@@ -1951,7 +2095,7 @@ def ai_runtime_status() -> dict[str, Any]:
         "qianwen_total_deadline_s": qianwen_total_deadline_s,
         "qianwen_max_tokens": _safe_int_env("QIANWEN_MAX_TOKENS", 1400, 256, 8192),
         "qianwen_max_cases": _safe_int_env("QIANWEN_MAX_CASES", 10, 1, 30),
-        "default_target_cases": _safe_int_env("AI_DEFAULT_CASES", 5, 1, 30),
+        "default_target_cases": _safe_int_env("AI_DEFAULT_CASES", 10, 1, 30),
         "gemini_api_key_configured": has_gemini,
         "gemini_model": configured,
         "gemini_effective_model": effective,
