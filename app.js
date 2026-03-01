@@ -121,42 +121,29 @@ function normalizeTestCase(item, idx) {
   };
 }
 
-function renderPreconditions(preconditions) {
-  if (!preconditions.length) {
-    return '<div class="ai-empty-inline">无</div>';
+function renderLines(lines) {
+  if (!Array.isArray(lines) || lines.length === 0) {
+    return "无";
   }
-  return `<ul class="ai-list">${preconditions
-    .map((row) => `<li>${escapeHtml(row)}</li>`)
-    .join("")}</ul>`;
+  return lines.map((line) => escapeHtml(line)).join("<br />");
 }
 
-function renderSteps(steps) {
-  if (!steps.length) {
-    return '<div class="ai-empty-inline">无</div>';
+function renderStepLines(steps) {
+  if (!Array.isArray(steps) || steps.length === 0) {
+    return "无";
   }
-
-  const rows = steps
-    .map(
-      (step) => `<tr>
-        <td>${escapeHtml(step.step_no)}</td>
-        <td>${escapeHtml(step.action)}</td>
-        <td>${escapeHtml(step.test_data || "-")}</td>
-        <td>${escapeHtml(step.expected_result || "-")}</td>
-      </tr>`
-    )
-    .join("");
-
-  return `<div class="ai-step-wrap"><table class="ai-step-table">
-    <thead>
-      <tr>
-        <th>#</th>
-        <th>Action</th>
-        <th>Test Data</th>
-        <th>Expected</th>
-      </tr>
-    </thead>
-    <tbody>${rows}</tbody>
-  </table></div>`;
+  return steps
+    .map((step) => {
+      const parts = [`${step.step_no}. ${step.action}`];
+      if (step.test_data) {
+        parts.push(`data: ${step.test_data}`);
+      }
+      if (step.expected_result) {
+        parts.push(`expect: ${step.expected_result}`);
+      }
+      return escapeHtml(parts.join(" | "));
+    })
+    .join("<br />");
 }
 
 function renderSuggestions(list) {
@@ -166,50 +153,39 @@ function renderSuggestions(list) {
     return;
   }
 
-  box.innerHTML = list
+  const rows = list
     .map((item, idx) => {
       const tc = normalizeTestCase(item, idx);
-      const tagsHtml = tc.tags.length
-        ? tc.tags.map((tag) => `<span class="ai-tag">${escapeHtml(tag)}</span>`).join("")
-        : '<span class="ai-tag muted">无标签</span>';
-
       return `
-      <article class="ai-case">
-        <div class="ai-case-head">
-          <h3>${escapeHtml(tc.title)}</h3>
-          <div class="ai-badges">
-            <span class="ai-badge prio">${escapeHtml(tc.priority)}</span>
-            <span class="ai-badge type">${escapeHtml(tc.type)}</span>
-          </div>
-        </div>
-
-        <div class="ai-meta">
-          <span>case_id: <code>${escapeHtml(tc.case_id)}</code></span>
-          <span>module: <code>${escapeHtml(tc.module)}</code></span>
-          <span>automation: <code>${escapeHtml(tc.kind)}</code></span>
-          <span>auto-candidate: <code>${tc.automation_candidate ? "yes" : "no"}</code></span>
-        </div>
-
-        ${tc.description ? `<p class="ai-desc">${escapeHtml(tc.description)}</p>` : ""}
-        <div class="ai-tags">${tagsHtml}</div>
-
-        <div class="ai-section">
-          <h4>前置条件</h4>
-          ${renderPreconditions(tc.preconditions)}
-        </div>
-
-        <div class="ai-section">
-          <h4>测试步骤</h4>
-          ${renderSteps(tc.steps)}
-        </div>
-
-        <div class="ai-section">
-          <h4>预期结果</h4>
-          <p class="ai-expected">${escapeHtml(tc.expected_result || "未提供")}</p>
-        </div>
-      </article>`;
+      <tr>
+        <td><div class="ai-cell-lines">${escapeHtml(tc.case_id)}</div></td>
+        <td><div class="ai-cell-lines">${escapeHtml(tc.module)}</div></td>
+        <td><div class="ai-cell-lines">${escapeHtml(tc.title)}</div></td>
+        <td><div class="ai-cell-lines">${escapeHtml(tc.priority)}</div></td>
+        <td><div class="ai-cell-lines">${renderLines(tc.preconditions)}</div></td>
+        <td><div class="ai-cell-lines">${renderStepLines(tc.steps)}</div></td>
+        <td><div class="ai-cell-lines">${escapeHtml(tc.expected_result || "无")}</div></td>
+      </tr>`;
     })
     .join("");
+
+  box.innerHTML = `
+    <div class="ai-table-wrap">
+      <table class="ai-result-table">
+        <thead>
+          <tr>
+            <th>id</th>
+            <th>module</th>
+            <th>title</th>
+            <th>priority</th>
+            <th>precondition</th>
+            <th>steps</th>
+            <th>expectedResult</th>
+          </tr>
+        </thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>`;
 }
 
 function renderOutput(out) {
