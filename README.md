@@ -55,6 +55,7 @@ python3 -m laitest cli projects
 - `DEEPSEEK_TIMEOUT_S`：DeepSeek 请求超时秒数（默认 `60`）
 - `DEEPSEEK_RETRIES`：DeepSeek 超时/5xx 重试次数（默认 `2`，总尝试次数=重试+1）
 - `DEEPSEEK_PARSE_RETRIES`：DeepSeek 内容解析失败重试次数（默认 `2`）
+- `DEEPSEEK_FORCE_JSON_OBJECT`：是否启用 `response_format=json_object`（默认 `0`，建议关闭以提高兼容性）
 - `DEEPSEEK_MAX_TOKENS`：DeepSeek 最大输出 token（默认 `1400`，越小通常越快）
 - `DEEPSEEK_MAX_CASES`：单次最多生成用例条数（默认 `10`，越小通常越快）
 - `DEEPSEEK_PROMPT_MAX_CHARS`：发送给 DeepSeek 的需求文本最大字符数（默认 `4500`）

@@ -1028,6 +1028,12 @@ def _deepseek_generate_cases(prompt: str) -> list[SuggestedCase]:
     max_cases = _safe_int_env("DEEPSEEK_MAX_CASES", 10, 1, 30)
     prompt_max_chars = _safe_int_env("DEEPSEEK_PROMPT_MAX_CHARS", 4500, 500, 20000)
     parse_retries = _safe_int_env("DEEPSEEK_PARSE_RETRIES", 2, 0, 5)
+    force_json_object = str(os.environ.get("DEEPSEEK_FORCE_JSON_OBJECT", "0")).strip().lower() in (
+        "1",
+        "true",
+        "yes",
+        "on",
+    )
     prompt_text = (prompt or "").strip()
     if len(prompt_text) > prompt_max_chars:
         prompt_text = prompt_text[:prompt_max_chars]
@@ -1057,9 +1063,10 @@ def _deepseek_generate_cases(prompt: str) -> list[SuggestedCase]:
             ],
             "temperature": 0.0,
             "stream": False,
-            "response_format": {"type": "json_object"},
             "max_tokens": attempt_max_tokens,
         }
+        if force_json_object:
+            req_body["response_format"] = {"type": "json_object"}
         raw = json.dumps(req_body, ensure_ascii=True).encode("utf-8")
         req = request.Request(
             url,
@@ -1348,6 +1355,8 @@ def ai_runtime_status() -> dict[str, Any]:
         "deepseek_timeout_s": float(os.environ.get("DEEPSEEK_TIMEOUT_S", "60") or "60"),
         "deepseek_retries": int(os.environ.get("DEEPSEEK_RETRIES", "2") or "2"),
         "deepseek_parse_retries": _safe_int_env("DEEPSEEK_PARSE_RETRIES", 2, 0, 5),
+        "deepseek_force_json_object": str(os.environ.get("DEEPSEEK_FORCE_JSON_OBJECT", "0")).strip().lower()
+        in ("1", "true", "yes", "on"),
         "deepseek_max_tokens": _safe_int_env("DEEPSEEK_MAX_TOKENS", 1400, 256, 8192),
         "deepseek_max_cases": _safe_int_env("DEEPSEEK_MAX_CASES", 10, 1, 30),
         "deepseek_prompt_max_chars": _safe_int_env("DEEPSEEK_PROMPT_MAX_CHARS", 4500, 500, 20000),
