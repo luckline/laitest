@@ -490,12 +490,9 @@ def _qianwen_base_urls() -> list[str]:
     raw = os.environ.get("QIANWEN_BASE_URL", "").strip()
     if raw:
         parts = [x.strip().rstrip("/") for x in raw.split(",") if x.strip()]
-        return parts or ["https://dashscope-intl.aliyuncs.com/compatible-mode/v1"]
-    # Prefer intl first for better reachability from non-mainland regions.
-    return [
-        "https://dashscope-intl.aliyuncs.com/compatible-mode/v1",
-        "https://dashscope.aliyuncs.com/compatible-mode/v1",
-    ]
+        return parts or ["https://dashscope.aliyuncs.com/compatible-mode/v1"]
+    # Default to DashScope China endpoint.
+    return ["https://dashscope.aliyuncs.com/compatible-mode/v1"]
 
 
 def _qianwen_base_url() -> str:
