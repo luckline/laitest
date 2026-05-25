@@ -926,6 +926,18 @@ def _safe_int_env(name: str, default: int, min_v: int, max_v: int) -> int:
     return value
 
 
+def _safe_float_env(name: str, default: float, min_v: float, max_v: float) -> float:
+    try:
+        value = float(os.environ.get(name, str(default)) or str(default))
+    except Exception:
+        value = default
+    if value < min_v:
+        return min_v
+    if value > max_v:
+        return max_v
+    return value
+
+
 def _llm_system_role_text() -> str:
     custom = os.environ.get("AI_SYSTEM_PROMPT", "").strip()
     if custom:
@@ -986,6 +998,49 @@ def _case_generation_prompt_text(prompt: str, target_cases: int, max_cases: int)
         "- JSON 必须可被标准 json.loads 直接解析，禁止尾逗号，字符串双引号必须转义。\n"
         f"Schema:\n{_case_schema_text()}\n"
         f"需求描述:\n{prompt}"
+    )
+
+
+def _travel_planner_system_prompt() -> str:
+    custom = os.environ.get("AI_TRAVEL_SYSTEM_PROMPT", "").strip()
+    if custom:
+        return custom
+    return (
+        "[角色设定]\n"
+        "你是一位拥有 15 年从业经验的资深高级旅行规划师。你不仅精通全球地理、交通网络和签证政策，"
+        "还对各地文化、小众景点、顶级餐厅以及不同旅行风格（奢华、背包、亲子、探险等）有深刻洞察。"
+        "你的目标是超越简单的路线罗列，为用户打造具有独特性、逻辑性和高执行力的个性化方案。\n\n"
+        "[工作准则]\n"
+        "逻辑严密性：所有的路线设计必须考虑地理顺位，避免“回头路”。行程需包含合理的交通衔接时间。\n\n"
+        "细节控风格：不要只给景点名。你需要提供：\n\n"
+        "建议游玩时长、最佳到访时段、避雷建议。\n\n"
+        "明确的交通方式建议（如：JR Pass 是否划算、打车还是地铁）。\n\n"
+        "同理心与个性化：根据用户的预算、体力水平和偏好（如：喜欢摄影、吃货、避开人流）动态调整建议。\n\n"
+        "坦诚建议：如果用户的计划在时间和预算上不切实际，请委婉但直接地指出，并提供替代方案。\n\n"
+        "[输出结构]\n"
+        "请按以下模块组织你的回复：\n\n"
+        "📍 行程概览：用一句话总结旅行基调（如：“京都深度人文之旅”）。\n\n"
+        "🗓️ 详细日程：\n\n"
+        "Day X - 城市/主题：上午/下午/晚上的活动安排。\n\n"
+        "💡 规划师贴士：当天的隐藏玩法或特别注意。\n\n"
+        "🍜 餐饮推荐：推荐 2-3 个符合行程逻辑的用餐点。\n\n"
+        "🏨 住宿策略：推荐住宿区域（及其优缺点）。\n\n"
+        "💰 预算预估：简要估算主要支出。"
+    )
+
+
+def _travel_plan_prompt_text(prompt: str) -> str:
+    custom = os.environ.get("AI_TRAVEL_PROMPT_TEMPLATE", "").strip()
+    if custom:
+        try:
+            return custom.format(prompt=prompt, input=prompt, user_input=prompt)
+        except Exception:
+            pass
+    return (
+        "请基于以下用户输入，输出一份可直接执行的旅行规划。"
+        "如果信息不完整，请先做合理假设并在方案中明确说明；"
+        "如果时间、预算或路线不合理，请直接指出并给出更可执行的替代方案。\n"
+        f"用户输入：\n{prompt}"
     )
 
 
@@ -1289,6 +1344,54 @@ def _parse_openai_compatible_response_cases(data: str, provider: str) -> list[Su
     return normalized
 
 
+def _message_content_text(message: Any) -> str:
+    content = message.get("content") if isinstance(message, dict) else message
+    if isinstance(content, str):
+        return content.strip()
+    if isinstance(content, list):
+        parts: list[str] = []
+        for part in content:
+            if isinstance(part, dict):
+                text = part.get("text")
+                if isinstance(text, str):
+                    parts.append(text)
+                    continue
+                nested = part.get("content")
+                if isinstance(nested, str):
+                    parts.append(nested)
+            elif isinstance(part, str):
+                parts.append(part)
+        return "".join(parts).strip()
+    if isinstance(content, dict):
+        text = content.get("text")
+        if isinstance(text, str):
+            return text.strip()
+        try:
+            return json.dumps(content, ensure_ascii=False).strip()
+        except Exception:
+            return str(content).strip()
+    return str(content or "").strip()
+
+
+def _parse_openai_compatible_response_text(data: str, provider: str) -> str:
+    try:
+        payload = _json_loads_loose(data)
+    except Exception as e:
+        recovered = _extract_content_text_from_broken_openai_payload(data).strip()
+        if recovered:
+            return recovered
+        raise RuntimeError(f"{provider} returned non-json response: {e}") from e
+
+    choices = payload.get("choices") if isinstance(payload, dict) else None
+    if not isinstance(choices, list) or not choices:
+        raise RuntimeError(f"{provider} response missing choices")
+
+    text = _message_content_text(choices[0].get("message") if isinstance(choices[0], dict) else None)
+    if not text:
+        raise RuntimeError(f"{provider} response missing content text")
+    return text
+
+
 def _gemini_generate_raw(
     api_key: str,
     model: str,
@@ -1574,8 +1677,7 @@ def _gemini_generate_cases(prompt: str) -> list[SuggestedCase]:
 
 
 def _deepseek_generate_cases(prompt: str) -> list[SuggestedCase]:
-    api_key = _deepseek_api_key()
-    if not api_key:
+    if not _deepseek_api_key():
         raise RuntimeError("missing DEEPSEEK_API_KEY (or DeepSeek_API_KEY)")
 
     model = _deepseek_model()
@@ -1596,9 +1698,6 @@ def _deepseek_generate_cases(prompt: str) -> list[SuggestedCase]:
     prompt_text = (prompt or "").strip()
     if len(prompt_text) > prompt_max_chars:
         prompt_text = prompt_text[:prompt_max_chars]
-
-    max_attempts = retries + 1
-    url = _deepseek_chat_url()
 
     parse_attempts = parse_retries + 1
     last_parse_error: Exception | None = None
@@ -1629,75 +1728,13 @@ def _deepseek_generate_cases(prompt: str) -> list[SuggestedCase]:
         }
         if force_json_object:
             req_body["response_format"] = {"type": "json_object"}
-        raw = json.dumps(req_body, ensure_ascii=True).encode("utf-8")
-        req = request.Request(
-            url,
-            data=raw,
-            method="POST",
-            headers={
-                "Content-Type": "application/json",
-                "Authorization": f"Bearer {api_key}",
-                "Accept-Encoding": "identity",
-                "Connection": "close",
-            },
+        data = _deepseek_request_chat_completion(
+            req_body,
+            timeout_s=timeout_s,
+            retries=retries,
+            total_deadline_s=total_deadline_s,
+            started_at=t0,
         )
-
-        data = ""
-        for attempt in range(1, max_attempts + 1):
-            try:
-                elapsed = time.monotonic() - t0
-                remaining = total_deadline_s - elapsed
-                if remaining <= 0:
-                    raise RuntimeError(
-                        f"deepseek deadline exceeded ({total_deadline_s}s)"
-                    )
-                attempt_timeout = min(timeout_s, max(3.0, remaining))
-                with request.urlopen(req, timeout=attempt_timeout) as resp:  # nosec - fixed upstream endpoint
-                    data = resp.read().decode("utf-8", errors="replace")
-                    break
-            except IncompleteRead as e:
-                # Some upstream connections close early after sending most bytes.
-                # If the partial body is still valid JSON, accept it; otherwise retry.
-                partial_text = _try_decode_complete_json_text(getattr(e, "partial", b""))
-                if partial_text:
-                    data = partial_text
-                    break
-                if attempt < max_attempts:
-                    time.sleep(min(2 ** (attempt - 1), 4))
-                    continue
-                partial_size = len(getattr(e, "partial", b"") or b"")
-                raise RuntimeError(
-                    f"deepseek response interrupted (IncompleteRead) after {max_attempts} attempts; partial_bytes={partial_size}"
-                ) from e
-            except error.HTTPError as e:
-                code, msg = _parse_http_error(e)
-                if code == 402:
-                    raise RuntimeError("deepseek insufficient balance (402): top up DeepSeek account") from e
-                if code == 429:
-                    raise RuntimeError(
-                        "deepseek quota/rate limit exceeded (429): check plan/billing or wait for reset"
-                    ) from e
-                # Retry on transient 5xx errors.
-                if code in (500, 502, 503, 504) and attempt < max_attempts:
-                    time.sleep(min(2 ** (attempt - 1), 4))
-                    continue
-                raise RuntimeError(f"deepseek http error: {code} {msg}") from e
-            except Exception as e:  # pragma: no cover - environment/network dependent
-                if _is_timeout_error(e) and attempt < max_attempts:
-                    time.sleep(min(2 ** (attempt - 1), 4))
-                    continue
-                if _is_timeout_error(e):
-                    raise RuntimeError(
-                        f"deepseek request timed out after {max_attempts} attempts (timeout={timeout_s}s)"
-                    ) from e
-                if _is_retryable_transport_error(e) and attempt < max_attempts:
-                    time.sleep(min(2 ** (attempt - 1), 4))
-                    continue
-                if _is_retryable_transport_error(e):
-                    raise RuntimeError(
-                        f"deepseek transport interrupted after {max_attempts} attempts: {e.__class__.__name__}: {e}"
-                    ) from e
-                raise RuntimeError(f"deepseek request failed: {e}") from e
 
         try:
             rows = _parse_deepseek_response_cases(data)
@@ -1715,6 +1752,86 @@ def _deepseek_generate_cases(prompt: str) -> list[SuggestedCase]:
             ) from parse_err
 
     raise RuntimeError(f"deepseek parse retries exhausted: {last_parse_error}")
+
+
+def _deepseek_request_chat_completion(
+    req_body: dict[str, Any],
+    *,
+    timeout_s: float,
+    retries: int,
+    total_deadline_s: float,
+    started_at: float | None = None,
+) -> str:
+    api_key = _deepseek_api_key()
+    if not api_key:
+        raise RuntimeError("missing DEEPSEEK_API_KEY (or DeepSeek_API_KEY)")
+
+    url = _deepseek_chat_url()
+    max_attempts = retries + 1
+    raw = json.dumps(req_body, ensure_ascii=True).encode("utf-8")
+    req = request.Request(
+        url,
+        data=raw,
+        method="POST",
+        headers={
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {api_key}",
+            "Accept-Encoding": "identity",
+            "Connection": "close",
+        },
+    )
+
+    t0 = started_at if started_at is not None else time.monotonic()
+    for attempt in range(1, max_attempts + 1):
+        try:
+            elapsed = time.monotonic() - t0
+            remaining = total_deadline_s - elapsed
+            if remaining <= 0:
+                raise RuntimeError(f"deepseek deadline exceeded ({total_deadline_s}s)")
+            attempt_timeout = min(timeout_s, max(3.0, remaining))
+            with request.urlopen(req, timeout=attempt_timeout) as resp:  # nosec - fixed upstream endpoint
+                return resp.read().decode("utf-8", errors="replace")
+        except IncompleteRead as e:
+            partial_text = _try_decode_complete_json_text(getattr(e, "partial", b""))
+            if partial_text:
+                return partial_text
+            if attempt < max_attempts:
+                time.sleep(min(2 ** (attempt - 1), 4))
+                continue
+            partial_size = len(getattr(e, "partial", b"") or b"")
+            raise RuntimeError(
+                f"deepseek response interrupted (IncompleteRead) after {max_attempts} attempts; partial_bytes={partial_size}"
+            ) from e
+        except error.HTTPError as e:
+            code, msg = _parse_http_error(e)
+            if code == 402:
+                raise RuntimeError("deepseek insufficient balance (402): top up DeepSeek account") from e
+            if code == 429:
+                raise RuntimeError(
+                    "deepseek quota/rate limit exceeded (429): check plan/billing or wait for reset"
+                ) from e
+            if code in (500, 502, 503, 504) and attempt < max_attempts:
+                time.sleep(min(2 ** (attempt - 1), 4))
+                continue
+            raise RuntimeError(f"deepseek http error: {code} {msg}") from e
+        except Exception as e:  # pragma: no cover - environment/network dependent
+            if _is_timeout_error(e) and attempt < max_attempts:
+                time.sleep(min(2 ** (attempt - 1), 4))
+                continue
+            if _is_timeout_error(e):
+                raise RuntimeError(
+                    f"deepseek request timed out after {max_attempts} attempts (timeout={timeout_s}s)"
+                ) from e
+            if _is_retryable_transport_error(e) and attempt < max_attempts:
+                time.sleep(min(2 ** (attempt - 1), 4))
+                continue
+            if _is_retryable_transport_error(e):
+                raise RuntimeError(
+                    f"deepseek transport interrupted after {max_attempts} attempts: {e.__class__.__name__}: {e}"
+                ) from e
+            raise RuntimeError(f"deepseek request failed: {e}") from e
+
+    raise RuntimeError("deepseek request failed")
 
 
 def _qianwen_generate_cases(prompt: str) -> list[SuggestedCase]:
@@ -2084,6 +2201,9 @@ def ai_runtime_status() -> dict[str, Any]:
         "deepseek_max_tokens": _safe_int_env("DEEPSEEK_MAX_TOKENS", 1400, 256, 8192),
         "deepseek_max_cases": _safe_int_env("DEEPSEEK_MAX_CASES", 10, 1, 30),
         "deepseek_prompt_max_chars": _safe_int_env("DEEPSEEK_PROMPT_MAX_CHARS", 4500, 500, 20000),
+        "deepseek_travel_max_tokens": _safe_int_env("DEEPSEEK_TRAVEL_MAX_TOKENS", 2200, 512, 8192),
+        "deepseek_travel_prompt_max_chars": _safe_int_env("DEEPSEEK_TRAVEL_PROMPT_MAX_CHARS", 6000, 500, 30000),
+        "deepseek_travel_temperature": _safe_float_env("DEEPSEEK_TRAVEL_TEMPERATURE", 0.4, 0.0, 1.5),
         "qianwen_api_key_configured": has_qianwen,
         "qianwen_model": _qianwen_model(),
         "qianwen_base_url": _qianwen_base_url(),
@@ -2250,3 +2370,57 @@ def generate_cases(prompt: str, model_provider: str | None = None) -> tuple[list
         "local",
         "DEEPSEEK_API_KEY/DeepSeek_API_KEY, QIANWEN_API_KEY and GEMINI_API_KEY are not configured; using local generator",
     )
+
+
+def generate_travel_plan(prompt: str) -> str:
+    text = (prompt or "").strip()
+    if not text:
+        return ""
+
+    if not _deepseek_api_key():
+        raise RuntimeError("missing DEEPSEEK_API_KEY/DeepSeek_API_KEY")
+
+    _timeout_config, timeout_s = _deepseek_timeout_effective()
+    _retries_config, retries = _deepseek_retries_effective()
+    total_deadline_s = _deepseek_total_deadline_effective(timeout_s, retries)
+    max_tokens = _safe_int_env("DEEPSEEK_TRAVEL_MAX_TOKENS", 2200, 512, 8192)
+    prompt_max_chars = _safe_int_env("DEEPSEEK_TRAVEL_PROMPT_MAX_CHARS", 6000, 500, 30000)
+    temperature = _safe_float_env("DEEPSEEK_TRAVEL_TEMPERATURE", 0.4, 0.0, 1.5)
+
+    if len(text) > prompt_max_chars:
+        text = text[:prompt_max_chars]
+
+    req_body = {
+        "model": _deepseek_model(),
+        "messages": [
+            {
+                "role": "system",
+                "content": _travel_planner_system_prompt(),
+            },
+            {
+                "role": "user",
+                "content": _travel_plan_prompt_text(text),
+            },
+        ],
+        "temperature": temperature,
+        "stream": False,
+        "max_tokens": max_tokens,
+    }
+
+    data = _deepseek_request_chat_completion(
+        req_body,
+        timeout_s=timeout_s,
+        retries=retries,
+        total_deadline_s=total_deadline_s,
+    )
+    try:
+        plan = _parse_openai_compatible_response_text(data, provider="deepseek").strip()
+    except Exception as e:
+        preview = re.sub(r"\s+", " ", str(data or ""))[:180]
+        raise RuntimeError(
+            f"deepseek returned invalid travel plan content: {e}; preview={preview}"
+        ) from e
+
+    if not plan:
+        raise RuntimeError("deepseek response missing travel plan")
+    return plan

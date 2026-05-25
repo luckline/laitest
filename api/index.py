@@ -8,7 +8,7 @@ from typing import Any
 
 from flask import Flask, jsonify, request
 
-from laitest.ai import ai_runtime_status, generate_cases, professional_case_from_suggested
+from laitest.ai import ai_runtime_status, generate_cases, generate_travel_plan, professional_case_from_suggested
 from laitest.db import db_conn, json_loads, row_to_dict, utc_now_iso
 from laitest.ids import new_id
 from laitest.runner import analyze_failures, run_case, summarize_run
@@ -446,6 +446,47 @@ def post_ai_generate_cases() -> Any:
             "elapsed_ms": elapsed_ms,
             "runtime": runtime,
             "created_case_ids": created_ids,
+        }
+    )
+
+
+@app.post("/api/ai/travel_plan")
+def post_ai_travel_plan() -> tuple[Any, int] | Any:
+    body = _body()
+    prompt = str(body.get("prompt") or body.get("user_input") or body.get("input") or "")
+    if not prompt.strip():
+        return jsonify({"error": "missing prompt"}), 400
+
+    t0 = time.monotonic()
+    try:
+        plan = generate_travel_plan(prompt)
+    except RuntimeError as e:
+        status = 503 if "missing DEEPSEEK_API_KEY" in str(e) else 502
+        return (
+            jsonify(
+                {
+                    "error": str(e),
+                    "provider": "deepseek",
+                    "elapsed_ms": int((time.monotonic() - t0) * 1000),
+                }
+            ),
+            status,
+        )
+
+    elapsed_ms = int((time.monotonic() - t0) * 1000)
+    runtime = ai_runtime_status()
+    default_mode = runtime.get("mode")
+    runtime["default_mode"] = default_mode
+    runtime["mode"] = "deepseek"
+    runtime["active_provider"] = "deepseek"
+
+    return jsonify(
+        {
+            "travel_plan": plan,
+            "provider": "deepseek",
+            "model": runtime.get("deepseek_model"),
+            "elapsed_ms": elapsed_ms,
+            "runtime": runtime,
         }
     )
 

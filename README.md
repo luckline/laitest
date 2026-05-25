@@ -38,6 +38,7 @@ python3 -m laitest cli projects
 - `POST /api/runs` 创建执行
 - `GET /api/runs` 查看执行
 - `POST /api/ai/generate_cases` 生成建议用例（本地启发式 or 外部模型）
+- `POST /api/ai/travel_plan` 基于用户输入生成旅行规划（强制使用 DeepSeek）
 
 ## AI 用例生成（DeepSeek / Qianwen / Gemini）
 
@@ -59,6 +60,8 @@ python3 -m laitest cli projects
 - `AI_DEFAULT_CASES`：未在需求中显式写条数时的默认目标用例数（默认 `10`；更易覆盖功能/性能/UI合规/异常容错/安全维度）
 - `AI_SYSTEM_PROMPT`：可选，自定义大模型 system prompt（未配置时使用内置资深测试架构师角色）
 - `AI_CASE_PROMPT_TEMPLATE`：可选，自定义用户提示词模板（支持占位符 `{target_cases}` / `{max_cases}` / `{prompt}` / `{schema}`）
+- `AI_TRAVEL_SYSTEM_PROMPT`：可选，自定义旅行规划接口的 system prompt（默认使用内置资深旅行规划师提示词）
+- `AI_TRAVEL_PROMPT_TEMPLATE`：可选，自定义旅行规划接口的 user prompt 模板（支持占位符 `{prompt}` / `{input}` / `{user_input}`）
 - `DEEPSEEK_API_KEY`：DeepSeek API Key（优先使用；兼容 `DeepSeek_API_KEY`）
 - `DEEPSEEK_MODEL`：模型名（默认 `deepseek-chat`）
 - `DEEPSEEK_BASE_URL`：DeepSeek 基础地址（默认 `https://api.deepseek.com`）
@@ -72,6 +75,9 @@ python3 -m laitest cli projects
 - `DEEPSEEK_MAX_TOKENS`：DeepSeek 最大输出 token（默认 `1400`，越小通常越快）
 - `DEEPSEEK_MAX_CASES`：单次最多生成用例条数（默认 `10`，越小通常越快）
 - `DEEPSEEK_PROMPT_MAX_CHARS`：发送给 DeepSeek 的需求文本最大字符数（默认 `4500`）
+- `DEEPSEEK_TRAVEL_MAX_TOKENS`：旅行规划接口最大输出 token（默认 `2200`）
+- `DEEPSEEK_TRAVEL_PROMPT_MAX_CHARS`：旅行规划接口输入最大字符数（默认 `6000`）
+- `DEEPSEEK_TRAVEL_TEMPERATURE`：旅行规划接口温度参数（默认 `0.4`）
 - `QIANWEN_API_KEY`：Qianwen API Key（Vercel 环境变量）
 - `QIANWEN_MODEL`：模型名（默认 `qwen-plus`）
 - `QIANWEN_BASE_URL`：基础地址；可用逗号配置多个端点（默认 `https://dashscope.aliyuncs.com/compatible-mode/v1`，即 DashScope 中国站）
@@ -92,6 +98,79 @@ python3 -m laitest cli projects
 - `provider`：`deepseek` / `qianwen` / `gemini` / `qianwen-fallback` / `gemini-fallback` / `local` / `local-fallback`
 - `requested_provider`：请求中指定的 `model_provider`（未指定时为 `null`）
 - `warning`：当远程生成失败并回退时返回错误摘要
+
+## 旅行规划接口
+
+`POST /api/ai/travel_plan`
+
+请求体支持以下任一字段：
+
+- `prompt`
+- `user_input`
+- `input`
+
+示例：
+
+```json
+{
+  "prompt": "我想在 8 月带父母去日本关西玩 5 天，预算 2 万人民币，尽量轻松一点，喜欢美食和历史街区。"
+}
+```
+
+返回示例：
+
+```json
+{
+  "travel_plan": "📍 行程概览：...",
+  "provider": "deepseek",
+  "model": "deepseek-chat",
+  "elapsed_ms": 1234,
+  "runtime": {
+    "mode": "deepseek"
+  }
+}
+```
+
+### 时光透卡系统侧调用示例
+
+如果时光透卡系统是 `Node.js` 服务，可以直接参考这个示例文件：
+
+- [examples/shiguang_touka_travel_plan_client.js](/Users/user/Documents/laitest/examples/shiguang_touka_travel_plan_client.js:1)
+
+运行方式：
+
+```bash
+cd /Users/user/Documents/laitest
+LAITEST_API_BASE=http://127.0.0.1:8080 \
+LAITEST_TOKEN=your-token-if-needed \
+node examples/shiguang_touka_travel_plan_client.js
+```
+
+核心调用代码如下：
+
+```js
+const response = await fetch(`${API_BASE}/api/ai/travel_plan`, {
+  method: "POST",
+  headers: {
+    "Content-Type": "application/json",
+    ...(API_TOKEN ? { Authorization: `Bearer ${API_TOKEN}` } : {}),
+  },
+  body: JSON.stringify({
+    user_input: userInput,
+  }),
+});
+```
+
+如果你们只是先联调接口，也可以直接用 `curl`：
+
+```bash
+curl -X POST "http://127.0.0.1:8080/api/ai/travel_plan" \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer your-token-if-needed" \
+  -d '{
+    "user_input": "我想在8月带父母去日本关西玩5天，预算2万元人民币，尽量轻松一点，喜欢美食和历史街区，希望避开太赶的换酒店安排。"
+  }'
+```
 
 ## 设计目标（后续可扩展）
 

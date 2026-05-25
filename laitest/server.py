@@ -11,7 +11,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import parse_qs, urlparse
 
-from .ai import ai_runtime_status, generate_cases, professional_case_from_suggested
+from .ai import ai_runtime_status, generate_cases, generate_travel_plan, professional_case_from_suggested
 from .db import db_conn, json_loads, row_to_dict, utc_now_iso
 from .ids import new_id
 from .runner import analyze_failures, run_case, summarize_run
@@ -524,6 +524,47 @@ class Handler(BaseHTTPRequestHandler):
                         "elapsed_ms": elapsed_ms,
                         "runtime": runtime,
                         "created_case_ids": created_ids,
+                    },
+                )
+                return
+
+            if path == "/api/ai/travel_plan":
+                prompt = str(body.get("prompt") or body.get("user_input") or body.get("input") or "")
+                if not prompt.strip():
+                    self._err(400, "missing prompt")
+                    return
+
+                t0 = time.monotonic()
+                try:
+                    plan = generate_travel_plan(prompt)
+                except RuntimeError as e:
+                    status = HTTPStatus.SERVICE_UNAVAILABLE if "missing DEEPSEEK_API_KEY" in str(e) else HTTPStatus.BAD_GATEWAY
+                    _send_json(
+                        self,
+                        int(status),
+                        {
+                            "error": str(e),
+                            "provider": "deepseek",
+                            "elapsed_ms": int((time.monotonic() - t0) * 1000),
+                        },
+                    )
+                    return
+
+                elapsed_ms = int((time.monotonic() - t0) * 1000)
+                runtime = ai_runtime_status()
+                default_mode = runtime.get("mode")
+                runtime["default_mode"] = default_mode
+                runtime["mode"] = "deepseek"
+                runtime["active_provider"] = "deepseek"
+                _send_json(
+                    self,
+                    200,
+                    {
+                        "travel_plan": plan,
+                        "provider": "deepseek",
+                        "model": runtime.get("deepseek_model"),
+                        "elapsed_ms": elapsed_ms,
+                        "runtime": runtime,
                     },
                 )
                 return
