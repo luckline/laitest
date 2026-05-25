@@ -1,0 +1,58 @@
+<svg width="1200" height="630" viewBox="0 0 1200 630" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="1200" height="630" rx="32" fill="#08182D"/>
+  <rect width="1200" height="630" fill="url(#paint0_radial_1_2)" fill-opacity="0.85"/>
+  <rect x="66" y="66" width="1068" height="498" rx="28" fill="#FFFFFF" fill-opacity="0.05" stroke="#FFFFFF" stroke-opacity="0.12"/>
+  <rect x="110" y="116" width="98" height="98" rx="24" fill="url(#paint1_linear_1_2)"/>
+  <text x="159" y="176" text-anchor="middle" fill="white" font-family="Avenir Next, PingFang SC, Segoe UI, sans-serif" font-size="34" font-weight="800">LT</text>
+  <text x="238" y="169" fill="white" font-family="Avenir Next, PingFang SC, Segoe UI, sans-serif" font-size="54" font-weight="800">laitest</text>
+  <text x="112" y="268" fill="#DCEBFF" font-family="Avenir Next, PingFang SC, Segoe UI, sans-serif" font-size="56" font-weight="760">
+    把测试从文档劳动
+  </text>
+  <text x="112" y="336" fill="#DCEBFF" font-family="Avenir Next, PingFang SC, Segoe UI, sans-serif" font-size="56" font-weight="760">
+    升级为可执行闭环
+  </text>
+  <text x="112" y="404" fill="#9FB6D0" font-family="Avenir Next, PingFang SC, Segoe UI, sans-serif" font-size="28" font-weight="500">
+    AI 生成结构化用例 · API / CLI 接入 · 轻量执行与结果汇总
+  </text>
+
+  <rect x="112" y="460" width="176" height="46" rx="23" fill="#0B6BCB"/>
+  <text x="200" y="490" text-anchor="middle" fill="white" font-family="Avenir Next, PingFang SC, Segoe UI, sans-serif" font-size="22" font-weight="700">
+    AI test workspace
+  </text>
+
+  <rect x="768" y="130" width="272" height="140" rx="22" fill="#FFFFFF" fill-opacity="0.06" stroke="#FFFFFF" stroke-opacity="0.12"/>
+  <text x="798" y="174" fill="#93C5FD" font-family="Avenir Next, PingFang SC, Segoe UI, sans-serif" font-size="18" font-weight="700">
+    AI 输出
+  </text>
+  <text x="798" y="226" fill="white" font-family="Avenir Next, PingFang SC, Segoe UI, sans-serif" font-size="58" font-weight="800">
+    12
+  </text>
+  <text x="884" y="226" fill="#DCEBFF" font-family="Avenir Next, PingFang SC, Segoe UI, sans-serif" font-size="24" font-weight="600">
+    条结构化用例
+  </text>
+
+  <rect x="768" y="296" width="272" height="184" rx="22" fill="#FFFFFF" fill-opacity="0.06" stroke="#FFFFFF" stroke-opacity="0.12"/>
+  <text x="798" y="340" fill="#93C5FD" font-family="Avenir Next, PingFang SC, Segoe UI, sans-serif" font-size="18" font-weight="700">
+    执行摘要
+  </text>
+  <text x="798" y="390" fill="white" font-family="Avenir Next, PingFang SC, Segoe UI, sans-serif" font-size="34" font-weight="760">
+    Pass 9 / Fail 3
+  </text>
+  <text x="798" y="432" fill="#9FB6D0" font-family="Avenir Next, PingFang SC, Segoe UI, sans-serif" font-size="22" font-weight="500">
+    聚焦验证码与退款链路
+  </text>
+  <text x="798" y="468" fill="#9FB6D0" font-family="Avenir Next, PingFang SC, Segoe UI, sans-serif" font-size="22" font-weight="500">
+    支持更快同步发布前风险
+  </text>
+
+  <defs>
+    <radialGradient id="paint0_radial_1_2" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(1025 84) rotate(141.809) scale(912.032 812.252)">
+      <stop stop-color="#14B8A6" stop-opacity="0.24"/>
+      <stop offset="1" stop-color="#08182D" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="paint1_linear_1_2" x1="110" y1="116" x2="208" y2="214" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#0B6BCB"/>
+      <stop offset="1" stop-color="#14B8A6"/>
+    </linearGradient>
+  </defs>
+</svg>

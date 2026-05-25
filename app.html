@@ -3,81 +3,84 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <title>laitest | AI 测试用例生成</title>
+    <title>laitest | AI 测试工作台</title>
     <meta
       name="description"
-      content="输入需求文本，调用 AI 生成结构化测试用例，覆盖正常流、边界流与异常流。"
+      content="输入需求文本，调用 AI 生成结构化测试用例，并以更适合评审和归档的方式输出结果。"
     />
     <link rel="stylesheet" href="/css/marketing.css" />
-    <link rel="stylesheet" href="/css/styles.css?v=app-layout-1" />
+    <link rel="stylesheet" href="/css/styles.css?v=app-layout-2" />
   </head>
   <body class="app-page">
     <div class="app-shell">
       <header class="nav">
         <a class="brand" href="/">
-          <span class="mark">AI</span>
+          <span class="mark">LT</span>
           <span class="word">laitest</span>
         </a>
         <nav class="links">
-          <a href="/#product">产品</a>
-          <a href="/#integrations">集成</a>
-          <a href="/#pricing">定价</a>
+          <a href="/#product">能力</a>
+          <a href="/#scenarios">场景</a>
+          <a href="/#tour">界面</a>
+          <a href="/#pilot">试点</a>
+          <a href="/#api">API</a>
           <a href="/#security">安全</a>
         </nav>
+        <div class="nav-actions">
+          <a class="btn ghost" href="/">返回官网</a>
+        </div>
       </header>
 
       <main class="ai-main">
-      <section class="ai-hero">
-        <p class="eyebrow">AI-native Software Testing</p>
-        <h1>AI 测试用例生成</h1>
-        <p class="sub">
-          输入需求、验收标准或用户故事，系统会自动输出结构化测试建议。
-        </p>
-      </section>
+        <section class="ai-hero">
+          <p class="eyebrow">AI-native Quality Engineering</p>
+          <h1>AI 测试用例工作台</h1>
+          <p class="sub">输入需求、验收标准或用户故事，系统会自动输出更适合评审和归档的结构化测试建议。</p>
+        </section>
 
-      <section class="ai-card">
-        <label class="ai-label" for="aiPrompt">需求文本</label>
-        <div class="ai-model-row">
-          <span class="ai-model-label">模型</span>
-          <select id="aiModel" class="ai-select">
-            <option value="deepseek" selected>DeepSeek（默认）</option>
-            <option value="qianwen">Qianwen</option>
-            <option value="gemini">Gemini</option>
-          </select>
-        </div>
-        <textarea
-          id="aiPrompt"
-          placeholder="- 登录成功：手机号+密码+验证码正确&#10;- 登录失败：密码错误&#10;- 登录失败：验证码错误超过5次被锁定"
-        ></textarea>
-        <div class="ai-toolbar">
-          <button id="fillSample" class="btn ghost" type="button">填充示例</button>
-          <button id="clearPrompt" class="btn ghost" type="button">清空</button>
-          <button id="aiGo" class="btn solid" type="button">生成结构化用例</button>
-        </div>
-        <p id="aiStatus" class="ai-status">就绪</p>
-      </section>
-
-      <section class="ai-card">
-        <div class="ai-out-head">
-          <h2>结构化结果</h2>
-          <div class="ai-toolbar right">
-            <button id="downloadExcel" class="btn ghost" type="button">下载 Excel</button>
-            <button id="copyJson" class="btn ghost" type="button">复制 JSON</button>
-            <button id="toggleRaw" class="btn ghost" type="button">显示原始 JSON</button>
+        <section class="ai-card">
+          <label class="ai-label" for="aiPrompt">需求文本</label>
+          <div class="ai-model-row">
+            <span class="ai-model-label">模型</span>
+            <select id="aiModel" class="ai-select">
+              <option value="deepseek" selected>DeepSeek（默认）</option>
+              <option value="qianwen">Qianwen</option>
+              <option value="gemini">Gemini</option>
+            </select>
           </div>
-        </div>
-        <div id="aiSummary" class="ai-summary">暂无结果</div>
-        <div id="aiCards" class="ai-cards"></div>
-        <pre id="aiOut" class="ai-pre" hidden></pre>
-      </section>
+          <textarea
+            id="aiPrompt"
+            placeholder="- 登录成功：手机号+密码+验证码正确&#10;- 登录失败：密码错误&#10;- 登录失败：验证码错误超过5次被锁定"
+          ></textarea>
+          <div class="ai-toolbar">
+            <button id="fillSample" class="btn ghost" type="button">填充示例</button>
+            <button id="clearPrompt" class="btn ghost" type="button">清空</button>
+            <button id="aiGo" class="btn solid" type="button">生成结构化用例</button>
+          </div>
+          <p id="aiStatus" class="ai-status">就绪</p>
+        </section>
+
+        <section class="ai-card">
+          <div class="ai-out-head">
+            <h2>结构化结果</h2>
+            <div class="ai-toolbar right">
+              <button id="downloadExcel" class="btn ghost" type="button">下载 Excel</button>
+              <button id="copyJson" class="btn ghost" type="button">复制 JSON</button>
+              <button id="toggleRaw" class="btn ghost" type="button">显示原始 JSON</button>
+            </div>
+          </div>
+          <div id="aiSummary" class="ai-summary">暂无结果</div>
+          <div id="aiCards" class="ai-cards"></div>
+          <pre id="aiOut" class="ai-pre" hidden></pre>
+        </section>
       </main>
 
       <footer class="app-foot">
         <span>官网首页：<a href="/">/</a></span>
         <span class="sep">|</span>
-        <span>API：<code>/api/ai/generate_cases</code></span>
+        <span>API：<code>/api/ai/generate_cases</code> · <code>/api/ai/travel_plan</code></span>
         <span class="sep">|</span>
-        <span>输出：结构化建议用例 JSON</span>
+        <span>输出：结构化 JSON / 旅行规划文本</span>
       </footer>
     </div>
 

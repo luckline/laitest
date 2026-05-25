@@ -3,203 +3,596 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <title>laitest | AI 测试平台</title>
-    <meta name="description" content="laitest 是面向研发团队的 AI 测试平台，帮助你更快生成用例、自动执行回归并定位失败根因。" />
+    <title>laitest | AI 测试工作台</title>
+    <meta
+      name="description"
+      content="laitest 是面向研发团队的 AI 测试工作台，帮助你把需求快速转成结构化用例，通过 API/CLI 触发轻量执行，并汇总关键风险。"
+    />
     <link rel="canonical" href="https://laitest.tech/" />
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="laitest" />
     <meta property="og:locale" content="zh_CN" />
-    <meta property="og:title" content="laitest | AI 测试平台" />
-    <meta property="og:description" content="面向研发团队的 AI 测试平台：用例生成、自动执行、失败聚类与质量门禁。" />
+    <meta property="og:title" content="laitest | AI 测试工作台" />
+    <meta
+      property="og:description"
+      content="把测试从文档劳动升级为可执行闭环：AI 生成结构化用例、API/CLI 接入、轻量执行与结果汇总。"
+    />
     <meta property="og:url" content="https://laitest.tech/" />
-    <meta property="og:image" content="https://laitest.tech/og-cover.png" />
+    <meta property="og:image" content="https://laitest.tech/img/og-cover.svg" />
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content="laitest | AI 测试平台" />
-    <meta name="twitter:description" content="让测试从人工驱动升级到 AI 驱动闭环交付。" />
-    <meta name="twitter:image" content="https://laitest.tech/og-cover.png" />
+    <meta name="twitter:title" content="laitest | AI 测试工作台" />
+    <meta
+      name="twitter:description"
+      content="帮助研发团队更快完成用例设计、轻量回归与风险汇总。"
+    />
+    <meta name="twitter:image" content="https://laitest.tech/img/og-cover.svg" />
     <link rel="stylesheet" href="/css/marketing.css" />
   </head>
   <body>
     <header class="nav">
       <a class="brand" href="/">
-        <span class="mark">AI</span>
+        <span class="mark">LT</span>
         <span class="word">laitest</span>
       </a>
       <nav class="links">
-        <a href="#product">产品</a>
-        <a href="#integrations">集成</a>
-        <a href="#pricing">定价</a>
+        <a href="#product">能力</a>
+        <a href="#scenarios">场景</a>
+        <a href="#tour">界面</a>
+        <a href="#pilot">试点</a>
+        <a href="#api">API</a>
         <a href="#security">安全</a>
       </nav>
+      <div class="nav-actions">
+        <a class="btn ghost" href="mailto:hello@laitest.tech">联系团队</a>
+        <a class="btn solid" href="/app">进入工作台</a>
+      </div>
     </header>
 
     <main>
       <section class="hero">
         <div class="hero-copy">
-          <p class="eyebrow">AI-native Software Testing</p>
-          <h1>让AI测试更简单</h1>
+          <p class="eyebrow">AI-native Quality Engineering</p>
+          <h1>把测试从文档劳动，升级为可执行闭环</h1>
           <p class="sub">
-            laitest帮助团队自动生成测试用例、执行关键路径回归。
+            laitest 帮助研发团队把需求文本快速转成结构化用例，通过 API / CLI 接入现有流程，
+            并把单轮回归结果、失败信号和交付风险整理成更容易协作的输出。
           </p>
           <div class="hero-actions">
-            <a class="btn solid" href="#cta">免费试用</a>
-            <a class="btn ghost" href="/app">查看产品</a>
+            <a class="btn solid" href="/app">立即体验</a>
+            <a class="btn ghost" href="#workflow">查看工作流</a>
           </div>
           <div class="proof">
-            <span>测试用例编写效率提升 <b>50%</b></span>
-            <span>平均回归时间降低 <b>70%</b></span>
-            <span>关键场景覆盖率提升 <b>41%</b></span>
+            <span>结构化 JSON 用例输出</span>
+            <span>DeepSeek 默认，可切换 Qianwen / Gemini</span>
+            <span>支持 API、CLI、本地运行与私有化接入</span>
+          </div>
+          <p class="hero-note">适合 QA、SDET、开发负责人和需要把回归链路标准化的小团队。</p>
+        </div>
+
+        <div class="hero-panel">
+          <div class="hero-board">
+            <div class="board-head">
+              <div class="board-brand">
+                <span class="board-status"></span>
+                <span>laitest workspace</span>
+              </div>
+              <div class="board-pills">
+                <span>case generation</span>
+                <span>run summary</span>
+                <span>api first</span>
+              </div>
+            </div>
+
+            <div class="board-grid">
+              <article class="board-card">
+                <p class="board-kicker">输入需求</p>
+                <h3>支付回归发布检查</h3>
+                <ul class="board-list">
+                  <li>登录、下单、支付、退款主链路</li>
+                  <li>验证码错误、重试、锁定与异常提示</li>
+                  <li>越权、超时、幂等与失败恢复</li>
+                </ul>
+              </article>
+
+              <article class="board-card accent">
+                <p class="board-kicker">AI 输出</p>
+                <div class="board-metric">
+                  <b>12</b>
+                  <span>条结构化用例</span>
+                </div>
+                <div class="chip-row">
+                  <span>functional 7</span>
+                  <span>boundary 2</span>
+                  <span>negative 2</span>
+                  <span>security 1</span>
+                </div>
+              </article>
+
+              <article class="board-card wide">
+                <p class="board-kicker">执行摘要</p>
+                <div class="run-grid">
+                  <div>
+                    <strong>Pass 9</strong>
+                    <span>关键路径通过</span>
+                  </div>
+                  <div>
+                    <strong>Fail 3</strong>
+                    <span>聚焦验证码与退款</span>
+                  </div>
+                  <div>
+                    <strong>4.8 min</strong>
+                    <span>单轮回归耗时</span>
+                  </div>
+                </div>
+                <div class="notice-bar">
+                  风险提示：发现 1 个高频失败簇，建议优先检查短信网关超时与退款幂等处理。
+                </div>
+              </article>
+            </div>
           </div>
         </div>
-        <div class="hero-panel">
-          <div class="terminal">
-            <aside class="wx-qr">
-              <p>扫码获取最新测试学习资料</p>
-              <div class="qr-box">
-                <img src="/img/qrcode_laitest.jpg" alt="laitest 公众号二维码" />
+      </section>
+
+      <section class="logo-strip">
+        <p>围绕真实交付场景搭建，不要求团队一次性替换现有测试流程</p>
+        <div class="logos">
+          <span>REST API</span>
+          <span>CLI 模式</span>
+          <span>Bearer Token 鉴权</span>
+          <span>结构化 JSON 输出</span>
+          <span>Excel 导出</span>
+          <span>本地 / 私有化运行</span>
+        </div>
+      </section>
+
+      <section id="scenarios" class="section">
+        <h2>更适合先试点的 3 类场景</h2>
+        <p class="section-lead">
+          不是所有测试问题都适合一上来就平台化。laitest 更适合那些已经有清晰输入、回归频率高、但仍依赖人工整理和同步结果的场景。
+        </p>
+        <div class="scenario-grid">
+          <article class="scenario-card">
+            <span class="card-label">Scenario 01</span>
+            <h3>支付 / 交易回归</h3>
+            <p>适合有明确主链路、异常链路和发布前检查清单的团队，把散落在文档里的回归点拉成结构化结果。</p>
+            <ul class="card-list">
+              <li>输入：需求单、验收标准、退款与异常处理规则</li>
+              <li>输出：结构化用例、执行摘要、风险提示</li>
+              <li>价值：发布前同步更快，回归点更容易复用</li>
+            </ul>
+          </article>
+
+          <article class="scenario-card">
+            <span class="card-label">Scenario 02</span>
+            <h3>活动 / 增长链路验证</h3>
+            <p>适合营销活动、权益发放、用户增长流程这类迭代快、逻辑多、边界容易遗漏的业务模块。</p>
+            <ul class="card-list">
+              <li>输入：活动规则、用户路径、边界条件</li>
+              <li>输出：正向、边界、异常和权限类检查点</li>
+              <li>价值：减少活动上线前的临时补测和口头同步</li>
+            </ul>
+          </article>
+
+          <article class="scenario-card">
+            <span class="card-label">Scenario 03</span>
+            <h3>中后台审批 / 权限流程</h3>
+            <p>适合角色多、权限细、状态流转长的系统，把审批流、越权流和失败恢复场景整理成可复盘资产。</p>
+            <ul class="card-list">
+              <li>输入：角色矩阵、状态流、异常分支</li>
+              <li>输出：流程级检查项与风险聚焦摘要</li>
+              <li>价值：更适合评审、复盘与后续自动化接入</li>
+            </ul>
+          </article>
+        </div>
+      </section>
+
+      <section id="workflow" class="section">
+        <h2>三步完成一条 AI 测试闭环</h2>
+        <p class="section-lead">
+          不是推倒重来，而是先把最耗时的需求转用例、结果归档和轻量回归整理进你的现有研发节奏里。
+        </p>
+        <div class="flow-grid">
+          <article class="flow-card">
+            <span class="step-index">01</span>
+            <h3>输入需求上下文</h3>
+            <p>支持需求文本、用户故事、验收标准、接口描述或你整理好的测试要点。</p>
+          </article>
+          <article class="flow-card">
+            <span class="step-index">02</span>
+            <h3>生成结构化用例</h3>
+            <p>自动输出更适合评审、归档和后续自动化接入的结构化测试建议。</p>
+          </article>
+          <article class="flow-card">
+            <span class="step-index">03</span>
+            <h3>执行并整理结果</h3>
+            <p>通过 API 或 CLI 触发轻量执行，汇总通过率、失败摘要与下一步关注点。</p>
+          </article>
+        </div>
+      </section>
+
+      <section id="product" class="section">
+        <h2>今天就能用上的核心能力</h2>
+        <div class="cards three">
+          <article class="card">
+            <h3>专业化用例输出</h3>
+            <p>输出包含标题、优先级、前置条件、执行步骤和预期结果的结构化测试建议。</p>
+          </article>
+          <article class="card">
+            <h3>轻量执行闭环</h3>
+            <p>支持项目、套件、用例与执行记录管理，适合从 smoke 到小规模回归快速验证。</p>
+          </article>
+          <article class="card">
+            <h3>结果汇总与失败信号</h3>
+            <p>对执行结果做通过率统计、失败摘要和风险归纳，方便在评审或发布前快速同步。</p>
+          </article>
+        </div>
+      </section>
+
+      <section id="tour" class="section">
+        <h2>工作台界面，不靠想象理解产品</h2>
+        <p class="section-lead">
+          如果你要评估一款工具是否适合团队，最直接的方式不是读概念，而是看它最终把输入、输出和执行结果整理成什么样。
+        </p>
+        <div class="workspace-shot">
+          <div class="shot-topbar">
+            <div class="shot-topbar-left">
+              <span class="code-dot"></span>
+              <span class="code-dot"></span>
+              <span class="code-dot"></span>
+              <strong>laitest workspace</strong>
+            </div>
+            <div class="shot-topbar-right">
+              <span>project: payment-regression</span>
+              <span>provider: deepseek</span>
+            </div>
+          </div>
+
+          <div class="shot-body">
+            <aside class="shot-sidebar">
+              <span class="shot-nav active">AI 用例生成</span>
+              <span class="shot-nav">项目与套件</span>
+              <span class="shot-nav">执行记录</span>
+              <span class="shot-nav">失败摘要</span>
+              <span class="shot-nav">导出与复盘</span>
+            </aside>
+
+            <div class="shot-main">
+              <div class="shot-panel">
+                <p class="shot-kicker">输入区</p>
+                <h3>需求文本 + 模型选择</h3>
+                <div class="shot-input">
+                  - 登录成功：手机号+密码+验证码正确
+                  <br />
+                  - 登录失败：验证码错误超过 5 次触发锁定
+                  <br />
+                  - 退款失败：重复提交应保持幂等
+                </div>
+                <div class="shot-pill-row">
+                  <span>DeepSeek</span>
+                  <span>结构化 JSON</span>
+                  <span>Excel 导出</span>
+                </div>
               </div>
-              <div class="wx-meta">
-                公众号名称：<b>小梁游记（后续专注测试领域学习）</b><br />
-                简介：<b>十几年测试老兵，分享测试领域学习资料，包括测试基础、测试方法、测试工具、测试案例等。</b>
+
+              <div class="shot-panel">
+                <p class="shot-kicker">输出区</p>
+                <h3>结构化结果表</h3>
+                <div class="shot-table">
+                  <div class="shot-table-head">
+                    <span>用例ID</span>
+                    <span>标题</span>
+                    <span>优先级</span>
+                    <span>预期结果</span>
+                  </div>
+                  <div class="shot-table-row">
+                    <span>TC-LOGIN-01</span>
+                    <span>验证码错误锁定</span>
+                    <span>P1</span>
+                    <span>锁定并给出明确提示</span>
+                  </div>
+                  <div class="shot-table-row">
+                    <span>TC-REFUND-02</span>
+                    <span>重复退款提交</span>
+                    <span>P0</span>
+                    <span>保持幂等，无重复扣减</span>
+                  </div>
+                  <div class="shot-table-row">
+                    <span>TC-AUTH-03</span>
+                    <span>越权访问订单详情</span>
+                    <span>P0</span>
+                    <span>拒绝访问并记录审计</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <aside class="shot-summary">
+              <div class="summary-card">
+                <p class="shot-kicker">执行摘要</p>
+                <strong>12 条用例</strong>
+                <span>7 functional · 2 boundary · 2 negative · 1 security</span>
+              </div>
+              <div class="summary-card">
+                <p class="shot-kicker">团队关注点</p>
+                <ul class="card-list compact">
+                  <li>哪些点适合直接评审</li>
+                  <li>哪些点需要人工补充</li>
+                  <li>哪些失败需要发布前优先处理</li>
+                </ul>
+              </div>
+              <div class="summary-card">
+                <p class="shot-kicker">后续动作</p>
+                <div class="notice-stack">
+                  <span>导出 Excel</span>
+                  <span>复制 JSON</span>
+                  <span>接入 run summary</span>
+                </div>
               </div>
             </aside>
           </div>
         </div>
       </section>
 
-      <section id="wechat" class="section">
-        <h2>测试最前沿</h2>
-        <div class="wx-hero">
-          <div>
-            <p class="sub">
-              汇总测试学习内容：测试设计、自动化实践、质量工程与 AI 测试方法。
-            </p>
-            <div class="hero-actions">
-              <a class="btn solid" href="#materials">查看资料</a>
+      <section class="section alt">
+        <h2>这类团队更容易把试点跑成</h2>
+        <div class="fit-grid">
+          <article class="fit-card good">
+            <h3>更适合现在开始</h3>
+            <ul class="card-list">
+              <li>已经有固定的回归场景，只是仍靠人工整理和同步</li>
+              <li>愿意先拿一个链路做试点，而不是一开始就覆盖全公司</li>
+              <li>团队能提供相对清晰的需求输入、验收标准或接口上下文</li>
+            </ul>
+          </article>
+          <article class="fit-card caution">
+            <h3>暂时不建议急着上</h3>
+            <ul class="card-list">
+              <li>连基础测试流程和输入规范都还没形成</li>
+              <li>希望第一天就替换现有全部自动化或测试平台</li>
+              <li>没有人愿意负责首个试点场景的复盘和迭代</li>
+            </ul>
+          </article>
+        </div>
+      </section>
+
+      <section id="pilot" class="section">
+        <h2>一周试点路径，比“大平台方案”更重要</h2>
+        <p class="section-lead">
+          企业团队真正关心的通常不是首页多漂亮，而是第一周怎么落地、谁来参与、最后能不能形成清晰结论。
+        </p>
+        <div class="timeline">
+          <article class="timeline-card">
+            <span class="timeline-step">Day 1</span>
+            <h3>选一个高频场景</h3>
+            <p>例如支付回归、活动上线或审批流发布检查，只聚焦一条链路，不扩散范围。</p>
+          </article>
+          <article class="timeline-card">
+            <span class="timeline-step">Day 2-3</span>
+            <h3>整理输入与输出模板</h3>
+            <p>准备需求文本、验收标准和示例用例，确认团队最关心的输出格式与复盘方式。</p>
+          </article>
+          <article class="timeline-card">
+            <span class="timeline-step">Day 4-5</span>
+            <h3>接入 API / CLI 并跑通一轮</h3>
+            <p>完成一次真实生成、一次执行摘要和一次问题回看，确保链路不是纸面可行。</p>
+          </article>
+          <article class="timeline-card">
+            <span class="timeline-step">Week 2</span>
+            <h3>决定是扩大还是收缩</h3>
+            <p>根据输出质量、同步效率和团队反馈，决定要不要继续纳入更多模块或发布前流程。</p>
+          </article>
+        </div>
+      </section>
+
+      <section class="section">
+        <h2>一个典型试点，最后会交付什么</h2>
+        <p class="section-lead">
+          以下内容是示例试点结构，用来说明试点结束时团队通常会拿到哪些结论和产物，不对应任何特定客户数据。
+        </p>
+        <div class="deliverable-grid">
+          <article class="deliverable-card">
+            <span class="card-label">Before</span>
+            <h3>试点前常见状态</h3>
+            <ul class="card-list">
+              <li>需求在文档、IM 和脑内经验里分散存在</li>
+              <li>回归点每次都要重新整理，评审前沟通成本高</li>
+              <li>执行结果能看懂，但不够容易复盘和复用</li>
+            </ul>
+          </article>
+
+          <article class="deliverable-card">
+            <span class="card-label">After</span>
+            <h3>试点后应回答的问题</h3>
+            <ul class="card-list">
+              <li>AI 输出是否足够接近团队想要的结构与语言</li>
+              <li>一轮回归的同步效率是否确实提升</li>
+              <li>哪些业务模块适合继续接入，哪些暂时不适合</li>
+            </ul>
+          </article>
+
+          <article class="deliverable-card wide">
+            <span class="card-label">Deliverables</span>
+            <h3>可以带走的最小交付清单</h3>
+            <div class="deliverable-list-grid">
+              <div>
+                <strong>1. 输入模板</strong>
+                <p>一份团队认可的需求输入模板，避免每次都从零描述上下文。</p>
+              </div>
+              <div>
+                <strong>2. 输出样例</strong>
+                <p>一份可复用的结构化用例样例，方便评审、归档和继续打磨。</p>
+              </div>
+              <div>
+                <strong>3. 试点结论</strong>
+                <p>明确知道这个链路值不值得扩大，而不是只留下“感觉还行”。</p>
+              </div>
+              <div>
+                <strong>4. 下一步建议</strong>
+                <p>包括该接 API、继续本地跑，还是先停在单场景验证阶段。</p>
+              </div>
             </div>
+          </article>
+        </div>
+      </section>
+
+      <section id="api" class="section">
+        <h2>给工程团队看的，不只是宣传文案</h2>
+        <p class="section-lead">
+          如果你更关心“怎么接”而不是“怎么讲”，这里直接给出最小调用路径。先能跑，再讨论更完整的治理和流程整合。
+        </p>
+        <div class="api-showcase">
+          <article class="code-card">
+            <div class="code-head">
+              <span class="code-dot"></span>
+              <span class="code-dot"></span>
+              <span class="code-dot"></span>
+              <code>POST /api/ai/generate_cases</code>
+            </div>
+            <pre>{
+  "prompt": "- 登录成功：手机号+密码+验证码正确\n- 登录失败：密码错误",
+  "model_provider": "deepseek"
+}</pre>
+            <p class="card-note">返回结构化用例数组，适合做评审、归档或接入后续执行流程。</p>
+          </article>
+
+          <article class="code-card">
+            <div class="code-head">
+              <span class="code-dot"></span>
+              <span class="code-dot"></span>
+              <span class="code-dot"></span>
+              <code>POST /api/ai/travel_plan</code>
+            </div>
+            <pre>{
+  "user_input": "8月去关西5天，带父母，预算2万元，偏轻松行程"
+}</pre>
+            <p class="card-note">也支持更偏内容生成的场景，当前旅行规划接口默认强制走 DeepSeek。</p>
+          </article>
+
+          <article class="code-card wide">
+            <div class="code-head">
+              <span class="code-dot"></span>
+              <span class="code-dot"></span>
+              <span class="code-dot"></span>
+              <code>接入建议</code>
+            </div>
+            <pre>1. 先通过 Bearer Token 控制访问边界
+2. 用一个固定业务场景验证输入质量和输出格式
+3. 把结果同步给 QA / 开发 / 发布负责人一起复盘
+4. 确认价值后，再扩到执行记录与更多回归模块</pre>
+            <p class="card-note">这种路径通常比“先做一整套大平台规划”更容易跑出真实结论。</p>
+          </article>
+        </div>
+      </section>
+
+      <section class="section contact-band">
+        <h2>发起评估前，你只需要准备这 4 项信息</h2>
+        <p class="section-lead">
+          如果你打算发邮件沟通试点，不需要先写完整方案。给到下面这些信息，通常就足够判断是否值得往下聊。
+        </p>
+        <div class="contact-grid">
+          <article class="contact-card">
+            <h3>建议发来的内容</h3>
+            <ul class="card-list">
+              <li>团队名称或业务背景</li>
+              <li>想试点的一个具体场景</li>
+              <li>当前最大的卡点：整理慢、同步慢，还是复盘难</li>
+              <li>你更希望得到结构化用例、执行摘要，还是完整试点建议</li>
+            </ul>
+          </article>
+
+          <article class="contact-card accent">
+            <h3>一键发起邮件</h3>
+            <p>如果你想省掉来回组织语言，可以直接用这封带模板的邮件开始。</p>
+            <div class="hero-actions compact">
+              <a
+                class="btn solid"
+                href="mailto:hello@laitest.tech?subject=laitest%20pilot%20evaluation&body=Team%3A%0AScenario%3A%0ACurrent%20pain%3A%0AWhat%20we%20want%20to%20validate%3A%0A"
+                >发起试点评估</a
+              >
+              <a class="btn ghost" href="/app">先自己体验工作台</a>
+            </div>
+            <p class="card-note">更适合先拿一个明确业务场景来聊，而不是直接问“能不能做测试平台”。</p>
+          </article>
+        </div>
+      </section>
+
+      <section id="resources" class="section">
+        <h2>学习资源与社区入口</h2>
+        <p class="section-lead">
+          资源内容保留，但从首页主视觉下移到辅助信息层，让产品与个人内容各自承担清晰角色。
+        </p>
+        <div class="resource-layout">
+          <div class="cards two">
+            <article class="card">
+              <h3>从需求到用例：高质量测试设计清单</h3>
+              <p>覆盖正常流、边界流和异常流的结构化设计思路，适合评审和日常用例编写。</p>
+              <a
+                class="wx-link"
+                href="https://mp.weixin.qq.com/s/SzFTo3DcoaC6gsouPioI6w"
+                target="_blank"
+                rel="noopener noreferrer"
+                >阅读文章</a
+              >
+            </article>
+            <article class="card">
+              <h3>测试用例概念和设计方法</h3>
+              <p>帮助新人和团队成员统一用例设计语言，建立可重复使用的测试框架。</p>
+              <a
+                class="wx-link"
+                href="https://mp.weixin.qq.com/s/WpWlNFcruEtZPQBpx64T-g"
+                target="_blank"
+                rel="noopener noreferrer"
+                >阅读文章</a
+              >
+            </article>
+            <article class="card">
+              <h3>持续集成（CI）落地全指南</h3>
+              <p>从流水线规划到质量门禁配置，梳理如何把测试真正放进交付链路。</p>
+              <a
+                class="wx-link"
+                href="https://mp.weixin.qq.com/s/xaipK5vbwLsAFtDvFupJVA"
+                target="_blank"
+                rel="noopener noreferrer"
+                >阅读文章</a
+              >
+            </article>
+            <article class="card">
+              <h3>AI 生成用例的正确使用姿势</h3>
+              <p>讨论如何把 AI 输出纳入团队流程，同时控制噪声、提高可执行率与复用价值。</p>
+              <a
+                class="wx-link"
+                href="https://mp.weixin.qq.com/s/5UPiDzVEczXOSiNEj-ANWw"
+                target="_blank"
+                rel="noopener noreferrer"
+                >阅读文章</a
+              >
+            </article>
           </div>
-          
-        </div>
-        <div id="materials" class="cards two">
-          <article class="card">
-            <h3>从需求到用例：高质量测试设计清单</h3>
-            <p>覆盖正常流、边界流、异常流的结构化思路，可直接套用到评审和用例编写流程。</p>
-            <a
-              class="wx-link"
-              href="https://mp.weixin.qq.com/s/SzFTo3DcoaC6gsouPioI6w"
-              target="_blank"
-              rel="noopener noreferrer"
-              >阅读公众号文章</a
-            >
-          </article>
-          <article class="card">
-            <h3>测试用例概念和设计方法</h3>
-            <p>系统讲清测试用例的核心概念、设计原则与常见方法，帮助你建立可复用的用例设计框架。</p>
-            <a
-              class="wx-link"
-              href="https://mp.weixin.qq.com/s/WpWlNFcruEtZPQBpx64T-g"
-              target="_blank"
-              rel="noopener noreferrer"
-              >阅读公众号文章</a
-            >
-          </article>
-          <article class="card">
-            <h3>持续集成（CI）落地全指南</h3>
-            <p>从流水线规划到质量门禁配置，完整梳理持续集成在团队中的落地路径与实践要点。</p>
-            <a
-              class="wx-link"
-              href="https://mp.weixin.qq.com/s/xaipK5vbwLsAFtDvFupJVA"
-              target="_blank"
-              rel="noopener noreferrer"
-              >阅读公众号文章</a
-            >
-          </article>
-          <article class="card">
-            <h3>AI 生成用例在团队中的正确使用姿势</h3>
-            <p>如何把 AI 用例生成纳入测试流程，同时控制噪声、提升可执行率与回归价值。</p>
-            <a
-              class="wx-link"
-              href="https://mp.weixin.qq.com/s/5UPiDzVEczXOSiNEj-ANWw"
-              target="_blank"
-              rel="noopener noreferrer"
-              >阅读公众号文章</a
-            >
-          </article>
-        </div>
-      </section>
 
-      <section id="product" class="section">
-        <h2>核心能力</h2>
-        <div class="cards three">
-          <article class="card">
-            <h3>AI 生成用例</h3>
-            <p>从需求、PR 描述、接口文档快速生成可执行用例，覆盖正常流、边界流和失败流。</p>
-          </article>
-          <article class="card">
-            <h3>自动执行与质量门禁</h3>
-            <p>支持 smoke / regression / release 流水线执行，输出通过率、失败率与风险等级。</p>
-          </article>
-          <article class="card">
-            <h3>失败聚类与根因分析</h3>
-            <p>自动聚类同类报错，提取高频问题并给出修复建议，降低 triage 时间。</p>
-          </article>
-        </div>
-      </section>
-
-      <section id="integrations" class="section alt">
-        <h2>集成生态</h2>
-        <div class="chips">
-          <span>GitHub Actions</span><span>GitLab CI</span><span>Jenkins</span><span>Jira</span><span>Slack</span><span>Webhook</span>
-        </div>
-        <p class="center">从代码提交到发布门禁，统一在一个测试中枢完成。</p>
-      </section>
-
-      <section id="pricing" class="section">
-        <h2>定价</h2>
-        <div class="cards three">
-          <article class="card price">
-            <h3>Starter</h3>
-            <p class="price-num">¥0<span>/月</span></p>
-            <ul>
-              <li>1 项目</li>
-              <li>基础用例管理</li>
-              <li>社区支持</li>
-            </ul>
-            <a class="btn ghost block" href="/app">立即开始</a>
-          </article>
-          <article class="card price featured">
-            <h3>Pro</h3>
-            <p class="price-num">¥899<span>/月</span></p>
-            <ul>
-              <li>10 项目</li>
-              <li>AI 用例生成</li>
-              <li>失败聚类分析</li>
-            </ul>
-            <a class="btn solid block" href="#cta">开始试用</a>
-          </article>
-          <article class="card price">
-            <h3>Enterprise</h3>
-            <p class="price-num">联系销售</p>
-            <ul>
-              <li>无限项目</li>
-              <li>私有化部署</li>
-              <li>SLA 与专属支持</li>
-            </ul>
-            <a class="btn ghost block" href="#cta">预约方案</a>
-          </article>
+          <aside class="wx-qr">
+            <h3>扫码加入学习入口</h3>
+            <p>如果你更习惯在微信里看测试资料，也可以从这里进入内容集合。</p>
+            <div class="qr-box">
+              <img src="/img/qrcode_laitest.jpg" alt="laitest 微信学习入口二维码" />
+            </div>
+            <div class="wx-meta">
+              内容方向：测试基础、测试设计、自动化实践、质量工程与 AI 测试方法。<br />
+              适合需要系统补齐测试方法论和实践案例的同学。
+            </div>
+          </aside>
         </div>
       </section>
 
       <section id="security" class="section alt">
-        <h2>安全与合规</h2>
+        <h2>安全与交付边界</h2>
         <div class="cards two">
           <article class="card">
-            <h3>企业级安全基线</h3>
-            <p>传输加密、访问控制、操作审计、Token 鉴权，满足团队内部治理需求。</p>
+            <h3>默认以最小化接入为前提</h3>
+            <p>支持 Bearer Token 鉴权，本地运行时由你自己控制环境变量、数据目录与部署边界。</p>
           </article>
           <article class="card">
-            <h3>可扩展部署</h3>
-            <p>支持云端与私有化部署，按组织规模扩展执行节点与测试吞吐能力。</p>
+            <h3>把模型调用与业务系统分层</h3>
+            <p>外部模型能力通过可配置提供商接入，便于团队根据成本、稳定性与安全要求选择策略。</p>
           </article>
         </div>
       </section>
@@ -207,25 +600,25 @@
       <section class="section faq">
         <h2>FAQ</h2>
         <details>
-          <summary>laitest 适合什么团队？</summary>
-          <p>适合持续交付频率高、回归压力大、需要提升测试效率和稳定性的研发团队。</p>
+          <summary>laitest 更适合什么阶段的团队？</summary>
+          <p>适合已经有稳定需求输入，但仍在手工整理用例、同步回归结果和复盘风险的研发团队。</p>
         </details>
         <details>
-          <summary>可以接入现有 CI 流程吗？</summary>
-          <p>可以，通过 CLI/API/Webhook 接入现有流水线，逐步替换或并行运行都可以。</p>
+          <summary>必须一次性替换现有工具链吗？</summary>
+          <p>不需要。更推荐先选一个高频回归场景做试点，把 API 或 CLI 接进原有流程里逐步验证。</p>
         </details>
         <details>
-          <summary>可以从免费版升级到企业版吗？</summary>
-          <p>可以，数据与用例资产可平滑迁移到更高版本。</p>
+          <summary>如果我们更重视数据边界怎么办？</summary>
+          <p>可以优先从本地运行、私有化接入和最小权限控制开始，再决定哪些能力适合继续外放。</p>
         </details>
       </section>
 
-      <section id="cta" class="cta">
-        <h2>让你的测试系统，从“工具拼装”走向“平台化智能协作”</h2>
-        <p>10 分钟预约演示，带你看如何在一周内上线第一条 AI 回归链路。</p>
+      <section class="cta">
+        <h2>如果你已经有一个高频回归场景，现在就够开始试了</h2>
+        <p>从一个真实模块开始，比从一份宏大的平台规划开始，更容易让团队看到价值、形成共识并继续投入。</p>
         <div class="hero-actions">
-          <a class="btn solid" href="/app">进入控制台</a>
-          <a class="btn ghost" href="mailto:sales@laitest.tech">联系销售</a>
+          <a class="btn solid" href="/app">进入工作台</a>
+          <a class="btn ghost" href="mailto:hello@laitest.tech">发邮件沟通试点</a>
         </div>
       </section>
     </main>
@@ -236,7 +629,7 @@
         <a href="/privacy.html">Privacy</a>
         <a href="/terms.html">Terms</a>
         <a href="/security.html">Security</a>
-        <a href="#wechat">测试最前沿</a>
+        <a href="/app">Workspace</a>
         <a href="mailto:hello@laitest.tech">Contact</a>
       </div>
     </footer>

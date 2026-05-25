@@ -4,34 +4,79 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
     <title>Security | laitest</title>
-    <meta name="description" content="laitest 安全实践与控制措施" />
+    <meta name="description" content="laitest 安全实践、访问控制与运行边界说明" />
     <link rel="canonical" href="https://laitest.tech/security.html" />
     <link rel="stylesheet" href="/css/marketing.css" />
   </head>
   <body>
     <header class="nav">
-      <a class="brand" href="/"><span class="mark">LAI</span><span class="word">laitest</span></a>
-      <div class="nav-actions"><a class="btn ghost" href="/">返回首页</a></div>
+      <a class="brand" href="/"><span class="mark">LT</span><span class="word">laitest</span></a>
+      <div class="nav-actions">
+        <a class="btn ghost" href="/">返回首页</a>
+        <a class="btn solid" href="/app">进入工作台</a>
+      </div>
     </header>
+
     <main>
       <section class="section">
-        <h2>Security</h2>
-        <div class="card">
-          <p>最后更新：2026-02-22</p>
-          <p>我们采用传输加密（HTTPS/TLS）、访问控制、鉴权令牌与最小权限原则保护平台数据。</p>
-          <p>关键操作具备审计日志，支持安全事件追踪与排查。</p>
-          <p>漏洞报告与安全沟通：security@laitest.tech。</p>
+        <p class="eyebrow">Trust & Security</p>
+        <h1>安全说明</h1>
+        <p class="section-lead">
+          当前版本的安全设计重点在于最小接入、访问边界清晰和可控部署。对于更严格的企业治理要求，可以在私有化或内部环境中进一步收紧策略。
+        </p>
+
+        <div class="cards two">
+          <article class="card">
+            <h3>访问控制</h3>
+            <ul class="legal-list">
+              <li>API 默认支持 Bearer Token 鉴权。</li>
+              <li>可通过环境变量控制令牌、数据目录和外部模型凭据。</li>
+              <li>建议在正式环境中配合 HTTPS/TLS、反向代理与组织级权限控制使用。</li>
+            </ul>
+          </article>
+
+          <article class="card">
+            <h3>数据与部署边界</h3>
+            <ul class="legal-list">
+              <li>本地运行模式便于团队自行控制数据落盘位置与网络出口。</li>
+              <li>如需减少外部依赖，可优先采用内部部署和受控的模型访问方式。</li>
+              <li>建议避免在未脱敏的前提下提交高敏感生产数据进行测试生成。</li>
+            </ul>
+          </article>
+
+          <article class="card">
+            <h3>日志与排障</h3>
+            <ul class="legal-list">
+              <li>系统会保留必要的运行记录和错误摘要，用于执行汇总、定位失败与问题回放。</li>
+              <li>团队应根据自身合规要求配置日志保留周期与访问权限。</li>
+              <li>在需要时可结合外部日志平台、审计平台或 CI 记录形成更完整链路。</li>
+            </ul>
+          </article>
+
+          <article class="card">
+            <h3>外部模型接入</h3>
+            <ul class="legal-list">
+              <li>当前支持以环境变量方式配置 DeepSeek、Qianwen 和 Gemini 等模型凭据。</li>
+              <li>模型响应质量、延迟和稳定性受外部服务商影响。</li>
+              <li>上线前建议结合团队的数据分类规范，决定哪些文本允许发送给外部模型。</li>
+            </ul>
+          </article>
+        </div>
+
+        <div class="legal-note">
+          最后更新：2026-05-25。安全沟通与漏洞反馈：security@laitest.tech。
         </div>
       </section>
     </main>
+
     <footer class="foot">
       <div>© 2026 laitest.tech</div>
       <div class="foot-links">
         <a href="/privacy.html">Privacy</a>
         <a href="/terms.html">Terms</a>
         <a href="/security.html">Security</a>
+        <a href="mailto:security@laitest.tech">security@laitest.tech</a>
       </div>
     </footer>
   </body>
 </html>
-
