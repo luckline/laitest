@@ -132,8 +132,8 @@ curl -X POST "http://127.0.0.1:8080/api/ai/travel_plan" \
 
 领测生成用例后，可填写测试环境 URL 并逐条或批量执行。执行结果会在用例列表中显示，通过“查看详情”可以检查步骤日志与失败现场截图。
 
-- 本地：安装依赖后执行 `playwright install chromium`。
-- Vercel：Serverless 环境无法稳定启动完整浏览器，需要配置 `PLAYWRIGHT_WS_ENDPOINT` 连接 Browserless 等兼容 Playwright 协议的远程浏览器。
+- 本地：执行 `pip install -r requirements-playwright.txt`，然后执行 `playwright install chromium`。
+- Vercel：默认使用 `@sparticuz/chromium` 提供的 Serverless Chromium，无需额外下载浏览器；如需更高并发或更长任务，也可以配置 `PLAYWRIGHT_WS_ENDPOINT` 连接远程浏览器。
 - 安全：执行接口仅接受公网 `http/https` 地址，拒绝 localhost 和内网 IP，避免服务端请求伪造。
 | `QIANWEN_API_KEY` | 通义千问 API Key |
 | `QIANWEN_MODEL` | 默认 `qwen-plus` |

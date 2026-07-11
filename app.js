@@ -311,7 +311,7 @@ function showExecutionResult(caseId) {
   el("executionLog").textContent = result.log || "暂无日志";
   const hasShot = Boolean(result.screenshot_base64);
   el("executionShotWrap").hidden = !hasShot;
-  el("executionScreenshot").src = hasShot ? `data:image/png;base64,${result.screenshot_base64}` : "";
+  el("executionScreenshot").src = hasShot ? `data:${result.screenshot_mime || "image/png"};base64,${result.screenshot_base64}` : "";
   el("executionDialog").showModal();
 }
 

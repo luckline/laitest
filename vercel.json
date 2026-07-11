@@ -2,6 +2,7 @@
   "version": 2,
   "builds": [
     { "src": "api/index.py", "use": "@vercel/python" },
+    { "src": "api/execute_case.js", "use": "@vercel/node" },
     { "src": "css/**", "use": "@vercel/static" },
     { "src": "img/**", "use": "@vercel/static" },
     { "src": "site-analytics.js", "use": "@vercel/static" },
@@ -20,6 +21,7 @@
     { "src": "security.html", "use": "@vercel/static" }
   ],
   "rewrites": [
+    { "source": "/api/ai/execute_case", "destination": "/api/execute_case.js" },
     { "source": "/api/(.*)", "destination": "/api/index.py" },
     { "source": "/css/(.*)", "destination": "/css/$1" },
     { "source": "/img/(.*)", "destination": "/img/$1" },

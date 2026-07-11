@@ -1,0 +1,9 @@
+{
+  "name": "laitest-serverless",
+  "private": true,
+  "engines": { "node": ">=20" },
+  "dependencies": {
+    "@sparticuz/chromium": "148.0.0",
+    "playwright-core": "1.61.1"
+  }
+}
