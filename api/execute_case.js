@@ -48,18 +48,47 @@ async function fillFields(page, data, logs) {
   }
 }
 
-async function runStep(page, step, logs) {
+function inferCaseValue(testCase) {
+  const text = (testCase?.steps || []).map((step) => `${step?.action || ""} ${step?.test_data || ""} ${step?.expected_result || ""}`).join(" ");
+  return text.match(/(?:^|[^a-z0-9.-])(?:https?:\/\/)?([a-z0-9-]+(?:\.[a-z0-9-]+)+)(?=[^a-z0-9.-]|$)/i)?.[1] || "";
+}
+
+async function assertNotBlocked(page) {
+  const url = page.url();
+  if (/captcha|wappass\.baidu\.com/i.test(url)) throw new Error("BLOCKED_BY_CAPTCHA: 百度检测到自动化访问并要求验证码，本次执行已被目标站风控拦截");
+}
+
+async function runStep(page, step, logs, context) {
   const action = String(step?.action || "").trim();
-  await fillFields(page, dataMap(step?.test_data), logs);
+  const mapped = dataMap(step?.test_data);
+  await fillFields(page, mapped, logs);
+  if (/输入|填写/.test(action) && !Object.keys(mapped).length) {
+    const directValue = action.match(/(?:输入|填写)[「『\"']?([^，,。；;|「』\"']+)[」』\"']?/)?.[1]?.trim();
+    const generic = !directValue || /^(?:关键词|内容|数据|信息)$/.test(directValue);
+    const value = generic ? context.inferredValue : directValue;
+    if (!value) throw new Error("用例缺少可执行的输入数据，请在测试数据中明确填写关键词或输入值");
+    const input = page.getByRole("textbox").first();
+    if (!(await input.count())) throw new Error("目标页面未找到可输入的文本框");
+    await input.fill(value);
+    logs.push(`在文本框输入 ${value}`);
+  }
   const click = action.match(/(?:点击|单击|按下)[「『\"']?([^，,。；;|「』\"']+?)[」』\"']?(?:按钮|链接|$)/);
   if (click) {
     const label = click[1].trim();
-    let target = page.getByRole("button", { name: new RegExp(label, "i") });
+    const domain = action.match(/(?:^|[^a-z0-9.-])([a-z0-9-]+(?:\.[a-z0-9-]+)+)(?=[^a-z0-9.-]|$)/i)?.[1];
+    let target = domain ? page.getByRole("link", { name: new RegExp(domain.replaceAll(".", "\\."), "i") }) : page.getByRole("button", { name: new RegExp(label, "i") });
+    if (!(await target.count()) && domain) target = page.getByText(new RegExp(domain.replaceAll(".", "\\."), "i"));
     if (!(await target.count())) target = page.getByText(label, { exact: true });
-    await target.first().click({ timeout: 8000 }); logs.push(`点击 ${label}`); return;
+    if (!(await target.count())) throw new Error(`目标页面未找到“${label}”按钮或链接，请填写实际功能页面地址并确认页面内容与用例一致`);
+    await target.first().click({ timeout: 8000 }); logs.push(`点击 ${label}`); await assertNotBlocked(page); return;
   }
   const label = ["登录","提交","确认","保存","下一步"].find((word) => action.includes(word));
-  if (label) { await page.getByRole("button", { name: new RegExp(label, "i") }).first().click({ timeout: 8000 }); logs.push(`点击 ${label}`); }
+  if (label) {
+    let target = page.getByRole("button", { name: new RegExp(label, "i") });
+    if (!(await target.count())) target = page.getByText(label, { exact: true });
+    if (!(await target.count())) throw new Error(`目标页面未找到“${label}”按钮，请填写实际功能页面地址并确认页面内容与用例一致`);
+    await target.first().click({ timeout: 8000 }); logs.push(`点击 ${label}`); await assertNotBlocked(page);
+  }
   else logs.push(`执行步骤：${action}`);
 }
 
@@ -79,10 +108,17 @@ module.exports = async function handler(req, res) {
     const launched = await launchBrowser(); browser = launched.browser; logs.push(`已启动${launched.mode}`);
     const context = await browser.newContext({ viewport: { width: 1440, height: 900 }, locale: "zh-CN" });
     page = await context.newPage();
-    page.on("console", (msg) => logs.push(`console.${msg.type()}: ${msg.text()}`));
+    page.on("console", (msg) => {
+      const text = msg.text();
+      if (msg.type() === "error" && !text.includes("upgrade-insecure-requests")) logs.push(`console.error: ${text}`);
+    });
     page.on("pageerror", (error) => logs.push(`pageerror: ${error.message}`));
-    await page.goto(target, { waitUntil: "domcontentloaded", timeout: 30000 }); logs.push(`打开 ${target}`);
-    for (const [index, step] of (testCase.steps || []).entries()) { logs.push(`STEP ${index + 1} START`); await runStep(page, step, logs); await page.waitForTimeout(500); logs.push(`STEP ${index + 1} PASS`); }
+    await page.goto(target, { waitUntil: "domcontentloaded", timeout: 30000 });
+    await page.waitForLoadState("domcontentloaded");
+    await page.waitForTimeout(1000);
+    logs.push(`打开 ${target}`);
+    const executionContext = { inferredValue: inferCaseValue(testCase) };
+    for (const [index, step] of (testCase.steps || []).entries()) { logs.push(`STEP ${index + 1} START`); await runStep(page, step, logs, executionContext); await page.waitForTimeout(500); await assertNotBlocked(page); logs.push(`STEP ${index + 1} PASS`); }
     const shot = await page.screenshot({ type: "jpeg", quality: 70 });
     return res.status(200).json({ result: { status:"passed", duration_ms:Date.now()-started, log:logs.join("\n"), screenshot_base64:shot.toString("base64"), screenshot_mime:"image/jpeg", final_url:page.url() } });
   } catch (error) {
