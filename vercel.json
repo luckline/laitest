@@ -8,6 +8,8 @@
     { "src": "app.html", "use": "@vercel/static" },
     { "src": "timelens.js", "use": "@vercel/static" },
     { "src": "timelens.html", "use": "@vercel/static" },
+    { "src": "timelens-route.js", "use": "@vercel/static" },
+    { "src": "timelens-route.html", "use": "@vercel/static" },
     { "src": "index.html", "use": "@vercel/static" },
     { "src": "privacy.html", "use": "@vercel/static" },
     { "src": "terms.html", "use": "@vercel/static" },
@@ -20,6 +22,7 @@
     { "source": "/app.js", "destination": "/app.js" },
     { "source": "/app", "destination": "/app.html"},
     { "source": "/timelens", "destination": "/timelens.html" },
+    { "source": "/timelens-route", "destination": "/timelens-route.html" },
     { "source": "/(.*)", "destination": "/$1" }
   ]
 }
