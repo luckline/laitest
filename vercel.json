@@ -6,6 +6,8 @@
     { "src": "img/**", "use": "@vercel/static" },
     { "src": "app.js", "use": "@vercel/static" },
     { "src": "app.html", "use": "@vercel/static" },
+    { "src": "timelens.js", "use": "@vercel/static" },
+    { "src": "timelens.html", "use": "@vercel/static" },
     { "src": "index.html", "use": "@vercel/static" },
     { "src": "privacy.html", "use": "@vercel/static" },
     { "src": "terms.html", "use": "@vercel/static" },
@@ -17,6 +19,7 @@
     { "source": "/img/(.*)", "destination": "/img/$1" },
     { "source": "/app.js", "destination": "/app.js" },
     { "source": "/app", "destination": "/app.html"},
+    { "source": "/timelens", "destination": "/timelens.html" },
     { "source": "/(.*)", "destination": "/$1" }
   ]
 }
