@@ -49,6 +49,7 @@
             <div><span class="step-number">TEST DESIGN</span><h2>描述需要验证的业务</h2><p>建议包含业务规则、成功条件、异常限制和关键测试数据。</p></div>
             <div class="model-field"><label for="aiModel">生成模型</label><select id="aiModel" class="ai-select"><option value="deepseek" selected>DeepSeek</option><option value="qianwen">Qianwen</option><option value="gemini">Gemini</option></select></div>
           </div>
+          <div class="demo-scenarios"><span>可运行示例</span><button type="button" data-demo="content">页面内容验证</button><button type="button" data-demo="search">站内搜索</button><button type="button" data-demo="login">登录流程</button><small>选择后会自动填入测试地址和用例</small></div>
           <textarea
             id="aiPrompt"
             placeholder="- 登录成功：手机号+密码+验证码正确&#10;- 登录失败：密码错误&#10;- 登录失败：验证码错误超过5次被锁定"
@@ -78,6 +79,7 @@
           <pre id="aiOut" class="ai-pre" hidden></pre>
         </section>
         <a class="guide-entry" href="/lingtest-guides"><span><small>LINGTEST GUIDES</small><b>测试方法与实践</b><p>测试设计、AI 测试、自动化与持续交付方法沉淀。</p></span><strong>进入方法库 →</strong></a>
+        <section class="local-history"><div><span class="step-number">LOCAL HISTORY</span><h2>最近执行</h2><p>记录仅保存在当前浏览器，不会上传账号。</p></div><button id="clearHistory" class="btn text" type="button">清空记录</button><div id="historyList" class="history-list"><p>还没有执行记录</p></div></section>
       </main>
 
       <footer class="app-foot"><span>领测 LingTest · AI 测试设计与质量工作台</span><span>结构化 JSON · Excel 导出 · 多模型支持</span><a href="mailto:lanceqa@agent.qq.com">lanceqa@agent.qq.com</a></footer>
@@ -91,7 +93,7 @@
     </dialog>
 
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-    <script src="/app.js?v=playwright-execution-1"></script>
+    <script src="/app.js?v=p0-quality-loop-1"></script>
   <script defer src="/site-analytics.js"></script><script defer src="/_vercel/insights/script.js"></script>
 </body>
 </html>

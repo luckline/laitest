@@ -33,6 +33,14 @@ const state = {
   runningCases: new Set(),
 };
 
+const STORAGE_CASES = "lingtest:last-cases:v1";
+const STORAGE_HISTORY = "lingtest:run-history:v1";
+const DEMOS = {
+  content: { target:"https://example.com/", case:{case_id:"DEMO-CONTENT-001",module:"页面内容",title:"验证示例页面核心内容",priority:"P1",preconditions:["示例页面可访问"],steps:[{step_no:1,action:"打开页面并读取主要内容",test_data:"",expected_result:"页面显示 Example Domain"}],expected_result:"页面显示 Example Domain",assertions:[{type:"text",value:"Example Domain"}]}},
+  search: { target:"https://www.wikipedia.org/", case:{case_id:"DEMO-SEARCH-001",module:"站内搜索",title:"搜索 Playwright 并进入结果页",priority:"P1",preconditions:["Wikipedia 可访问"],steps:[{step_no:1,action:"在搜索框中输入关键词",test_data:"关键词: Playwright",expected_result:"输入成功"},{step_no:2,action:"点击搜索按钮",test_data:"",expected_result:"进入搜索结果"}],expected_result:"结果页标题包含 Playwright",assertions:[{type:"title_contains",value:"Playwright"}]}},
+  login: { target:"https://www.saucedemo.com/", case:{case_id:"DEMO-LOGIN-001",module:"登录",title:"使用标准账号正常登录",priority:"P0",preconditions:["演示站点可访问"],steps:[{step_no:1,action:"填写用户名和密码",test_data:"用户名: standard_user, 密码: secret_sauce",expected_result:"字段填写成功"},{step_no:2,action:"点击登录按钮",test_data:"",expected_result:"进入商品页面"}],expected_result:"页面显示 Products",assertions:[{type:"text",value:"Products"}]}}
+};
+
 const SAMPLE_PROMPT = [
   "- 登录成功：手机号+密码+验证码正确",
   "- 登录失败：密码错误",
@@ -165,6 +173,7 @@ function normalizeTestCase(item, idx) {
       : [],
     steps: steps.length ? steps : fallbackSteps,
     expected_result: String(tc.expected_result || ""),
+    assertions: Array.isArray(tc.assertions) ? tc.assertions : (Array.isArray(item.assertions) ? item.assertions : []),
     automation_candidate: Boolean(tc.automation_candidate),
     description: String(item.description || ""),
     tags: Array.isArray(item.tags) ? item.tags.map((x) => String(x)).filter(Boolean) : [],
@@ -283,6 +292,7 @@ async function executeCase(caseId) {
     const out = await api("/api/ai/execute_case", {method:"POST", body:JSON.stringify({target_url:target,test_case:testCase})});
     state.executionResults[caseId] = out.result || {status:"failed",log:"服务未返回执行结果"};
     const result = state.executionResults[caseId];
+    addHistory(testCase, result, target);
     const resultLabel = {passed:"通过",failed:"失败",blocked:"被网站风控拦截",needs_review:"需要人工确认"}[result.status] || result.status;
     setStatus(`${caseId}：${resultLabel}，耗时 ${formatElapsed(result.duration_ms)}。`, result.status === "passed" ? "ok" : result.status === "needs_review" ? "warn" : "err");
   } catch (e) {
@@ -402,6 +412,33 @@ function renderOutput(out) {
   renderSummary(out);
   renderSuggestions(out.suggestions || []);
   el("aiOut").textContent = JSON.stringify(out, null, 2);
+  persistCases();
+}
+
+function safeRead(key, fallback) { try { return JSON.parse(localStorage.getItem(key)) ?? fallback; } catch (_) { return fallback; } }
+function safeWrite(key, value) { try { localStorage.setItem(key, JSON.stringify(value)); } catch (_) {} }
+function persistCases() {
+  if (state.lastCases.length) safeWrite(STORAGE_CASES, {target:el("executionTarget").value.trim(),cases:state.lastCases,savedAt:new Date().toISOString()});
+}
+function loadDemo(name) {
+  const demo=DEMOS[name]; if (!demo) return;
+  el("executionTarget").value=demo.target; el("aiPrompt").value=`已载入可运行示例：${demo.case.title}`;
+  state.executionResults={}; state.lastOutput={suggestions:[demo.case],provider:"demo"};
+  renderSuggestions([demo.case]); renderSummary({suggestions:[demo.case],provider:"demo",runtime:{mode:"demo"}}); persistCases();
+  setStatus(`已载入“${demo.case.title}”，可直接点击执行。`,"ok"); el("aiCards").scrollIntoView({behavior:"smooth",block:"start"});
+}
+function addHistory(testCase,result,target) {
+  const rows=safeRead(STORAGE_HISTORY,[]); rows.unshift({id:`${Date.now()}-${testCase.case_id}`,caseId:testCase.case_id,title:testCase.title,target,status:result.status,summary:result.summary||"",durationMs:result.duration_ms||0,createdAt:new Date().toISOString()});
+  safeWrite(STORAGE_HISTORY,rows.slice(0,12)); renderHistory();
+}
+function renderHistory() {
+  const rows=safeRead(STORAGE_HISTORY,[]),box=el("historyList"); if(!rows.length){box.innerHTML="<p>还没有执行记录</p>";return;}
+  const labels={passed:"通过",failed:"失败",blocked:"被拦截",needs_review:"需确认"};
+  box.innerHTML=rows.map(row=>`<article><span class="run-status ${escapeHtml(row.status)}">${escapeHtml(labels[row.status]||row.status)}</span><div><b>${escapeHtml(row.title)}</b><small>${escapeHtml(row.target)} · ${new Date(row.createdAt).toLocaleString()}</small></div><em>${escapeHtml(formatElapsed(row.durationMs))}</em></article>`).join("");
+}
+function restoreWorkspace() {
+  const saved=safeRead(STORAGE_CASES,null); if(!saved||!Array.isArray(saved.cases)||!saved.cases.length)return;
+  state.lastCases=saved.cases; el("executionTarget").value=saved.target||""; renderSuggestions(saved.cases); renderSummary({suggestions:saved.cases,provider:"local",runtime:{mode:"local-history"}}); setStatus("已恢复上次的测试用例。","");
 }
 
 async function generate() {
@@ -479,6 +516,9 @@ function bindEvents() {
   el("toggleRaw").addEventListener("click", toggleRaw);
   el("fillSample").addEventListener("click", fillSample);
   el("clearPrompt").addEventListener("click", clearPrompt);
+  document.querySelectorAll("[data-demo]").forEach((button) => button.addEventListener("click", () => loadDemo(button.dataset.demo)));
+  el("clearHistory").addEventListener("click", () => { localStorage.removeItem(STORAGE_HISTORY); renderHistory(); setStatus("本地执行记录已清空。", ""); });
+  el("executionTarget").addEventListener("change", persistCases);
   el("runAllCases").addEventListener("click", executeAllCases);
   el("closeExecutionDialog").addEventListener("click", () => el("executionDialog").close());
   el("aiCards").addEventListener("click", (event) => {
@@ -500,7 +540,9 @@ function bindEvents() {
 
 function main() {
   bindEvents();
-  setStatus("就绪。按 Ctrl/Cmd + Enter 可快速生成。", "");
+  restoreWorkspace();
+  renderHistory();
+  if (!state.lastCases.length) setStatus("就绪。按 Ctrl/Cmd + Enter 可快速生成。", "");
 }
 
 main();

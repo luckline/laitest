@@ -135,6 +135,8 @@ curl -X POST "http://127.0.0.1:8080/api/ai/travel_plan" \
 
 执行器采用通用页面模型：优先根据 `role`、`label`、`placeholder`、可见文本和表单语义定位元素，不绑定特定网站。执行结论区分通过、失败、页面需确认和网站风控拦截；验证码不会被自动绕过。
 
+P0 保护与可信结果：每个用例最多 12 个步骤，同一来源默认每分钟最多执行 6 次；只有明确的文本、标题、URL 或可见性断言通过后才判定成功。最近用例和最多 12 条执行摘要保存在当前浏览器的 `localStorage` 中。
+
 - 本地：执行 `pip install -r requirements-playwright.txt`，然后执行 `playwright install chromium`。
 - Vercel：默认使用 `@sparticuz/chromium` 提供的 Serverless Chromium，无需额外下载浏览器；如需更高并发或更长任务，也可以配置 `PLAYWRIGHT_WS_ENDPOINT` 连接远程浏览器。
 - 安全：执行接口仅接受公网 `http/https` 地址，拒绝 localhost 和内网 IP，避免服务端请求伪造。
