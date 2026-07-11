@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>时光透卡 · PC 版</title>
+  <meta name="description" content="把旅行计划和游记整理成可执行、可分享的路线内容。">
+  <link rel="stylesheet" href="/css/timelens.css?v=1">
+</head>
+<body>
+  <div class="layout">
+    <aside class="sidebar">
+      <a class="logo" href="/timelens.html"><span>时</span><div><b>时光透卡</b><small>TIMELENS</small></div></a>
+      <nav id="nav">
+        <button data-page="explore" class="active"><i>⌁</i>路线广场</button>
+        <button data-page="workspace"><i>◫</i>计划工作台</button>
+        <button data-page="footprints"><i>⌖</i>城市足迹</button>
+        <button data-page="profile"><i>○</i>我的旅行</button>
+      </nav>
+      <div class="side-trip" id="sideTrip"><small>当前计划</small><b>还没有旅行计划</b><p>创建后将在这里快速进入</p></div>
+      <a class="back" href="/">← 返回 laitest</a>
+    </aside>
+    <main>
+      <header><div><b id="pageTitle">路线广场</b><span id="pageSub">发现值得出发的路线灵感</span></div><div class="header-actions"><button class="search" id="searchBtn">⌕ 搜索目的地</button><button class="primary" id="newTrip">＋ 创建计划</button><button class="avatar" id="loginBtn">旅</button></div></header>
+      <div id="notice" class="notice" hidden></div>
+      <section id="content"></section>
+    </main>
+  </div>
+  <dialog id="modal"><form method="dialog" id="modalBody"></form></dialog>
+  <script src="/timelens.js?v=1"></script>
+</body>
+</html>
