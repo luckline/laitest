@@ -5,16 +5,23 @@
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>路线详情 · 时光透卡</title>
   <meta name="description" content="查看并分享时光透卡旅行路线合集。">
+  <meta property="og:title" content="路线详情 · 时光透卡">
+  <meta property="og:description" content="查看完整逐日路线，扫码收藏并继续规划旅程。">
+  <meta property="og:image" content="https://laitest.tech/img/timelens-miniapp.jpg">
+  <meta name="twitter:card" content="summary_large_image"><meta name="theme-color" content="#147d69"><link rel="icon" href="/img/favicon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="/css/timelens.css?v=1">
   <link rel="stylesheet" href="/css/timelens-route.css?v=1">
+  <link rel="stylesheet" href="/css/timelens-qr.css?v=1">
 </head>
 <body class="route-page">
   <header class="route-header">
     <a class="logo" href="/timelens"><span>时</span><div><b>时光透卡</b><small>TIMELENS</small></div></a>
-    <div class="route-actions"><a class="ghost" href="/timelens">返回路线广场</a><button class="primary" id="shareRoute">分享路线</button></div>
+    <div class="route-actions"><a class="ghost" href="/timelens">返回路线广场</a><button class="primary" id="shareRoute" data-event="share_route">分享路线</button></div>
   </header>
   <main class="route-main" id="routeContent"><div class="empty"><h2>正在加载路线…</h2><p>逐日行程马上就来。</p></div></main>
+  <aside class="miniapp-route-cta"><div><span class="eyebrow">CONTINUE IN WECHAT</span><h2>扫码收藏路线，继续规划旅程</h2><p>进入时光透卡小程序，随时查看路线、创建旅行计划，并在途中记录城市足迹。</p><small>手机端可长按图片识别</small></div><img src="/img/timelens-miniapp.jpg" alt="时光透卡微信小程序码"></aside>
   <div id="notice" class="notice" hidden></div>
-  <script src="/timelens-route.js?v=1"></script>
+  <script defer src="/site-analytics.js"></script><script defer src="/_vercel/insights/script.js"></script>
+  <script src="/timelens-route.js?v=2"></script>
 </body>
 </html>

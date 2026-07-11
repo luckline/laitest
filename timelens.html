@@ -4,8 +4,16 @@
   <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
   <title>时光透卡 · PC 版</title>
   <meta name="description" content="把旅行计划和游记整理成可执行、可分享的路线内容。">
+  <link rel="canonical" href="https://laitest.tech/timelens">
+  <meta property="og:title" content="时光透卡 · 旅行计划与城市足迹">
+  <meta property="og:description" content="发现路线灵感，规划旅程，并记录走过的城市足迹。">
+  <meta property="og:image" content="https://laitest.tech/img/timelens-miniapp.jpg">
+  <meta name="theme-color" content="#147d69"><link rel="icon" href="/img/favicon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="">
   <link rel="stylesheet" href="/css/timelens.css?v=1">
+  <link rel="stylesheet" href="/css/timelens-qr.css?v=1">
+  <link rel="stylesheet" href="/css/timelens-login.css?v=1">
+  <link rel="stylesheet" href="/css/timelens-fixes.css?v=1">
 </head>
 <body>
   <div class="layout">
@@ -21,13 +29,15 @@
       <a class="back" href="/">← 返回 laitest</a>
     </aside>
     <main>
-      <header><div><b id="pageTitle">路线广场</b><span id="pageSub">发现值得出发的路线灵感</span></div><div class="header-actions"><button class="search" id="searchBtn">⌕ 搜索目的地</button><button class="primary" id="newTrip">＋ 创建计划</button><button class="avatar" id="loginBtn">旅</button></div></header>
+      <header><div><b id="pageTitle">路线广场</b><span id="pageSub">发现值得出发的路线灵感</span></div><div class="header-actions"><button class="miniapp-trigger" id="miniappBtn" data-event="scan_miniapp">▦ 小程序</button><button class="search" id="searchBtn">⌕ 搜索目的地</button><button class="primary" id="newTrip" data-event="create_trip">＋ 创建计划</button><button class="avatar" id="loginBtn" data-event="open_login">旅</button></div></header>
       <div id="notice" class="notice" hidden></div>
       <section id="content"></section>
     </main>
   </div>
   <dialog id="modal"><form method="dialog" id="modalBody"></form></dialog>
+  <dialog id="miniappModal" class="miniapp-modal"><div><button class="miniapp-close" id="miniappClose" aria-label="关闭">×</button><span class="eyebrow">TIMELENS MINI PROGRAM</span><h2>把旅程装进口袋</h2><p>微信扫码进入时光透卡小程序，随时规划路线、记录足迹和查看旅程。</p><img src="/img/timelens-miniapp.jpg" alt="时光透卡微信小程序码"><small>手机端可长按图片识别小程序码</small></div></dialog>
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
-  <script src="/timelens.js?v=5"></script>
+  <script defer src="/site-analytics.js"></script><script defer src="/_vercel/insights/script.js"></script>
+  <script src="/timelens.js?v=7"></script>
 </body>
 </html>

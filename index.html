@@ -10,8 +10,15 @@
   <meta property="og:title" content="Luckline · 产品、技术与生活">
   <meta property="og:description" content="把做过的产品、写过的内容和持续探索的方向，放在同一个地方。">
   <meta property="og:image" content="https://laitest.tech/img/og-cover.svg">
+  <meta property="og:url" content="https://laitest.tech/">
+  <meta property="og:site_name" content="Luckline">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="theme-color" content="#172e2a">
+  <link rel="icon" href="/img/favicon.svg" type="image/svg+xml">
+  <link rel="manifest" href="/site.webmanifest">
   <link rel="stylesheet" href="/css/marketing.css?v=personal-1">
   <link rel="stylesheet" href="/css/personal-content.css?v=1">
+  <link rel="stylesheet" href="/css/timelens-qr.css?v=1">
 </head>
 <body>
   <header class="nav">
@@ -28,7 +35,7 @@
         <p class="eyebrow">INDEPENDENT BUILDER · QUALITY ENGINEERING</p>
         <h1>认真做产品，<br>也认真记录生活。</h1>
         <p class="sub">你好，我是 Luckline。这里收集我做的工具、产品实验和长期写作：从 AI 测试与质量工程，到旅行计划与城市足迹。</p>
-        <div class="hero-actions"><a class="btn solid" href="#projects">看看我的作品</a><a class="btn ghost" href="#laitest-resources">阅读测试内容</a></div>
+        <div class="hero-actions"><a class="btn solid" href="#projects" data-event="view_projects">看看我的作品</a><a class="btn ghost" href="#laitest-resources" data-event="view_laitest_content">阅读测试内容</a></div>
         <div class="status"><span class="pulse"></span><span>正在持续迭代</span><b>laitest</b><b>时光透卡</b><span>以及下一个想法</span></div>
       </div>
       <aside class="now-card">
@@ -47,7 +54,7 @@
           <p class="project-type">AI · QUALITY ENGINEERING</p><h3>laitest</h3>
           <p>把需求快速转成结构化测试用例，通过 API / CLI 接入工作流，并整理执行结果与风险信号。</p>
           <ul><li>AI 用例生成与多模型支持</li><li>轻量执行、结果汇总和 Excel 导出</li><li>适合 QA、SDET 与研发团队试点</li></ul>
-          <div class="card-actions"><a class="btn solid" href="/app">打开工作台</a><a href="mailto:lanceqa@agent.qq.com?subject=laitest%20合作">聊聊合作 →</a></div>
+          <div class="card-actions"><a class="btn solid" href="/app" data-event="open_laitest">免费体验 laitest</a><a href="#laitest-resources" data-event="view_laitest_content">阅读方法 →</a></div>
           <div class="project-resources" id="laitest-resources">
             <div class="resource-head"><div><span>LAITEST NOTES</span><h4>方法与实践</h4></div><p>围绕测试设计、工程效率和 AI 测试整理的配套内容。</p></div>
             <div class="resource-links">
@@ -63,7 +70,8 @@
           <p class="project-type">TRAVEL · MEMORY · MAP</p><h3>时光透卡</h3>
           <p>从路线灵感、旅行计划到城市足迹，把一次出发整理成可执行、可回看、可分享的旅行记忆。</p>
           <ul><li>路线广场与旅行计划工作台</li><li>单日记录、出发清单和路线合集</li><li>地图点位与城市足迹</li></ul>
-          <div class="card-actions"><a class="btn travel-btn" href="/timelens">开始一段旅程</a><a href="/timelens">查看路线 →</a></div>
+          <div class="card-actions"><a class="btn travel-btn" href="/timelens" data-event="open_timelens">查看公开路线</a><a href="#timelens-miniapp" data-event="scan_miniapp">扫码进入小程序 →</a></div>
+          <div class="project-miniapp" id="timelens-miniapp"><img src="/img/timelens-miniapp.jpg" alt="时光透卡微信小程序码"><p><b>微信小程序</b><span>扫码随时规划路线、记录足迹</span></p></div>
         </article>
         <article class="project-card next"><span class="plus">＋</span><p class="project-type">NEXT PROJECT</p><h3>这里留给下一个想法</h3><p>一个个人站不只是作品归档，也是新项目开始生长的地方。</p><a href="mailto:lanceqa@agent.qq.com?subject=一起做点什么">如果你也有想法，来聊聊 →</a></article>
       </div>
@@ -82,5 +90,7 @@
     <section class="cta"><p class="eyebrow">LET'S BUILD SOMETHING USEFUL</p><h2>有产品想法、测试需求，<br>或者只是想认识一下？</h2><div><a class="btn solid" href="mailto:lanceqa@agent.qq.com">给我写封邮件</a><a class="btn ghost" href="#projects">浏览作品</a></div></section>
   </main>
   <footer class="foot"><div><b>Luckline</b><span>产品、技术与生活的长期记录。</span></div><div class="foot-links"><a href="#projects">作品</a><a href="#laitest-resources">测试内容</a><a href="/privacy.html">隐私</a><a href="/security.html">安全</a></div><small>© 2026 laitest.tech</small></footer>
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"Person","name":"Luckline","url":"https://laitest.tech/","email":"mailto:lanceqa@agent.qq.com","knowsAbout":["Quality Engineering","AI Testing","Independent Product Development"],"owns":[{"@type":"SoftwareApplication","name":"laitest","url":"https://laitest.tech/app","applicationCategory":"DeveloperApplication"},{"@type":"SoftwareApplication","name":"时光透卡","url":"https://laitest.tech/timelens","applicationCategory":"TravelApplication"}]}</script>
+  <script defer src="/site-analytics.js"></script><script defer src="/_vercel/insights/script.js"></script>
 </body>
 </html>
