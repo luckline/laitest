@@ -127,7 +127,7 @@ curl -X POST "http://127.0.0.1:8080/api/ai/travel_plan" \
 | `DEEPSEEK_API_KEY` | DeepSeek API Key |
 | `DEEPSEEK_MODEL` | 默认 `deepseek-chat` |
 | `PLAYWRIGHT_WS_ENDPOINT` | 可选的远程 Playwright WebSocket 地址；留空时 Vercel 使用内置 Serverless Chromium |
-| `PLAYWRIGHT_CJK_FONT_URL` | 可选的中日韩字体文件地址；Vercel Chromium 默认加载 Noto Sans CJK SC，确保中文截图正常 |
+| `PLAYWRIGHT_CJK_FONT_URL` | 可选的 HTTPS 中日韩字体地址；执行页面通过 Web Font 加载，字体失败不会阻断测试 |
 
 ### Playwright 页面自动化
 

@@ -68,6 +68,14 @@ async function waitForPageReady(page) {
   await page.waitForTimeout(1200);
 }
 
+async function installCjkFont(page) {
+  const fontUrl = String(process.env.PLAYWRIGHT_CJK_FONT_URL || "https://raw.githubusercontent.com/notofonts/noto-cjk/main/Sans/OTF/SimplifiedChinese/NotoSansCJKsc-Regular.otf").trim();
+  if (!/^https:\/\//i.test(fontUrl)) return;
+  const source = JSON.stringify(fontUrl);
+  await page.addStyleTag({ content: `@font-face{font-family:LingTestCJK;src:url(${source}) format("opentype");font-display:swap}html,body,input,button,textarea,select{font-family:LingTestCJK,Arial,sans-serif}` }).catch(() => {});
+  await page.evaluate(() => document.fonts?.load('16px LingTestCJK')).catch(() => {});
+}
+
 async function findClickTarget(page, label, action) {
   const domain = action.match(/(?:^|[^a-z0-9.-])([a-z0-9-]+(?:\.[a-z0-9-]+)+)(?=[^a-z0-9.-]|$)/i)?.[1];
   let target = domain ? page.getByRole("link", { name: new RegExp(domain.replaceAll(".", "\\."), "i") }) : page.getByRole("button", { name: new RegExp(label, "i") });
@@ -116,8 +124,6 @@ async function runStep(page, step, logs, context) {
 async function launchBrowser() {
   const ws = String(process.env.PLAYWRIGHT_WS_ENDPOINT || "").trim();
   if (ws) return { browser: await playwright.connect(ws), mode: "远程 Playwright" };
-  const cjkFont = String(process.env.PLAYWRIGHT_CJK_FONT_URL || "https://raw.githubusercontent.com/notofonts/noto-cjk/main/Sans/OTF/SimplifiedChinese/NotoSansCJKsc-Regular.otf").trim();
-  if (cjkFont) await serverlessChromium.font(cjkFont).catch(() => {});
   return { browser: await playwright.launch({ args: serverlessChromium.args, executablePath: await serverlessChromium.executablePath(), headless: true }), mode: "Vercel Chromium" };
 }
 
@@ -137,6 +143,7 @@ module.exports = async function handler(req, res) {
     });
     page.on("pageerror", (error) => logs.push(`pageerror: ${error.message}`));
     await page.goto(target, { waitUntil: "domcontentloaded", timeout: 30000 });
+    await installCjkFont(page);
     await waitForPageReady(page);
     logs.push(`打开 ${target}`);
     const executionContext = { inferredValue: inferCaseValue(testCase) };
