@@ -11,6 +11,7 @@
     { "src": "site.webmanifest", "use": "@vercel/static" },
     { "src": "app.js", "use": "@vercel/static" },
     { "src": "app.html", "use": "@vercel/static" },
+    { "src": "lingtest-guides.html", "use": "@vercel/static" },
     { "src": "timelens.js", "use": "@vercel/static" },
     { "src": "timelens.html", "use": "@vercel/static" },
     { "src": "timelens-route.js", "use": "@vercel/static" },
@@ -27,6 +28,7 @@
     { "source": "/img/(.*)", "destination": "/img/$1" },
     { "source": "/app.js", "destination": "/app.js" },
     { "source": "/app", "destination": "/app.html"},
+    { "source": "/lingtest-guides", "destination": "/lingtest-guides.html" },
     { "source": "/timelens", "destination": "/timelens.html" },
     { "source": "/timelens-route", "destination": "/timelens-route.html" },
     { "source": "/(.*)", "destination": "/$1" }
