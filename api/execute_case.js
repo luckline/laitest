@@ -57,9 +57,30 @@ async function fillFields(page, data, logs) {
       }
       if (filled) break;
     }
-    if (!filled) logs.push(`未找到字段 ${rawKey}，已跳过`);
+    if (!filled) logs.push(`字段“${rawKey}”未按标签匹配，将尝试通用输入框`);
   }
   return filledCount;
+}
+
+async function findEditableInput(page, hint = "") {
+  const candidates = [];
+  if (hint) {
+    const pattern = new RegExp(hint, "i");
+    candidates.push(page.getByLabel(pattern), page.getByPlaceholder(pattern));
+  }
+  candidates.push(
+    page.getByRole("searchbox"),
+    page.getByRole("textbox"),
+    page.locator('input:not([type="hidden"]):not([type="submit"]):not([type="button"]):not([disabled]), textarea:not([disabled]), [contenteditable="true"]')
+  );
+  for (const candidate of candidates) {
+    const count = Math.min(await candidate.count(), 10);
+    for (let index = 0; index < count; index += 1) {
+      const visible = candidate.nth(index);
+      if (await visible.isVisible()) return visible;
+    }
+  }
+  return page.locator("input:visible").first();
 }
 
 function inferCaseValue(testCase) {
@@ -110,10 +131,7 @@ async function runStep(page, step, logs, context) {
     const value = Object.values(mapped)[0] || (generic ? context.inferredValue : directValue);
     if (!value) throw new Error("用例缺少可执行的输入数据，请在测试数据中明确填写关键词或输入值");
     const hint = action.match(/在(.{1,24}?)(?:中|里)?(?:输入|填写)/)?.[1]?.replace(/页面|表单/g, "").trim();
-    let input = hint ? page.getByLabel(new RegExp(hint, "i")) : page.getByRole("textbox");
-    if (!(await input.count()) && hint) input = page.getByPlaceholder(new RegExp(hint, "i"));
-    if (!(await input.count())) input = page.getByRole("textbox");
-    input = input.first();
+    const input = await findEditableInput(page, hint || "");
     if (!(await input.count())) throw new Error("目标页面未找到可输入的文本框");
     await input.fill(value);
     logs.push(`在文本框输入 ${value}`);

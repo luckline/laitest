@@ -57,7 +57,27 @@ def _fill_common_fields(page: Any, data: dict[str, str], logs: list[str]) -> Non
             if filled:
                 break
         if not filled:
-            logs.append(f"未找到字段 {raw_key}，已跳过")
+            logs.append(f"字段“{raw_key}”未按标签匹配，将尝试通用输入框")
+
+
+def _find_editable_input(page: Any, hint: str = "") -> Any:
+    candidates: list[Any] = []
+    if hint:
+        pattern = re.compile(re.escape(hint), re.I)
+        candidates.extend((page.get_by_label(pattern), page.get_by_placeholder(pattern)))
+    candidates.extend(
+        (
+            page.get_by_role("searchbox"),
+            page.get_by_role("textbox"),
+            page.locator('input:not([type="hidden"]):not([type="submit"]):not([type="button"]):not([disabled]), textarea:not([disabled]), [contenteditable="true"]'),
+        )
+    )
+    for candidate in candidates:
+        for index in range(min(candidate.count(), 10)):
+            visible = candidate.nth(index)
+            if visible.is_visible():
+                return visible
+    return page.locator("input:visible").first
 
 
 def _infer_case_value(test_case: dict[str, Any]) -> str:
@@ -103,7 +123,9 @@ def _run_natural_step(page: Any, step: dict[str, Any], logs: list[str], inferred
         value = inferred_value if not direct_value or direct_value in {"关键词", "内容", "数据", "信息"} else direct_value
         if not value:
             raise RuntimeError("用例缺少可执行的输入数据，请在测试数据中明确填写关键词或输入值")
-        target = page.get_by_role("textbox").first
+        hint_match = re.search(r"在(.{1,24}?)(?:中|里)?(?:输入|填写)", action)
+        hint = re.sub(r"页面|表单", "", hint_match.group(1)).strip() if hint_match else ""
+        target = _find_editable_input(page, hint)
         if target.count() == 0:
             raise RuntimeError("目标页面未找到可输入的文本框")
         target.fill(value)
