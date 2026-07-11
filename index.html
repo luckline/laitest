@@ -22,6 +22,7 @@
   <link rel="stylesheet" href="/css/lingtest-brand.css?v=1">
   <link rel="stylesheet" href="/css/home-v2.css?v=1">
   <link rel="stylesheet" href="/css/home-v2-fixes.css?v=1">
+  <link rel="stylesheet" href="/css/home-v3.css?v=1">
 </head>
 <body>
   <header class="nav">
@@ -36,17 +37,12 @@
     <section class="hero">
       <div class="hero-copy">
         <p class="eyebrow">INDEPENDENT BUILDER · QUALITY ENGINEERING</p>
-        <h1>认真做产品，<br>也认真记录生活。</h1>
-        <p class="sub">你好，我是 Luckline，一名质量工程与 AI 产品实践者。正在独立构建领测 LingTest 和时光透卡，也持续记录产品从想法到可用的过程。</p>
-        <div class="hero-actions"><a class="btn solid" href="#projects" data-event="view_projects">看看我的作品</a><a class="btn ghost" href="#laitest-resources" data-event="view_laitest_content">阅读测试内容</a></div>
-        <div class="status"><span class="pulse"></span><span>正在持续迭代</span><b>领测 LingTest</b><b>时光透卡</b><span>以及下一个想法</span></div>
+        <h1>把真实问题，<br>做成可用产品。</h1>
+        <p class="sub">我是 Luckline，质量工程与 AI 产品实践者。目前专注构建领测 LingTest 和时光透卡。</p>
+        <div class="hero-actions"><a class="btn solid" href="#projects" data-event="view_projects">查看两个产品</a><a class="btn ghost" href="#about">认识我</a></div>
+        <div class="status"><span class="pulse"></span><span>独立构建 · 持续迭代 · 公开记录</span></div>
       </div>
-      <aside class="now-card">
-        <div class="now-head"><span>NOW / 2026</span><i></i></div>
-        <h2>把想法做成真正可用的东西</h2>
-        <p>我关心复杂工作如何变得更简单，也喜欢把旅行中的碎片整理成路线与记忆。</p>
-        <div class="now-list"><div><span>01</span><p><b>构建</b><small>AI 原生测试与效率工具</small></p></div><div><span>02</span><p><b>探索</b><small>旅行、地图与个人记录产品</small></p></div><div><span>03</span><p><b>分享</b><small>质量工程和独立开发实践</small></p></div></div>
-      </aside>
+      <aside class="hero-products"><a class="hero-product lingtest" href="/app" data-event="open_laitest"><div class="hero-product-top"><span>领</span><small>PRODUCT 01</small></div><h2>领测 <i>LingTest</i></h2><p>AI 测试设计与质量工作台</p><div class="mini-ui"><b>需求 → 用例</b><span>12 条结构化结果</span></div><strong>免费体验 →</strong></a><a class="hero-product timelens" href="/timelens" data-event="open_timelens"><div class="hero-product-top"><span>时</span><small>PRODUCT 02</small></div><h2>时光透卡</h2><p>旅行计划、路线分享与城市足迹</p><div class="mini-ui"><b>路线 → 足迹</b><span>把旅程装进口袋</span></div><strong>查看路线 →</strong></a></aside>
     </section>
 
     <section id="projects" class="section">
@@ -58,7 +54,7 @@
           <p>把需求快速转成结构化测试用例，通过 API / CLI 接入工作流，并整理执行结果与风险信号。</p>
           <div class="product-preview test-preview"><div class="preview-bar"><i></i><span>AI 测试设计</span><b>DeepSeek</b></div><div class="preview-body"><div><small>需求文本</small><p>登录连续失败 5 次后锁定账户，并提示剩余尝试次数。</p><span>生成结构化用例 →</span></div><div class="preview-result"><b>12 条用例</b><em>功能 7</em><em>边界 2</em><em>异常 3</em></div></div></div>
           <ul><li>AI 用例生成与多模型支持</li><li>轻量执行、结果汇总和 Excel 导出</li><li>适合 QA、SDET 与研发团队试点</li></ul>
-          <div class="card-actions"><a class="btn solid" href="/app" data-event="open_laitest">免费体验领测</a><a href="#laitest-resources" data-event="view_laitest_content">阅读方法 →</a></div>
+          <div class="card-actions"><a class="btn solid" href="/app" data-event="open_laitest">免费体验领测</a><a href="/app#resources" data-event="view_laitest_content">阅读方法 →</a></div>
         </article>
         <article class="project-card travel">
           <div class="project-top"><span class="project-icon">时</span><span class="live">● 在线</span></div>
@@ -70,10 +66,7 @@
           <div class="project-miniapp" id="timelens-miniapp"><img src="/img/timelens-miniapp.jpg" alt="时光透卡微信小程序码"><p><b>微信小程序</b><span>扫码随时规划路线、记录足迹</span></p></div>
         </article>
       </div>
-      <div class="home-support-grid">
-        <section class="notes-panel" id="laitest-resources"><div class="support-head"><div><p class="eyebrow">SELECTED NOTES</p><h3>两篇值得先读的测试内容</h3></div><a href="#wechat">关注后继续阅读 →</a></div><div class="featured-notes"><a href="https://mp.weixin.qq.com/s/SzFTo3DcoaC6gsouPioI6w" target="_blank" rel="noopener"><span>测试设计</span><b>从需求到用例：高质量测试设计清单</b><small>正常流、边界流与异常流的结构化设计方法</small></a><a href="https://mp.weixin.qq.com/s/5UPiDzVEczXOSiNEj-ANWw" target="_blank" rel="noopener"><span>AI 测试</span><b>AI 生成用例的正确使用姿势</b><small>控制噪声，提高用例的可执行率与复用价值</small></a></div></section>
-        <section class="updates-panel"><div class="support-head"><div><p class="eyebrow">RECENT UPDATES</p><h3>最近更新</h3></div><span class="live">● 持续迭代</span></div><div class="update-list"><a href="/app"><time>07.11</time><p><b>领测工作台完成视觉升级</b><span>更专注的需求输入、生成与导出流程</span></p></a><a href="/timelens"><time>07.11</time><p><b>时光透卡支持公开路线搜索</b><span>可按城市、景点和关键词查询</span></p></a><a href="/timelens-route?id=seed-trip-2026-north-xinjiang-0925"><time>07.11</time><p><b>路线详情支持独立分享</b><span>逐日行程与小程序扫码入口</span></p></a></div></section>
-      </div>
+      <section class="updates-panel updates-wide"><div class="support-head"><div><p class="eyebrow">RECENT UPDATES</p><h3>最近更新</h3></div><span class="live">● 持续迭代</span></div><div class="update-list"><a href="/app"><time>07.11</time><p><b>领测工作台完成视觉升级</b><span>更专注的需求输入、生成与导出流程</span></p></a><a href="/timelens"><time>07.11</time><p><b>时光透卡支持公开路线搜索</b><span>可按城市、景点和关键词查询</span></p></a><a href="/timelens-route?id=seed-trip-2026-north-xinjiang-0925"><time>07.11</time><p><b>路线详情支持独立分享</b><span>逐日行程与小程序扫码入口</span></p></a></div></section>
       <article class="project-card next compact-next"><span class="plus">＋</span><p class="project-type">NEXT PROJECT</p><h3>这里留给下一个想法</h3><p>一个个人站不只是作品归档，也是新项目开始生长的地方。</p><a href="mailto:lanceqa@agent.qq.com?subject=一起做点什么">如果你也有想法，来聊聊 →</a></article>
     </section>
 
@@ -89,7 +82,7 @@
 
     <section class="cta"><p class="eyebrow">LET'S BUILD SOMETHING USEFUL</p><h2>有产品想法、测试需求，<br>或者只是想认识一下？</h2><div><a class="btn solid" href="mailto:lanceqa@agent.qq.com">给我写封邮件</a><a class="btn ghost" href="#projects">浏览作品</a></div></section>
   </main>
-  <footer class="foot"><div><b>Luckline</b><span>产品、技术与生活的长期记录。</span></div><div class="foot-links"><a href="#projects">作品</a><a href="#laitest-resources">测试内容</a><a href="/privacy.html">隐私</a><a href="/security.html">安全</a></div><small>© 2026 laitest.tech</small></footer>
+  <footer class="foot"><div><b>Luckline</b><span>产品、技术与生活的长期记录。</span></div><div class="foot-links"><a href="#projects">作品</a><a href="/app#resources">领测内容</a><a href="/privacy.html">隐私</a><a href="/security.html">安全</a></div><small>© 2026 laitest.tech</small></footer>
   <script type="application/ld+json">{"@context":"https://schema.org","@type":"Person","name":"Luckline","url":"https://laitest.tech/","email":"mailto:lanceqa@agent.qq.com","knowsAbout":["Quality Engineering","AI Testing","Independent Product Development"],"owns":[{"@type":"SoftwareApplication","name":"领测 LingTest","alternateName":"laitest","url":"https://laitest.tech/app","applicationCategory":"DeveloperApplication"},{"@type":"SoftwareApplication","name":"时光透卡","url":"https://laitest.tech/timelens","applicationCategory":"TravelApplication"}]}</script>
   <script defer src="/site-analytics.js"></script><script defer src="/_vercel/insights/script.js"></script>
 </body>
