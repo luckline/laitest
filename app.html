@@ -13,20 +13,22 @@
     <link rel="stylesheet" href="/css/lingtest-execution.css?v=1" />
     <link rel="stylesheet" href="/css/lingtest-workspace-v2.css?v=1" />
     <link rel="stylesheet" href="/css/system-density.css?v=1" />
+    <link rel="stylesheet" href="/css/product-nav.css?v=1" />
   </head>
   <body class="app-page">
     <div class="app-shell">
-      <header class="workspace-nav">
+      <header class="workspace-nav unified-nav" data-product="lingtest">
         <a class="brand" href="/lingtest">
           <span class="mark">领</span>
           <span class="brand-copy"><b>领测 LingTest</b><small>AI QUALITY WORKSPACE</small></span>
         </a>
-        <div class="workspace-state"><span></span>工作台在线</div>
-        <div class="workspace-actions">
-          <a class="nav-link" href="/lingtest">产品介绍</a>
-          <a class="nav-link" href="/lingtest-guides">方法库</a>
-          <a class="nav-link" href="/">个人主页</a>
-          <a class="nav-link" href="mailto:lanceqa@agent.qq.com?subject=领测%20LingTest%20反馈">反馈</a>
+        <nav class="shared-links" aria-label="领测导航">
+          <a href="/lingtest">产品介绍</a>
+          <a href="/lingtest-guides">方法库</a>
+        </nav>
+        <div class="nav-actions">
+          <div class="workspace-state"><span></span>工作台在线</div>
+          <a class="nav-primary" href="mailto:lanceqa@agent.qq.com?subject=领测%20LingTest%20反馈">反馈</a>
         </div>
       </header>
 
@@ -95,6 +97,7 @@
     </dialog>
 
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <script src="/product-nav.js?v=1"></script>
     <script src="/app.js?v=p0-quality-loop-1"></script>
   <script defer src="/site-analytics.js"></script><script defer src="/_vercel/insights/script.js"></script>
 </body>
