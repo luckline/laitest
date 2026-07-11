@@ -24,6 +24,7 @@
   <link rel="stylesheet" href="/css/home-v2-fixes.css?v=1">
   <link rel="stylesheet" href="/css/home-v3.css?v=1">
   <link rel="stylesheet" href="/css/home-v4.css?v=1">
+  <link rel="stylesheet" href="/css/home-lingtest-v2.css?v=1">
 </head>
 <body>
   <header class="nav">
@@ -43,7 +44,7 @@
         <div class="hero-actions"><a class="btn solid" href="#projects" data-event="view_projects">查看两个产品</a><a class="btn ghost" href="#about">认识我</a></div>
         <div class="status"><span class="pulse"></span><span>独立构建 · 持续迭代 · 公开记录</span></div>
       </div>
-      <aside class="hero-products"><a class="hero-product lingtest" href="/app" data-event="open_laitest"><div class="hero-product-top"><span>领</span><small>PRODUCT 01</small></div><h2>领测 <i>LingTest</i></h2><p>AI 测试设计与质量工作台</p><div class="mini-ui"><b>需求 → 用例</b><span>12 条结构化结果</span></div><strong>免费体验 →</strong></a><a class="hero-product timelens" href="/timelens" data-event="open_timelens"><div class="hero-product-top"><span>时</span><small>PRODUCT 02</small></div><h2>时光透卡</h2><p>旅行计划、路线分享与城市足迹</p><div class="mini-ui"><b>路线 → 足迹</b><span>把旅程装进口袋</span></div><strong>查看路线 →</strong></a></aside>
+      <aside class="hero-products"><a class="hero-product lingtest" href="/app" data-event="open_laitest"><div class="hero-product-top"><span>领</span><small>PRODUCT 01</small></div><h2>领测 <i>LingTest</i></h2><p>AI 测试设计与质量工作台</p><div class="mini-ui"><b>设计 → 执行 → 分析</b><span>用例、Playwright 与失败现场</span></div><strong>进入工作台 →</strong></a><a class="hero-product timelens" href="/timelens" data-event="open_timelens"><div class="hero-product-top"><span>时</span><small>PRODUCT 02</small></div><h2>时光透卡</h2><p>旅行计划、路线分享与城市足迹</p><div class="mini-ui"><b>路线 → 足迹</b><span>把旅程装进口袋</span></div><strong>查看路线 →</strong></a></aside>
     </section>
 
     <section id="projects" class="section">
@@ -52,10 +53,10 @@
         <article class="project-card test featured-work">
           <div class="project-top"><span class="project-icon">领</span><span class="live">● 在线</span></div>
           <p class="project-type">AI · QUALITY ENGINEERING</p><h3>领测 <small>LingTest</small></h3>
-          <p>把需求快速转成结构化测试用例，通过 API / CLI 接入工作流，并整理执行结果与风险信号。</p>
-          <div class="product-preview test-preview"><div class="preview-bar"><i></i><span>AI 测试设计</span><b>DeepSeek</b></div><div class="preview-body"><div><small>需求文本</small><p>登录连续失败 5 次后锁定账户，并提示剩余尝试次数。</p><span>生成结构化用例 →</span></div><div class="preview-result"><b>12 条用例</b><em>功能 7</em><em>边界 2</em><em>异常 3</em></div></div></div>
-          <ul><li>AI 用例生成与多模型支持</li><li>轻量执行、结果汇总和 Excel 导出</li><li>适合 QA、SDET 与研发团队试点</li></ul>
-          <div class="card-actions"><a class="btn solid" href="/app" data-event="open_laitest">免费体验领测</a><a href="/lingtest-guides" data-event="view_laitest_content">阅读方法 →</a></div>
+          <p>把业务需求转成测试资产，在真实页面运行 Playwright，并用日志与截图回溯失败现场。</p>
+          <div class="product-preview test-preview"><div class="preview-bar"><i></i><span>AI QUALITY WORKSPACE</span><b>在线</b></div><div class="quality-flow"><div><small>01 · DESIGN</small><b>12 条结构化用例</b><span>正常 · 边界 · 异常</span></div><i>→</i><div><small>02 · EXECUTE</small><b>Playwright</b><span>真实页面验证</span></div><i>→</i><div><small>03 · ANALYZE</small><b>通过 9 · 失败 3</b><span>日志与截图</span></div></div></div>
+          <ul><li>AI 测试设计与多模型支持</li><li>Playwright 页面自动执行与结果分类</li><li>失败日志、现场截图和测试方法库</li></ul>
+          <div class="card-actions"><a class="btn solid" href="/app" data-event="open_laitest">进入领测工作台</a><a href="/lingtest-guides" data-event="view_laitest_content">查看方法库 →</a></div>
         </article>
         <article class="project-card travel">
           <div class="project-top"><span class="project-icon">时</span><span class="live">● 在线</span></div>
@@ -67,7 +68,7 @@
           <div class="project-miniapp" id="timelens-miniapp"><img src="/img/timelens-miniapp.jpg" alt="时光透卡微信小程序码"><p><b>微信小程序</b><span>扫码随时规划路线、记录足迹</span></p></div>
         </article>
       </div>
-      <section class="updates-panel updates-wide"><div class="support-head"><div><p class="eyebrow">RECENT UPDATES</p><h3>最近更新</h3></div><span class="live">● 持续迭代</span></div><div class="update-list"><a href="/app"><time>07.11</time><p><b>领测工作台完成视觉升级</b><span>更专注的需求输入、生成与导出流程</span></p></a><a href="/timelens"><time>07.11</time><p><b>时光透卡支持公开路线搜索</b><span>可按城市、景点和关键词查询</span></p></a><a href="/timelens-route?id=seed-trip-2026-north-xinjiang-0925"><time>07.11</time><p><b>路线详情支持独立分享</b><span>逐日行程与小程序扫码入口</span></p></a></div></section>
+      <section class="updates-panel updates-wide"><div class="support-head"><div><p class="eyebrow">RECENT UPDATES</p><h3>最近更新</h3></div><span class="live">● 持续迭代</span></div><div class="update-list"><a href="/app"><time>07.11</time><p><b>领测打通测试设计与页面执行</b><span>支持 Playwright、失败日志、截图与结果分类</span></p></a><a href="/lingtest-guides"><time>07.11</time><p><b>领测方法库正式上线</b><span>沉淀测试设计、AI 测试与质量工程实践</span></p></a><a href="/timelens"><time>07.11</time><p><b>时光透卡支持公开路线搜索</b><span>可按城市、景点和关键词查询</span></p></a></div></section>
       <article class="project-card next compact-next"><span class="plus">＋</span><p class="project-type">NEXT PROJECT</p><h3>这里留给下一个想法</h3><p>一个个人站不只是作品归档，也是新项目开始生长的地方。</p><a href="mailto:lanceqa@agent.qq.com?subject=一起做点什么">如果你也有想法，来聊聊 →</a></article>
     </section>
 
