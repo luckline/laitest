@@ -268,6 +268,31 @@ def _normalize_professional_steps(raw: Any) -> list[dict[str, Any]]:
     return out
 
 
+def _normalize_assertions(value: Any, expected_result: str) -> list[dict[str, str]]:
+    allowed = {"text", "title_contains", "url_contains", "visible"}
+    out: list[dict[str, str]] = []
+    if isinstance(value, list):
+        for row in value[:8]:
+            if not isinstance(row, dict):
+                continue
+            kind = _clean_text(row.get("type"), "text", 30).lower()
+            target = _clean_text(row.get("value"), "", 160)
+            if kind in allowed and target:
+                out.append({"type": kind, "value": target})
+    if out:
+        return out
+
+    text = str(expected_result or "")
+    url_match = re.search(r"(?:跳转|进入|地址|URL)[^。；]*?((?:https?://)?[a-z0-9-]+(?:\.[a-z0-9-]+)+[^，。；\s]*)", text, re.I)
+    if url_match:
+        out.append({"type": "url_contains", "value": re.sub(r"^https?://", "", url_match.group(1))})
+    for match in re.finditer(r"(?:显示|出现|包含|看到)[“「『\"']?([^，。；|”」』\"']{1,50})", text):
+        target = match.group(1).strip()
+        if target and not re.search(r"正确|正常|符合预期|成功处理", target):
+            out.append({"type": "text", "value": target})
+    return out[:4]
+
+
 def _fallback_professional_steps(title: str, expected_result: str) -> list[dict[str, Any]]:
     return [
         {
@@ -340,6 +365,7 @@ def _normalize_professional_case(obj: dict[str, Any], title: str, tags: list[str
         case_id = _make_case_id(title)
 
     automation_candidate = bool(obj.get("automation_candidate", True))
+    assertions = _normalize_assertions(obj.get("assertions"), expected_result)
 
     return {
         "case_id": case_id,
@@ -352,6 +378,7 @@ def _normalize_professional_case(obj: dict[str, Any], title: str, tags: list[str
         "expected_result": expected_result,
         "tags": tags,
         "automation_candidate": automation_candidate,
+        "assertions": assertions,
     }
 
 
@@ -391,6 +418,7 @@ def _normalize_case(obj: dict[str, Any]) -> SuggestedCase | None:
         "steps",
         "expected_result",
         "automation_candidate",
+        "assertions",
     ):
         if key in obj and obj.get(key) not in (None, ""):
             merged_case[key] = obj.get(key)
@@ -943,7 +971,8 @@ def _llm_system_role_text() -> str:
     if custom:
         return custom
     return (
-        "Role: 你是一名拥有 10 年经验的资深软件测试架构师，擅长利用等价类划分、边界值分析、因果图及错误推测法编写高质量测试用例。"
+        "Role: 你是一名拥有 10 年经验的资深测试架构师，擅长风险驱动测试、等价类、边界值、状态迁移、决策表、探索式测试和 Playwright 自动化设计。"
+        "你的输出必须可执行、可观察、可追溯；不编造需求事实，不使用空泛步骤或不可验证的预期结果。"
         "你必须只输出合法 JSON 对象，不要输出 Markdown 或额外解释。"
     )
 
@@ -959,6 +988,8 @@ def _case_schema_text() -> str:
         "\"preconditions\":[\"string\"],"
         "\"steps\":[{\"step_no\":1,\"action\":\"string\",\"test_data\":\"string\",\"expected_result\":\"string\"}],"
         "\"expected_result\":\"string\","
+        "\"assertions\":[{\"type\":\"text|title_contains|url_contains|visible\",\"value\":\"string\"}],"
+        "\"automation_candidate\":true,"
         "\"tags\":[\"string\"],"
         "\"description\":\"string\""
         "}]}"
@@ -979,20 +1010,23 @@ def _case_generation_prompt_text(prompt: str, target_cases: int, max_cases: int)
             # Fallback to default template when placeholder format is invalid.
             pass
     return (
-        "Task: 请根据我提供的【需求描述】，设计一套专业、严密且易于自动化的测试用例。\n"
-        "Design Guidelines & Distribution:\n"
-        "- 功能测试 (60%): 必须覆盖 Happy Path、Negative Testing、输入/数值边界值分析。\n"
-        "- 性能与可靠性 (10%): 关注响应耗时与高并发下数据一致性。\n"
-        "- 合规性与 UI (10%): 关注行业规范、文案准确性、多端兼容性。\n"
-        "- 异常容错 (10%): 覆盖网络波动、服务宕机、非法参数注入等健壮性场景。\n"
-        "- 安全性 (10%): 覆盖垂直/水平越权、SQL 注入、敏感数据脱敏。\n"
-        "- 输出数量允许时，必须覆盖以上五大维度；当数量受限时优先保证每个非功能维度至少 1 条。\n"
-        "- 当输出数量 >= 10 时，优先按 6/1/1/1/1（功能/性能与可靠性/合规UI/异常容错/安全）分配。\n"
+        "Task: 请根据【需求描述】设计一套风险驱动、可评审、可直接执行且适合自动化的测试用例。\n"
+        "Test Analysis Method:\n"
+        "- 先识别业务目标、参与角色、关键状态、业务规则、输入约束、权限边界和失败恢复路径。\n"
+        "- 用等价类、边界值、状态迁移、决策表、错误推测组合设计；边界必须给出 n-1/n/n+1 或明确上下限数据。\n"
+        "- 优先覆盖主流程、资金/数据/权限风险和不可逆操作；只有需求相关时才设计性能、安全、兼容性场景，不要机械凑数。\n"
+        "- 每条用例验证一个清晰目标，避免重复标题、重复步骤和多个无关断言混在一条用例。\n"
+        "- 不得编造需求未提供的接口、账号、阈值或业务规则；必要假设写入 preconditions，并用“假设：”标记。\n"
+        "Priority Rules: P0=核心链路不可用/数据安全风险；P1=主要功能或重要异常；P2=次要场景与兼容性；P3=低风险体验问题。\n"
         f"数量要求: 目标输出 {target_cases} 条，最多 {max_cases} 条；若需求未指定数量，按目标条数输出。\n"
         "Output Requirements:\n"
-        "- 严谨性: 每个步骤必须提供具体可执行的测试数据建议（例如 11 位手机号、特殊字符字符串、越界数值）。\n"
+        "- action 使用明确动词和页面目标，例如“在手机号输入框填写…”“点击登录按钮”，禁止“执行测试”“检查功能”等空泛步骤。\n"
+        "- test_data 必须给出可直接使用的字段和值，格式优先为“字段: 值, 字段: 值”；无数据时写“无”，禁止“按需求输入”。\n"
+        "- 每一步 expected_result 必须可观察；总 expected_result 必须包含明确文案、URL、页面标题或元素状态，禁止只写“符合预期/处理成功”。\n"
+        "- assertions 必须与总预期一致且可由浏览器验证：text=页面文本，title_contains=标题，url_contains=URL，visible=可见元素文字。\n"
+        "- 适合页面自动化的用例设置 automation_candidate=true；性能、验证码、外部支付等不适合直接页面自动化的场景设置 false。\n"
         "- 格式: 虽以前端表格展示，但你必须严格返回 JSON，字段与表格列一一对应："
-        "用例ID(case_id)、模块(module)、用例标题(title)、优先级(priority)、前置条件(preconditions)、执行步骤(steps)、预期结果(expected_result)。\n"
+        "用例ID(case_id)、模块(module)、用例标题(title)、优先级(priority)、前置条件(preconditions)、执行步骤(steps)、预期结果(expected_result)、断言(assertions)。\n"
         "- 执行步骤(steps) 为数组；每个步骤包含 step_no/action/test_data/expected_result。\n"
         "- 默认使用简体中文（需求明确要求英文时除外）。\n"
         "- JSON 必须可被标准 json.loads 直接解析，禁止尾逗号，字符串双引号必须转义。\n"
@@ -1162,11 +1196,19 @@ def _ensure_dimension_coverage(
     if not cases:
         return cases
     target = min(max_cases, max(target_cases, len(cases)))
-    # Too few slots cannot represent all major dimensions.
-    if target < 5:
+    prompt_low = str(prompt or "").lower()
+    required_dims = ["functional"]
+    dimension_signals = {
+        "performance": ("性能", "并发", "响应时间", "吞吐", "稳定性", "performance", "concurrency", "latency"),
+        "compliance_ui": ("ui", "界面", "文案", "兼容", "多端", "浏览器", "合规", "compatibility"),
+        "resilience": ("异常", "容错", "网络", "超时", "重试", "降级", "恢复", "故障", "timeout", "retry"),
+        "security": ("登录", "认证", "权限", "支付", "订单", "隐私", "敏感", "越权", "安全", "token", "auth", "security"),
+    }
+    for dimension, signals in dimension_signals.items():
+        if any(signal in prompt_low for signal in signals):
+            required_dims.append(dimension)
+    if target < len(required_dims):
         return cases
-
-    required_dims = ["functional", "performance", "compliance_ui", "resilience", "security"]
     present: set[str] = set()
     for s in cases:
         present.update(_case_dimension_tags(s))
