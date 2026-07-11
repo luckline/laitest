@@ -2,6 +2,7 @@
   "version": 2,
   "builds": [
     { "src": "api/index.py", "use": "@vercel/python" },
+    { "src": "api/timelens_share.py", "use": "@vercel/python" },
     { "src": "api/execute_case.js", "use": "@vercel/node" },
     { "src": "css/**", "use": "@vercel/static" },
     { "src": "img/**", "use": "@vercel/static" },
@@ -30,7 +31,7 @@
     { "source": "/app", "destination": "/app.html"},
     { "source": "/lingtest-guides", "destination": "/lingtest-guides.html" },
     { "source": "/timelens", "destination": "/timelens.html" },
-    { "source": "/timelens-route", "destination": "/timelens-route.html" },
+    { "source": "/timelens-route", "destination": "/api/timelens_share.py" },
     { "source": "/(.*)", "destination": "/$1" }
   ]
 }
