@@ -25,6 +25,7 @@
   <link rel="stylesheet" href="/css/home-v3.css?v=1">
   <link rel="stylesheet" href="/css/home-v4.css?v=1">
   <link rel="stylesheet" href="/css/home-lingtest-v2.css?v=1">
+  <link rel="stylesheet" href="/css/home-growth-p0.css?v=1">
 </head>
 <body>
   <header class="nav">
@@ -44,7 +45,7 @@
         <div class="hero-actions"><a class="btn solid" href="#projects" data-event="view_projects">查看两个产品</a><a class="btn ghost" href="#about">认识我</a></div>
         <div class="status"><span class="pulse"></span><span>独立构建 · 持续迭代 · 公开记录</span></div>
       </div>
-      <aside class="hero-products"><a class="hero-product lingtest" href="/app" data-event="open_laitest"><div class="hero-product-top"><span>领</span><small>PRODUCT 01</small></div><h2>领测 <i>LingTest</i></h2><p>AI 测试设计与质量工作台</p><div class="mini-ui"><b>设计 → 执行 → 分析</b><span>用例、Playwright 与失败现场</span></div><strong>进入工作台 →</strong></a><a class="hero-product timelens" href="/timelens" data-event="open_timelens"><div class="hero-product-top"><span>时</span><small>PRODUCT 02</small></div><h2>时光透卡</h2><p>旅行计划、路线分享与城市足迹</p><div class="mini-ui"><b>路线 → 足迹</b><span>把旅程装进口袋</span></div><strong>查看路线 →</strong></a></aside>
+      <aside class="hero-products"><a class="hero-product lingtest" href="/lingtest" data-event="open_laitest"><div class="hero-product-top"><span>领</span><small>PRODUCT 01</small></div><h2>领测 <i>LingTest</i></h2><p>AI 测试设计与质量工作台</p><div class="mini-ui"><b>设计 → 执行 → 分析</b><span>用例、Playwright 与失败现场</span></div><strong>了解领测 →</strong></a><a class="hero-product timelens" href="/timelens" data-event="open_timelens"><div class="hero-product-top"><span>时</span><small>PRODUCT 02</small></div><h2>时光透卡</h2><p>旅行计划、路线分享与城市足迹</p><div class="mini-ui"><b>路线 → 足迹</b><span>把旅程装进口袋</span></div><strong>查看路线 →</strong></a></aside>
     </section>
 
     <section id="projects" class="section">
@@ -54,9 +55,10 @@
           <div class="project-top"><span class="project-icon">领</span><span class="live">● 在线</span></div>
           <p class="project-type">AI · QUALITY ENGINEERING</p><h3>领测 <small>LingTest</small></h3>
           <p>把业务需求转成测试资产，在真实页面运行 Playwright，并用日志与截图回溯失败现场。</p>
+          <div class="home-product-metrics"><span><b>3</b> 种模型</span><span><b>10</b> 条默认生成</span><span><b>4</b> 类场景覆盖</span><span><b>2</b> 类失败证据</span></div>
           <div class="product-preview test-preview"><div class="preview-bar"><i></i><span>AI QUALITY WORKSPACE</span><b>在线</b></div><div class="quality-flow"><div><small>01 · DESIGN</small><b>12 条结构化用例</b><span>正常 · 边界 · 异常</span></div><i>→</i><div><small>02 · EXECUTE</small><b>Playwright</b><span>真实页面验证</span></div><i>→</i><div><small>03 · ANALYZE</small><b>通过 9 · 失败 3</b><span>日志与截图</span></div></div></div>
           <ul><li>AI 测试设计与多模型支持</li><li>Playwright 页面自动执行与结果分类</li><li>失败日志、现场截图和测试方法库</li></ul>
-          <div class="card-actions"><a class="btn solid" href="/app" data-event="open_laitest">进入领测工作台</a><a href="/lingtest-guides" data-event="view_laitest_content">查看方法库 →</a></div>
+          <div class="card-actions"><a class="btn solid" href="/lingtest" data-event="open_laitest">查看产品与案例</a><a href="/app" data-event="lingtest_start">直接使用 →</a></div>
         </article>
         <article class="project-card travel">
           <div class="project-top"><span class="project-icon">时</span><span class="live">● 在线</span></div>
@@ -68,7 +70,8 @@
           <div class="project-miniapp" id="timelens-miniapp"><img src="/img/timelens-miniapp.jpg" alt="时光透卡微信小程序码"><p><b>微信小程序</b><span>扫码随时规划路线、记录足迹</span></p></div>
         </article>
       </div>
-      <section class="updates-panel updates-wide"><div class="support-head"><div><p class="eyebrow">RECENT UPDATES</p><h3>最近更新</h3></div><span class="live">● 持续迭代</span></div><div class="update-list"><a href="/app"><time>07.11</time><p><b>领测打通测试设计与页面执行</b><span>支持 Playwright、失败日志、截图与结果分类</span></p></a><a href="/lingtest-guides"><time>07.11</time><p><b>领测方法库正式上线</b><span>沉淀测试设计、AI 测试与质量工程实践</span></p></a><a href="/timelens"><time>07.11</time><p><b>时光透卡支持公开路线搜索</b><span>可按城市、景点和关键词查询</span></p></a></div></section>
+      <section class="home-case-study"><div class="home-case-copy"><p class="eyebrow">REAL PRODUCT FLOW</p><h3>一个完整案例，<br>比十句功能介绍更有说服力。</h3><p>以“手机号密码登录”为例，领测把业务规则拆成默认 10 条结构化用例，覆盖正常、边界、异常和安全场景，再交给 Playwright 验证真实页面。</p><div class="home-case-actions"><a class="btn solid" href="/lingtest#case">查看完整案例</a><a href="/app">拿真实需求试一试 →</a></div></div><div class="home-case-flow"><article><small>INPUT</small><b>登录需求与业务规则</b><span>成功条件 · 异常限制 · 测试数据</span></article><i>↓</i><article><small>TEST ASSETS</small><b>10 条结构化用例</b><span>正常 · 边界 · 异常 · 安全</span></article><i>↓</i><article class="case-result"><small>EXECUTION</small><b>Playwright 真实验证</b><span>步骤日志 · 失败截图 · 结果分类</span></article></div></section>
+      <section class="updates-panel updates-wide"><div class="support-head"><div><p class="eyebrow">RECENT UPDATES</p><h3>最近更新</h3></div><span class="live">● 持续迭代</span></div><div class="update-list"><a href="/lingtest"><time>07.11</time><p><b>领测打通测试设计与页面执行</b><span>支持 Playwright、失败日志、截图与结果分类</span></p></a><a href="/lingtest-guides"><time>07.11</time><p><b>领测方法库正式上线</b><span>沉淀测试设计、AI 测试与质量工程实践</span></p></a><a href="/timelens"><time>07.11</time><p><b>时光透卡支持公开路线搜索</b><span>可按城市、景点和关键词查询</span></p></a></div></section>
       <article class="project-card next compact-next"><span class="plus">＋</span><p class="project-type">NEXT PROJECT</p><h3>这里留给下一个想法</h3><p>一个个人站不只是作品归档，也是新项目开始生长的地方。</p><a href="mailto:lanceqa@agent.qq.com?subject=一起做点什么">如果你也有想法，来聊聊 →</a></article>
     </section>
 
