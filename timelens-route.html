@@ -22,8 +22,9 @@
   </header>
   <main class="route-main" id="routeContent"><div class="empty"><h2>正在加载路线…</h2><p>逐日行程马上就来。</p></div></main>
   <aside class="miniapp-route-cta"><div><span class="eyebrow">CONTINUE IN WECHAT</span><h2>扫码收藏路线，继续规划旅程</h2><p>进入时光透卡小程序，随时查看路线、创建旅行计划，并在途中记录城市足迹。</p><small>手机端可长按图片识别</small></div><img src="/img/timelens-miniapp.jpg" alt="时光透卡微信小程序码"></aside>
+  <dialog id="wechatShareGuide" class="wechat-share-guide"><div class="wechat-share-arrow">↗</div><button type="button" id="closeWechatGuide" aria-label="关闭">×</button><span class="eyebrow">SHARE IN WECHAT</span><h2>从右上角分享，才会显示图文卡片</h2><ol><li>点击微信右上角的「···」</li><li>选择「发送给朋友」或「分享到朋友圈」</li></ol><p>微信会自动带上这条路线的封面、标题和简介。</p><button type="button" class="primary" id="confirmWechatGuide">我知道了</button></dialog>
   <div id="notice" class="notice" hidden></div>
   <script defer src="/site-analytics.js"></script><script defer src="/_vercel/insights/script.js"></script>
-  <script src="/timelens-route.js?v=share-flow-fix-1"></script>
+  <script src="/timelens-route.js?v=wechat-card-guide-1"></script>
 </body>
 </html>
