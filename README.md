@@ -1,27 +1,70 @@
-# laitest (MVP)
+# laitest.tech
 
-一个“TestHub 风格”的测试平台最小可运行版本：
+Luckline 的个人站与产品集合。目前包含：
 
-- 无需安装任何依赖（Python 标准库）
-- SQLite 持久化（`./.laitest/laitest.db`）
-- Web UI（静态页面）+ JSON API
-- 内置一个可插拔的“AI 生成用例”接口（默认用本地启发式；可选对接外部模型）
+- **个人主页**：作品、测试内容、个人介绍与联系方式
+- **laitest**：AI 测试用例生成、用例管理、轻量执行与结果汇总
+- **时光透卡 Web**：旅行路线、计划工作台、城市足迹与可分享路线详情
+- **JSON API / CLI**：供自动化流程、本地工具和其他服务调用
 
-## 运行
+生产站点：[https://laitest.tech](https://laitest.tech)
 
-Web 模式（本机正常终端里运行即可）：
+## 站点路由
+
+| 路径 | 说明 |
+| --- | --- |
+| `/` | Luckline 个人主页与作品入口 |
+| `/app` | laitest AI 测试工作台 |
+| `/timelens` | 时光透卡 PC 工作台 |
+| `/timelens-route?id=<route-id>` | 可独立转发的路线详情页 |
+| `/api/health` | 服务健康检查 |
+| `/api/ai/generate_cases` | AI 测试用例生成 |
+| `/api/ai/travel_plan` | AI 旅行规划 |
+
+## 技术结构
+
+- 前端：原生 HTML、CSS、JavaScript
+- 后端：Python；本地使用标准库 HTTP Server，Vercel 使用 Flask
+- 数据：SQLite，默认位于 `.laitest/laitest.db`
+- 部署：Vercel，配置见 `vercel.json`
+- 统计：Vercel Web Analytics（Hobby 免费版）
+- SEO：`robots.txt`、`sitemap.xml`、Open Graph、JSON-LD、Web Manifest
+
+主要文件：
+
+```text
+.
+├── index.html                 # 个人主页
+├── app.html / app.js          # laitest 工作台
+├── timelens.html              # 时光透卡 PC 工作台
+├── timelens.js
+├── timelens-route.html        # 独立路线详情页
+├── timelens-route.js
+├── css/                       # 各页面样式
+├── img/                       # 站点图片、二维码与图标
+├── api/index.py               # Vercel Flask API
+├── laitest/                   # 本地服务、CLI、AI 与执行引擎
+├── examples/                  # API 调用示例
+├── site-analytics.js          # 站点事件标识
+└── vercel.json                # 部署和路由配置
+```
+
+## 本地运行
+
+要求 Python 3.10+。
 
 ```bash
 cd /Users/user/Documents/laitest
 python3 -m laitest
 ```
 
-然后打开：
+默认访问地址：
 
-- 官网落地页：`http://127.0.0.1:8080/`
-- 控制台：`http://127.0.0.1:8080/app`
+- 个人主页：<http://127.0.0.1:8080/>
+- laitest：<http://127.0.0.1:8080/app>
+- 时光透卡：<http://127.0.0.1:8080/timelens.html>
 
-CLI 模式（不需要监听端口，适合受限环境）：
+CLI 示例：
 
 ```bash
 python3 -m laitest cli health
@@ -29,153 +72,130 @@ python3 -m laitest cli project-create demo
 python3 -m laitest cli projects
 ```
 
-## API 概览
+## API
+
+### 基础接口
 
 - `GET /api/health`
 - `GET/POST /api/projects`
 - `GET/POST /api/suites`
 - `GET/POST /api/cases`
-- `POST /api/runs` 创建执行
-- `GET /api/runs` 查看执行
-- `POST /api/ai/generate_cases` 生成建议用例（本地启发式 or 外部模型）
-- `POST /api/ai/travel_plan` 基于用户输入生成旅行规划（强制使用 DeepSeek）
+- `POST /api/runs`
+- `GET /api/runs`
+- `POST /api/ai/generate_cases`
+- `POST /api/ai/travel_plan`
 
-## AI 用例生成（DeepSeek / Qianwen / Gemini）
+如配置 `LAITEST_TOKEN`，调用 API 时需要携带：
 
-默认使用本地启发式生成；若配置了远程模型 key，则按以下顺序调用并在失败时自动回退：
-
-1. `DeepSeek`
-2. `Qianwen`
-3. `Gemini`
-4. `local`（本地启发式）
-
-`POST /api/ai/generate_cases` 支持可选请求字段：
-
-- `model_provider`：`deepseek` / `qianwen` / `gemini`
-  - 传入后将仅调用该模型生成（失败时仅回退 `local`）
-  - 不传时按上述顺序自动回退
-
-可选环境变量：
-
-- `AI_DEFAULT_CASES`：未在需求中显式写条数时的默认目标用例数（默认 `10`；更易覆盖功能/性能/UI合规/异常容错/安全维度）
-- `AI_SYSTEM_PROMPT`：可选，自定义大模型 system prompt（未配置时使用内置资深测试架构师角色）
-- `AI_CASE_PROMPT_TEMPLATE`：可选，自定义用户提示词模板（支持占位符 `{target_cases}` / `{max_cases}` / `{prompt}` / `{schema}`）
-- `AI_TRAVEL_SYSTEM_PROMPT`：可选，自定义旅行规划接口的 system prompt（默认使用内置资深旅行规划师提示词）
-- `AI_TRAVEL_PROMPT_TEMPLATE`：可选，自定义旅行规划接口的 user prompt 模板（支持占位符 `{prompt}` / `{input}` / `{user_input}`）
-- `DEEPSEEK_API_KEY`：DeepSeek API Key（优先使用；兼容 `DeepSeek_API_KEY`）
-- `DEEPSEEK_MODEL`：模型名（默认 `deepseek-chat`）
-- `DEEPSEEK_BASE_URL`：DeepSeek 基础地址（默认 `https://api.deepseek.com`）
-- `DEEPSEEK_TIMEOUT_S`：DeepSeek 请求超时秒数（默认 `60`）
-- `DEEPSEEK_RETRIES`：DeepSeek 超时/5xx 重试次数（默认 `2`，总尝试次数=重试+1）
-- `DEEPSEEK_TIMEOUT_CAP_S`：有效超时上限（默认不启用；仅在你显式配置时生效）
-- `DEEPSEEK_RETRIES_CAP`：有效重试上限（默认不启用；仅在你显式配置时生效）
-- `DEEPSEEK_PARSE_RETRIES`：DeepSeek 内容解析失败重试次数（默认 `2`）
-- `DEEPSEEK_TOTAL_DEADLINE_S`：DeepSeek 单次生成总时长上限（默认自动按 `timeout*(retries+1)+10s` 推导，超时即回退）
-- `DEEPSEEK_FORCE_JSON_OBJECT`：是否启用 `response_format=json_object`（默认 `0`，建议关闭以提高兼容性）
-- `DEEPSEEK_MAX_TOKENS`：DeepSeek 最大输出 token（默认 `1400`，越小通常越快）
-- `DEEPSEEK_MAX_CASES`：单次最多生成用例条数（默认 `10`，越小通常越快）
-- `DEEPSEEK_PROMPT_MAX_CHARS`：发送给 DeepSeek 的需求文本最大字符数（默认 `4500`）
-- `DEEPSEEK_TRAVEL_MAX_TOKENS`：旅行规划接口最大输出 token（默认 `2200`）
-- `DEEPSEEK_TRAVEL_PROMPT_MAX_CHARS`：旅行规划接口输入最大字符数（默认 `6000`）
-- `DEEPSEEK_TRAVEL_TEMPERATURE`：旅行规划接口温度参数（默认 `0.4`）
-- `QIANWEN_API_KEY`：Qianwen API Key（Vercel 环境变量）
-- `QIANWEN_MODEL`：模型名（默认 `qwen-plus`）
-- `QIANWEN_BASE_URL`：基础地址；可用逗号配置多个端点（默认 `https://dashscope.aliyuncs.com/compatible-mode/v1`，即 DashScope 中国站）
-- `QIANWEN_TIMEOUT_S`：请求超时秒数（默认 `60`）
-- `QIANWEN_RETRIES`：超时/5xx 重试次数（默认 `1`）
-- `QIANWEN_TIMEOUT_CAP_S`：有效超时上限（默认不启用；仅在你显式配置时生效）
-- `QIANWEN_RETRIES_CAP`：有效重试上限（默认不启用；仅在你显式配置时生效）
-- `QIANWEN_TOTAL_DEADLINE_S`：Qianwen 单次生成总时长上限（默认自动按 `timeout*(retries+1)+8s` 推导，超时即回退）
-- `QIANWEN_MAX_TOKENS`：最大输出 token（默认 `1400`）
-- `QIANWEN_MAX_CASES`：单次最多生成用例条数（默认 `10`）
-- `QIANWEN_PROMPT_MAX_CHARS`：发送给 Qianwen 的需求文本最大字符数（默认 `4500`）
-- `GEMINI_API_KEY`：Gemini API Key（作为 DeepSeek 失败时回退）
-- `GEMINI_MODEL`：Gemini 模型名（默认 `gemini-2.0-flash`）
-- `GEMINI_TIMEOUT_S`：Gemini 请求超时秒数（默认 `25`）
-
-接口返回会包含：
-
-- `provider`：`deepseek` / `qianwen` / `gemini` / `qianwen-fallback` / `gemini-fallback` / `local` / `local-fallback`
-- `requested_provider`：请求中指定的 `model_provider`（未指定时为 `null`）
-- `warning`：当远程生成失败并回退时返回错误摘要
-
-## 旅行规划接口
-
-`POST /api/ai/travel_plan`
-
-请求体支持以下任一字段：
-
-- `prompt`
-- `user_input`
-- `input`
-
-示例：
-
-```json
-{
-  "prompt": "我想在 8 月带父母去日本关西玩 5 天，预算 2 万人民币，尽量轻松一点，喜欢美食和历史街区。"
-}
+```http
+Authorization: Bearer <LAITEST_TOKEN>
 ```
 
-返回示例：
-
-```json
-{
-  "travel_plan": "📍 行程概览：...",
-  "provider": "deepseek",
-  "model": "deepseek-chat",
-  "elapsed_ms": 1234,
-  "runtime": {
-    "mode": "deepseek"
-  }
-}
-```
-
-### 时光透卡系统侧调用示例
-
-如果时光透卡系统是 `Node.js` 服务，可以直接参考这个示例文件：
-
-- [examples/shiguang_touka_travel_plan_client.js](/Users/user/Documents/laitest/examples/shiguang_touka_travel_plan_client.js:1)
-
-运行方式：
+### 生成测试用例
 
 ```bash
-cd /Users/user/Documents/laitest
-LAITEST_API_BASE=http://127.0.0.1:8080 \
-LAITEST_TOKEN=your-token-if-needed \
-node examples/shiguang_touka_travel_plan_client.js
+curl -X POST "http://127.0.0.1:8080/api/ai/generate_cases" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "prompt": "登录连续失败 5 次后锁定账户",
+    "model_provider": "deepseek"
+  }'
 ```
 
-核心调用代码如下：
+支持 `deepseek`、`qianwen`、`gemini`。未指定模型时按可用配置自动选择，远程调用失败后回退到本地启发式生成。
 
-```js
-const response = await fetch(`${API_BASE}/api/ai/travel_plan`, {
-  method: "POST",
-  headers: {
-    "Content-Type": "application/json",
-    ...(API_TOKEN ? { Authorization: `Bearer ${API_TOKEN}` } : {}),
-  },
-  body: JSON.stringify({
-    user_input: userInput,
-  }),
-});
-```
-
-如果你们只是先联调接口，也可以直接用 `curl`：
+### 生成旅行计划
 
 ```bash
 curl -X POST "http://127.0.0.1:8080/api/ai/travel_plan" \
   -H "Content-Type: application/json" \
-  -H "Authorization: Bearer your-token-if-needed" \
   -d '{
-    "user_input": "我想在8月带父母去日本关西玩5天，预算2万元人民币，尽量轻松一点，喜欢美食和历史街区，希望避开太赶的换酒店安排。"
+    "user_input": "带父母去日本关西玩 5 天，预算 2 万元，节奏轻松"
   }'
 ```
 
-## 设计目标（后续可扩展）
+请求支持 `prompt`、`user_input` 或 `input` 字段。Node.js 调用示例见 `examples/shiguang_touka_travel_plan_client.js`。
 
-- 用例管理：标签、版本、评审流
-- 执行：并发、重试、隔离、分布式 worker
-- 报告：趋势、失败聚类、Flaky 检测
-- 集成：GitHub/GitLab、CI、通知、缺陷单
-- 智能：从 PR/需求/OpenAPI 自动生成用例，失败归因与修复建议
+## AI 配置
+
+常用环境变量：
+
+| 环境变量 | 用途 |
+| --- | --- |
+| `LAITEST_TOKEN` | API Bearer Token；不设置则不启用鉴权 |
+| `LAITEST_DATA_DIR` | SQLite 数据目录 |
+| `DEEPSEEK_API_KEY` | DeepSeek API Key |
+| `DEEPSEEK_MODEL` | 默认 `deepseek-chat` |
+| `QIANWEN_API_KEY` | 通义千问 API Key |
+| `QIANWEN_MODEL` | 默认 `qwen-plus` |
+| `GEMINI_API_KEY` | Gemini API Key |
+| `GEMINI_MODEL` | 默认 `gemini-2.0-flash` |
+| `AI_DEFAULT_CASES` | 默认生成用例数量，默认 `10` |
+| `AI_SYSTEM_PROMPT` | 自定义测试用例 System Prompt |
+| `AI_CASE_PROMPT_TEMPLATE` | 自定义测试用例提示词模板 |
+| `AI_TRAVEL_SYSTEM_PROMPT` | 自定义旅行规划 System Prompt |
+| `AI_TRAVEL_PROMPT_TEMPLATE` | 自定义旅行规划提示词模板 |
+
+超时、重试、Token 上限等高级配置请查看 `laitest/ai.py` 中对应的环境变量读取逻辑。
+
+## 时光透卡
+
+PC 版提供：
+
+- 公开路线广场
+- 路线合集与逐日行程
+- 可独立分享的路线详情 URL
+- 旅行计划、清单和单日记录
+- 城市足迹地图
+- 微信小程序二维码与扫码登录引导
+- 通过访问令牌同步云端数据
+
+时光透卡公开数据由 `https://timelens.cc` API 提供。PC 浏览器无法直接调用微信小程序的 `wx.login`；扫码登录小程序与 PC Access Token 同步是两个独立步骤。
+
+## 内容与图片维护
+
+- 首页作品与文字：`index.html`
+- 首页样式：`css/marketing.css`、`css/personal-content.css`
+- 测试文章链接：`index.html` 中的 `project-resources`
+- 公众号二维码：`img/qrcode_laitest.jpg`
+- 时光透卡小程序码：`img/timelens-miniapp.jpg`
+- SEO 页面清单：`sitemap.xml`
+
+新增公开页面时，请同步更新 `vercel.json` 和 `sitemap.xml`。
+
+## Analytics
+
+项目使用 Vercel Web Analytics 静态脚本。Vercel 项目控制台需要启用 Web Analytics；部署后访问网站即可产生页面访问数据。
+
+`site-analytics.js` 为关键按钮提供统一事件命名。Hobby 免费版提供页面访问统计但不展示自定义事件；升级或切换统计服务时，可继续复用页面上的 `data-event` 标识。
+
+## 部署
+
+仓库 `main` 分支推送后由 Vercel 自动部署：
+
+```bash
+git push origin main
+```
+
+部署前建议执行：
+
+```bash
+node --check app.js
+node --check timelens.js
+node --check timelens-route.js
+python3 -m json.tool vercel.json >/dev/null
+```
+
+## 安全说明
+
+- 不要提交 API Key、Access Token 或 `.laitest/` 数据库。
+- 生产环境密钥通过 Vercel Environment Variables 配置。
+- `privacy.html`、`terms.html` 和 `security.html` 为站点公开政策页面。
+
+## 后续方向
+
+- 作品、文章和社交账号的数据化维护
+- 产品更新日志与订阅入口
+- 路线详情服务端动态 OG 分享卡片
+- 自媒体内容聚合和运营看板
+- laitest CI、通知、失败聚类与 Flaky 检测
