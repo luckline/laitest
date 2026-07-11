@@ -2,13 +2,14 @@
 /* Personal homepage */
 .personal-home .hero{padding:36px 0 52px;gap:38px;align-items:start}
 .personal-home .hero-copy{padding-top:8px;justify-content:flex-start}
-.personal-home .hero h1{max-width:610px;font-size:clamp(44px,4.5vw,56px);line-height:1.13;letter-spacing:-1px}
+.personal-home .hero h1{max-width:590px;font-size:clamp(40px,4vw,48px);line-height:1.14;letter-spacing:-.8px}
 .personal-home .hero-copy .sub{font-size:16px;line-height:1.7}
 .personal-home .hero-product{min-height:320px;padding:22px}
 .personal-home .hero-product h2{margin-top:32px;font-size:24px}
 .personal-home .section{padding:64px 0}
 .personal-home #projects{padding-top:58px}
 .personal-home .section-title{margin-bottom:24px}
+.personal-home .section h2{font-size:clamp(30px,3.2vw,40px);line-height:1.2;letter-spacing:-.5px}
 .personal-home .project-card{padding:24px}
 .personal-home .product-preview{margin:15px 0}
 .personal-home .about{padding-top:64px;padding-bottom:64px}
@@ -45,4 +46,4 @@
 .guides-page .guide-grid h3{font-size:21px}
 .guides-page .guides-cta{margin-bottom:54px;padding:28px 32px}
 @media(max-width:900px){:root{--ds-section:54px}.personal-home .hero{padding-top:32px}.personal-home .section{padding:56px 0}.lingtest-landing .lt-section{padding-top:60px;padding-bottom:60px}}
-@media(max-width:620px){.personal-home .hero{padding:28px 0 44px}.personal-home .hero h1{font-size:38px}.personal-home .hero-products{grid-template-columns:1fr}.personal-home .hero-product{min-height:190px}.personal-home .section{padding:48px 0}.personal-home #projects{padding-top:46px}.personal-home .home-case-study{padding:20px}.lingtest-landing .lt-section{padding-top:52px;padding-bottom:52px}.lingtest-landing .lt-section h2,.lingtest-landing .lt-final h2{font-size:34px}.guides-page .guides-main{padding-top:28px}.guides-page .guides-hero h1{font-size:42px}}
+@media(max-width:620px){.personal-home .hero{padding:28px 0 44px}.personal-home .hero h1{font-size:36px}.personal-home .section h2{font-size:32px}.personal-home .hero-products{grid-template-columns:1fr}.personal-home .hero-product{min-height:190px}.personal-home .section{padding:48px 0}.personal-home #projects{padding-top:46px}.personal-home .home-case-study{padding:20px}.lingtest-landing .lt-section{padding-top:52px;padding-bottom:52px}.lingtest-landing .lt-section h2,.lingtest-landing .lt-final h2{font-size:34px}.guides-page .guides-main{padding-top:28px}.guides-page .guides-hero h1{font-size:42px}}
