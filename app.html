@@ -8,65 +8,56 @@
       name="description"
       content="输入需求文本，调用 AI 生成结构化测试用例，并以更适合评审和归档的方式输出结果。"
     />
-    <link rel="stylesheet" href="/css/marketing.css" />
     <link rel="stylesheet" href="/css/styles.css?v=app-layout-2" />
+    <link rel="stylesheet" href="/css/app-modern.css?v=1" />
   </head>
   <body class="app-page">
     <div class="app-shell">
-      <header class="nav">
+      <header class="workspace-nav">
         <a class="brand" href="/">
           <span class="mark">LT</span>
-          <span class="word">laitest</span>
+          <span class="brand-copy"><b>laitest</b><small>AI TEST WORKSPACE</small></span>
         </a>
-        <nav class="links">
-          <a href="/#product">能力</a>
-          <a href="/#scenarios">场景</a>
-          <a href="/#tour">界面</a>
-          <a href="/#pilot">试点</a>
-          <a href="/#api">API</a>
-          <a href="/#security">安全</a>
-        </nav>
-        <div class="nav-actions">
-          <a class="btn ghost" href="/">返回官网</a>
+        <div class="workspace-state"><span></span>工作台在线</div>
+        <div class="workspace-actions">
+          <a class="nav-link" href="/">个人主页</a>
+          <a class="nav-link" href="mailto:lanceqa@agent.qq.com?subject=laitest%20反馈">反馈</a>
         </div>
       </header>
 
       <main class="ai-main">
         <section class="ai-hero">
-          <p class="eyebrow">AI-native Quality Engineering</p>
-          <h1>AI 测试用例工作台</h1>
-          <p class="sub">输入需求、验收标准或用户故事，系统会自动输出更适合评审和归档的结构化测试建议。</p>
+          <div>
+            <p class="eyebrow">AI-NATIVE QUALITY ENGINEERING</p>
+            <h1>从一段需求，得到一套<br>可以直接评审的测试用例。</h1>
+            <p class="sub">粘贴需求、验收标准或用户故事，AI 会补齐正常流、边界、异常与安全场景，并整理成结构化结果。</p>
+          </div>
+          <div class="hero-proof"><span><b>01</b>理解需求</span><span><b>02</b>覆盖风险</span><span><b>03</b>导出结果</span></div>
         </section>
 
-        <section class="ai-card">
-          <label class="ai-label" for="aiPrompt">需求文本</label>
-          <div class="ai-model-row">
-            <span class="ai-model-label">模型</span>
-            <select id="aiModel" class="ai-select">
-              <option value="deepseek" selected>DeepSeek（默认）</option>
-              <option value="qianwen">Qianwen</option>
-              <option value="gemini">Gemini</option>
-            </select>
+        <section class="composer-card">
+          <div class="composer-head">
+            <div><span class="step-number">STEP 01</span><h2>描述你要测试的功能</h2><p>信息越具体，输出越接近可以执行的测试方案。</p></div>
+            <div class="model-field"><label for="aiModel">生成模型</label><select id="aiModel" class="ai-select"><option value="deepseek" selected>DeepSeek</option><option value="qianwen">Qianwen</option><option value="gemini">Gemini</option></select></div>
           </div>
           <textarea
             id="aiPrompt"
             placeholder="- 登录成功：手机号+密码+验证码正确&#10;- 登录失败：密码错误&#10;- 登录失败：验证码错误超过5次被锁定"
           ></textarea>
           <div class="ai-toolbar">
-            <button id="fillSample" class="btn ghost" type="button">填充示例</button>
-            <button id="clearPrompt" class="btn ghost" type="button">清空</button>
-            <button id="aiGo" class="btn solid" type="button">生成结构化用例</button>
+            <div><button id="fillSample" class="btn ghost" type="button">使用示例</button><button id="clearPrompt" class="btn text" type="button">清空输入</button></div>
+            <button id="aiGo" class="btn solid generate" type="button"><span>生成结构化用例</span><i>→</i></button>
           </div>
-          <p id="aiStatus" class="ai-status">就绪</p>
+          <p id="aiStatus" class="ai-status"><span class="status-dot"></span>准备就绪</p>
         </section>
 
-        <section class="ai-card">
+        <section class="result-card">
           <div class="ai-out-head">
-            <h2>结构化结果</h2>
+            <div><span class="step-number">STEP 02</span><h2>结构化结果</h2><p>生成后可直接评审、复制或导出。</p></div>
             <div class="ai-toolbar right">
-              <button id="downloadExcel" class="btn ghost" type="button">下载 Excel</button>
+              <button id="downloadExcel" class="btn ghost" type="button">导出 Excel</button>
               <button id="copyJson" class="btn ghost" type="button">复制 JSON</button>
-              <button id="toggleRaw" class="btn ghost" type="button">显示原始 JSON</button>
+              <button id="toggleRaw" class="btn text" type="button">查看原始数据</button>
             </div>
           </div>
           <div id="aiSummary" class="ai-summary">暂无结果</div>
@@ -75,13 +66,7 @@
         </section>
       </main>
 
-      <footer class="app-foot">
-        <span>官网首页：<a href="/">/</a></span>
-        <span class="sep">|</span>
-        <span>API：<code>/api/ai/generate_cases</code> · <code>/api/ai/travel_plan</code></span>
-        <span class="sep">|</span>
-        <span>输出：结构化 JSON / 旅行规划文本</span>
-      </footer>
+      <footer class="app-foot"><span>laitest · AI 测试工作台</span><span>结构化 JSON · Excel 导出 · 多模型支持</span><a href="mailto:lanceqa@agent.qq.com">lanceqa@agent.qq.com</a></footer>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
