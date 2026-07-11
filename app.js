@@ -54,7 +54,7 @@ function setBusy(busy) {
       node.disabled = busy;
     }
   });
-  el("aiGo").textContent = busy ? "生成中..." : "生成结构化用例";
+  el("aiGo").textContent = busy ? "正在生成测试资产..." : "生成测试用例 →";
 }
 
 function baseProviderName(name) {
@@ -211,7 +211,7 @@ function renderSuggestions(list) {
       const result = state.executionResults[tc.case_id];
       const running = state.runningCases.has(tc.case_id);
       const status = running ? "running" : result ? result.status : "idle";
-      const statusText = {running:"执行中",passed:"通过",failed:"失败",idle:"未执行"}[status] || status;
+      const statusText = {running:"执行中",passed:"通过",failed:"失败",blocked:"被拦截",needs_review:"需确认",idle:"未执行"}[status] || status;
       return `
       <tr data-case-id="${escapeHtml(tc.case_id)}">
         <td><div class="ai-cell-lines">${escapeHtml(tc.case_id)}</div></td>
@@ -283,7 +283,8 @@ async function executeCase(caseId) {
     const out = await api("/api/ai/execute_case", {method:"POST", body:JSON.stringify({target_url:target,test_case:testCase})});
     state.executionResults[caseId] = out.result || {status:"failed",log:"服务未返回执行结果"};
     const result = state.executionResults[caseId];
-    setStatus(`${caseId} 执行${result.status === "passed" ? "通过" : "失败"}，耗时 ${formatElapsed(result.duration_ms)}。`, result.status === "passed" ? "ok" : "err");
+    const resultLabel = {passed:"通过",failed:"失败",blocked:"被网站风控拦截",needs_review:"需要人工确认"}[result.status] || result.status;
+    setStatus(`${caseId}：${resultLabel}，耗时 ${formatElapsed(result.duration_ms)}。`, result.status === "passed" ? "ok" : result.status === "needs_review" ? "warn" : "err");
   } catch (e) {
     state.executionResults[caseId] = {status:"failed",duration_ms:0,log:String(e.message || e),error:String(e.message || e)};
     setStatus(`${caseId} 执行失败：${e.message || e}`, "err");
@@ -307,7 +308,8 @@ function showExecutionResult(caseId) {
   if (!result) return;
   el("executionCaseId").textContent = caseId;
   el("executionTitle").textContent = testCase ? testCase.title : "执行详情";
-  el("executionMeta").innerHTML = `<span class="run-status ${escapeHtml(result.status)}">${result.status === "passed" ? "通过" : "失败"}</span><span>耗时 ${escapeHtml(formatElapsed(result.duration_ms))}</span>${result.final_url ? `<span>${escapeHtml(result.final_url)}</span>` : ""}`;
+  const resultLabel = {passed:"通过",failed:"失败",blocked:"被拦截",needs_review:"需确认"}[result.status] || result.status;
+  el("executionMeta").innerHTML = `<span class="run-status ${escapeHtml(result.status)}">${escapeHtml(resultLabel)}</span>${result.summary ? `<b>${escapeHtml(result.summary)}</b>` : ""}<span>耗时 ${escapeHtml(formatElapsed(result.duration_ms))}</span>${result.final_url ? `<span>${escapeHtml(result.final_url)}</span>` : ""}`;
   el("executionLog").textContent = result.log || "暂无日志";
   const hasShot = Boolean(result.screenshot_base64);
   el("executionShotWrap").hidden = !hasShot;

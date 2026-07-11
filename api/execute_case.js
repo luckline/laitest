@@ -55,7 +55,27 @@ function inferCaseValue(testCase) {
 
 async function assertNotBlocked(page) {
   const url = page.url();
-  if (/captcha|wappass\.baidu\.com/i.test(url)) throw new Error("BLOCKED_BY_CAPTCHA: 百度检测到自动化访问并要求验证码，本次执行已被目标站风控拦截");
+  const title = await page.title().catch(() => "");
+  const bodyText = await page.locator("body").innerText({ timeout: 1000 }).catch(() => "");
+  if (/captcha|challenge|verify|security-check/i.test(url) || /验证码|安全验证|人机验证|滑块验证|访问异常/.test(`${title} ${bodyText.slice(0, 2000)}`)) {
+    throw new Error("BLOCKED_BY_CHALLENGE: 目标网站要求验证码或人机验证，本次自动执行已被网站风控拦截");
+  }
+}
+
+async function waitForPageReady(page) {
+  await page.waitForLoadState("domcontentloaded");
+  await page.evaluate(() => document.fonts?.ready).catch(() => {});
+  await page.waitForTimeout(1200);
+}
+
+async function findClickTarget(page, label, action) {
+  const domain = action.match(/(?:^|[^a-z0-9.-])([a-z0-9-]+(?:\.[a-z0-9-]+)+)(?=[^a-z0-9.-]|$)/i)?.[1];
+  let target = domain ? page.getByRole("link", { name: new RegExp(domain.replaceAll(".", "\\."), "i") }) : page.getByRole("button", { name: new RegExp(label, "i") });
+  if (!(await target.count()) && domain) target = page.getByText(new RegExp(domain.replaceAll(".", "\\."), "i"));
+  if (!(await target.count())) target = page.getByText(label, { exact: true });
+  const isSubmitAction = /搜索|查询|提交|登录|确认|保存|下一步|完成/.test(`${label} ${action}`);
+  if (!(await target.count()) && isSubmitAction) target = page.locator('button[type="submit"], input[type="submit"], form button, [role="search"] button');
+  return target.first();
 }
 
 async function runStep(page, step, logs, context) {
@@ -67,7 +87,11 @@ async function runStep(page, step, logs, context) {
     const generic = !directValue || /^(?:关键词|内容|数据|信息)$/.test(directValue);
     const value = generic ? context.inferredValue : directValue;
     if (!value) throw new Error("用例缺少可执行的输入数据，请在测试数据中明确填写关键词或输入值");
-    const input = page.getByRole("textbox").first();
+    const hint = action.match(/在(.{1,24}?)(?:中|里)?(?:输入|填写)/)?.[1]?.replace(/页面|表单/g, "").trim();
+    let input = hint ? page.getByLabel(new RegExp(hint, "i")) : page.getByRole("textbox");
+    if (!(await input.count()) && hint) input = page.getByPlaceholder(new RegExp(hint, "i"));
+    if (!(await input.count())) input = page.getByRole("textbox");
+    input = input.first();
     if (!(await input.count())) throw new Error("目标页面未找到可输入的文本框");
     await input.fill(value);
     logs.push(`在文本框输入 ${value}`);
@@ -75,17 +99,14 @@ async function runStep(page, step, logs, context) {
   const click = action.match(/(?:点击|单击|按下)[「『\"']?([^，,。；;|「』\"']+?)[」』\"']?(?:按钮|链接|$)/);
   if (click) {
     const label = click[1].trim();
-    const domain = action.match(/(?:^|[^a-z0-9.-])([a-z0-9-]+(?:\.[a-z0-9-]+)+)(?=[^a-z0-9.-]|$)/i)?.[1];
-    let target = domain ? page.getByRole("link", { name: new RegExp(domain.replaceAll(".", "\\."), "i") }) : page.getByRole("button", { name: new RegExp(label, "i") });
-    if (!(await target.count()) && domain) target = page.getByText(new RegExp(domain.replaceAll(".", "\\."), "i"));
-    if (!(await target.count())) target = page.getByText(label, { exact: true });
+    const target = await findClickTarget(page, label, action);
     if (!(await target.count())) throw new Error(`目标页面未找到“${label}”按钮或链接，请填写实际功能页面地址并确认页面内容与用例一致`);
+    await target.waitFor({ state: "visible", timeout: 8000 });
     await target.first().click({ timeout: 8000 }); logs.push(`点击 ${label}`); await assertNotBlocked(page); return;
   }
   const label = ["登录","提交","确认","保存","下一步"].find((word) => action.includes(word));
   if (label) {
-    let target = page.getByRole("button", { name: new RegExp(label, "i") });
-    if (!(await target.count())) target = page.getByText(label, { exact: true });
+    const target = await findClickTarget(page, label, action);
     if (!(await target.count())) throw new Error(`目标页面未找到“${label}”按钮，请填写实际功能页面地址并确认页面内容与用例一致`);
     await target.first().click({ timeout: 8000 }); logs.push(`点击 ${label}`); await assertNotBlocked(page);
   }
@@ -95,6 +116,8 @@ async function runStep(page, step, logs, context) {
 async function launchBrowser() {
   const ws = String(process.env.PLAYWRIGHT_WS_ENDPOINT || "").trim();
   if (ws) return { browser: await playwright.connect(ws), mode: "远程 Playwright" };
+  const cjkFont = String(process.env.PLAYWRIGHT_CJK_FONT_URL || "https://raw.githubusercontent.com/notofonts/noto-cjk/main/Sans/OTF/SimplifiedChinese/NotoSansCJKsc-Regular.otf").trim();
+  if (cjkFont) await serverlessChromium.font(cjkFont).catch(() => {});
   return { browser: await playwright.launch({ args: serverlessChromium.args, executablePath: await serverlessChromium.executablePath(), headless: true }), mode: "Vercel Chromium" };
 }
 
@@ -114,18 +137,23 @@ module.exports = async function handler(req, res) {
     });
     page.on("pageerror", (error) => logs.push(`pageerror: ${error.message}`));
     await page.goto(target, { waitUntil: "domcontentloaded", timeout: 30000 });
-    await page.waitForLoadState("domcontentloaded");
-    await page.waitForTimeout(1000);
+    await waitForPageReady(page);
     logs.push(`打开 ${target}`);
     const executionContext = { inferredValue: inferCaseValue(testCase) };
     for (const [index, step] of (testCase.steps || []).entries()) { logs.push(`STEP ${index + 1} START`); await runStep(page, step, logs, executionContext); await page.waitForTimeout(500); await assertNotBlocked(page); logs.push(`STEP ${index + 1} PASS`); }
     const shot = await page.screenshot({ type: "jpeg", quality: 70 });
-    return res.status(200).json({ result: { status:"passed", duration_ms:Date.now()-started, log:logs.join("\n"), screenshot_base64:shot.toString("base64"), screenshot_mime:"image/jpeg", final_url:page.url() } });
+    return res.status(200).json({ result: { status:"passed", category:"assertion_passed", summary:"全部步骤执行完成", duration_ms:Date.now()-started, log:logs.join("\n"), screenshot_base64:shot.toString("base64"), screenshot_mime:"image/jpeg", final_url:page.url() } });
   } catch (error) {
-    logs.push(`FAILED: ${error?.name || "Error"}: ${error?.message || error}`);
+    const message = String(error?.message || error);
+    const blocked = message.includes("BLOCKED_BY_CHALLENGE");
+    const needsReview = /未找到|缺少可执行|页面地址|页面内容与用例一致/.test(message);
+    const status = blocked ? "blocked" : needsReview ? "needs_review" : "failed";
+    const category = blocked ? "site_challenge" : needsReview ? "page_mismatch" : "execution_error";
+    const summary = blocked ? "被目标网站风控拦截" : needsReview ? "页面与用例需要人工确认" : "执行器运行失败";
+    logs.push(`${status.toUpperCase()}: ${error?.name || "Error"}: ${message.replace(/^BLOCKED_BY_CHALLENGE:\s*/, "")}`);
     let screenshot = "";
     try { if (page) screenshot = (await page.screenshot({ type:"jpeg", quality:70 })).toString("base64"); } catch (_) {}
-    return res.status(200).json({ result: { status:"failed", duration_ms:Date.now()-started, log:logs.join("\n"), screenshot_base64:screenshot, screenshot_mime:"image/jpeg", error:String(error?.message || error) } });
+    return res.status(200).json({ result: { status, category, summary, duration_ms:Date.now()-started, log:logs.join("\n"), screenshot_base64:screenshot, screenshot_mime:"image/jpeg", error:message } });
   } finally { if (browser) await browser.close().catch(() => {}); }
 };
 

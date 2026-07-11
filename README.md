@@ -126,11 +126,14 @@ curl -X POST "http://127.0.0.1:8080/api/ai/travel_plan" \
 | `LAITEST_DATA_DIR` | SQLite 数据目录 |
 | `DEEPSEEK_API_KEY` | DeepSeek API Key |
 | `DEEPSEEK_MODEL` | 默认 `deepseek-chat` |
-| `PLAYWRIGHT_WS_ENDPOINT` | 线上 Playwright 浏览器 WebSocket 地址；Vercel 环境必须配置，本地留空时启动本机 Chromium |
+| `PLAYWRIGHT_WS_ENDPOINT` | 可选的远程 Playwright WebSocket 地址；留空时 Vercel 使用内置 Serverless Chromium |
+| `PLAYWRIGHT_CJK_FONT_URL` | 可选的中日韩字体文件地址；Vercel Chromium 默认加载 Noto Sans CJK SC，确保中文截图正常 |
 
 ### Playwright 页面自动化
 
 领测生成用例后，可填写测试环境 URL 并逐条或批量执行。执行结果会在用例列表中显示，通过“查看详情”可以检查步骤日志与失败现场截图。
+
+执行器采用通用页面模型：优先根据 `role`、`label`、`placeholder`、可见文本和表单语义定位元素，不绑定特定网站。执行结论区分通过、失败、页面需确认和网站风控拦截；验证码不会被自动绕过。
 
 - 本地：执行 `pip install -r requirements-playwright.txt`，然后执行 `playwright install chromium`。
 - Vercel：默认使用 `@sparticuz/chromium` 提供的 Serverless Chromium，无需额外下载浏览器；如需更高并发或更长任务，也可以配置 `PLAYWRIGHT_WS_ENDPOINT` 连接远程浏览器。

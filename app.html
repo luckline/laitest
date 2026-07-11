@@ -12,6 +12,7 @@
     <link rel="stylesheet" href="/css/app-modern.css?v=1" />
     <link rel="stylesheet" href="/css/lingtest-resources.css?v=1" />
     <link rel="stylesheet" href="/css/lingtest-execution.css?v=1" />
+    <link rel="stylesheet" href="/css/lingtest-workspace-v2.css?v=1" />
   </head>
   <body class="app-page">
     <div class="app-shell">
@@ -30,16 +31,22 @@
       <main class="ai-main">
         <section class="ai-hero">
           <div>
-            <p class="eyebrow">AI-NATIVE QUALITY ENGINEERING</p>
-            <h1>从一段需求，得到一套<br>可以直接评审的测试用例。</h1>
-            <p class="sub">粘贴需求、验收标准或用户故事，AI 会补齐正常流、边界、异常与安全场景，并整理成结构化结果。</p>
+            <p class="eyebrow">LINGTEST · AI QUALITY WORKSPACE</p>
+            <h1>把需求变成<br>可执行的质量资产。</h1>
+            <p class="sub">从测试设计、结构化用例到 Playwright 页面执行，在一个工作台完成评审、验证与问题回溯。</p>
           </div>
-          <div class="hero-proof"><span><b>01</b>理解需求</span><span><b>02</b>覆盖风险</span><span><b>03</b>导出结果</span></div>
+          <div class="hero-proof"><span><b>01</b><i>设计</i><small>需求 → 用例</small></span><span><b>02</b><i>执行</i><small>页面自动化</small></span><span><b>03</b><i>分析</i><small>日志与截图</small></span></div>
+        </section>
+
+        <section class="workspace-overview" aria-label="领测工作流">
+          <div><span>01</span><b>输入业务需求</b><p>支持需求、验收标准与用户故事</p></div>
+          <i>→</i><div><span>02</span><b>生成测试资产</b><p>覆盖正常、边界、异常和安全场景</p></div>
+          <i>→</i><div><span>03</span><b>真实页面验证</b><p>运行 Playwright 并保留失败现场</p></div>
         </section>
 
         <section class="composer-card">
           <div class="composer-head">
-            <div><span class="step-number">STEP 01</span><h2>描述你要测试的功能</h2><p>信息越具体，输出越接近可以执行的测试方案。</p></div>
+            <div><span class="step-number">TEST DESIGN</span><h2>描述需要验证的业务</h2><p>建议包含业务规则、成功条件、异常限制和关键测试数据。</p></div>
             <div class="model-field"><label for="aiModel">生成模型</label><select id="aiModel" class="ai-select"><option value="deepseek" selected>DeepSeek</option><option value="qianwen">Qianwen</option><option value="gemini">Gemini</option></select></div>
           </div>
           <textarea
@@ -48,14 +55,14 @@
           ></textarea>
           <div class="ai-toolbar">
             <div><button id="fillSample" class="btn ghost" type="button">使用示例</button><button id="clearPrompt" class="btn text" type="button">清空输入</button></div>
-            <button id="aiGo" class="btn solid generate" type="button"><span>生成结构化用例</span><i>→</i></button>
+            <button id="aiGo" class="btn solid generate" type="button"><span>生成测试用例</span><i>→</i></button>
           </div>
           <p id="aiStatus" class="ai-status"><span class="status-dot"></span>准备就绪</p>
         </section>
 
         <section class="result-card">
           <div class="ai-out-head">
-            <div><span class="step-number">STEP 02</span><h2>结构化结果与自动执行</h2><p>生成后可评审、导出，并用 Playwright 在真实页面执行。</p></div>
+            <div><span class="step-number">TEST ASSETS</span><h2>用例与执行结果</h2><p>统一评审测试设计，并在真实页面验证关键路径。</p></div>
             <div class="ai-toolbar right">
               <button id="downloadExcel" class="btn ghost" type="button">导出 Excel</button>
               <button id="copyJson" class="btn ghost" type="button">复制 JSON</button>
@@ -66,8 +73,8 @@
             <label for="executionTarget"><span>测试环境地址</span><input id="executionTarget" type="url" inputmode="url" placeholder="https://example.com/login" autocomplete="url" /></label>
             <div><span class="execution-hint">填写目标页面后，可执行右侧单条用例</span><button id="runAllCases" class="btn solid" type="button">执行全部</button></div>
           </div>
-          <div id="aiSummary" class="ai-summary">暂无结果</div>
-          <div id="aiCards" class="ai-cards"></div>
+          <div id="aiSummary" class="ai-summary">等待生成测试资产</div>
+          <div id="aiCards" class="ai-cards"><div class="workspace-empty"><span>◎</span><b>还没有测试用例</b><p>在上方输入业务需求，AI 将生成可评审、可导出、可自动执行的结构化用例。</p><small>支持正常流 · 边界场景 · 异常处理 · 安全风险</small></div></div>
           <pre id="aiOut" class="ai-pre" hidden></pre>
         </section>
         <section class="lingtest-resources" id="resources"><div class="resource-title"><div><span class="step-number">METHODS & PRACTICE</span><h2>测试方法与实践</h2><p>从需求分析到 AI 用例生成，继续了解领测背后的测试设计方法。</p></div></div><div class="resource-grid"><a href="https://mp.weixin.qq.com/s/SzFTo3DcoaC6gsouPioI6w" target="_blank" rel="noopener"><span>测试设计</span><b>从需求到用例：高质量测试设计清单</b><p>覆盖正常流、边界流和异常流的结构化设计思路。</p><i>阅读文章 ↗</i></a><a href="https://mp.weixin.qq.com/s/WpWlNFcruEtZPQBpx64T-g" target="_blank" rel="noopener"><span>方法论</span><b>测试用例概念和设计方法</b><p>建立可重复使用的测试设计框架。</p><i>阅读文章 ↗</i></a><a href="https://mp.weixin.qq.com/s/xaipK5vbwLsAFtDvFupJVA" target="_blank" rel="noopener"><span>工程实践</span><b>持续集成（CI）落地全指南</b><p>从流水线规划到质量门禁配置。</p><i>阅读文章 ↗</i></a><a href="https://mp.weixin.qq.com/s/5UPiDzVEczXOSiNEj-ANWw" target="_blank" rel="noopener"><span>AI 测试</span><b>AI 生成用例的正确使用姿势</b><p>提高 AI 输出的可执行率与复用价值。</p><i>阅读文章 ↗</i></a></div></section>

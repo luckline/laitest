@@ -70,8 +70,23 @@ def _infer_case_value(test_case: dict[str, Any]) -> str:
 
 
 def _assert_not_blocked(page: Any) -> None:
-    if re.search(r"captcha|wappass\.baidu\.com", page.url, re.I):
-        raise RuntimeError("BLOCKED_BY_CAPTCHA: 百度检测到自动化访问并要求验证码，本次执行已被目标站风控拦截")
+    title = page.title()
+    body_text = page.locator("body").inner_text(timeout=1000)[:2000]
+    if re.search(r"captcha|challenge|verify|security-check", page.url, re.I) or re.search(r"验证码|安全验证|人机验证|滑块验证|访问异常", f"{title} {body_text}"):
+        raise RuntimeError("BLOCKED_BY_CHALLENGE: 目标网站要求验证码或人机验证，本次自动执行已被网站风控拦截")
+
+
+def _find_click_target(page: Any, label: str, action: str) -> Any:
+    domain_match = re.search(r"(?:^|[^a-z0-9.-])([a-z0-9-]+(?:\.[a-z0-9-]+)+)(?=[^a-z0-9.-]|$)", action, re.I)
+    domain = domain_match.group(1) if domain_match else ""
+    target = page.get_by_role("link", name=re.compile(re.escape(domain), re.I)) if domain else page.get_by_role("button", name=re.compile(re.escape(label), re.I))
+    if target.count() == 0 and domain:
+        target = page.get_by_text(re.compile(re.escape(domain), re.I))
+    if target.count() == 0:
+        target = page.get_by_text(label, exact=True)
+    if target.count() == 0 and re.search(r"搜索|查询|提交|登录|确认|保存|下一步|完成", f"{label} {action}"):
+        target = page.locator('button[type="submit"], input[type="submit"], form button, [role="search"] button')
+    return target.first
 
 
 def _run_natural_step(page: Any, step: dict[str, Any], logs: list[str], inferred_value: str = "") -> None:
@@ -97,13 +112,7 @@ def _run_natural_step(page: Any, step: dict[str, Any], logs: list[str], inferred
     click_match = re.search(r"(?:点击|单击|按下)[「『\"']?([^，,。；;|「』\"']+?)[」』\"']?(?:按钮|链接|$)", action)
     if click_match:
         label = click_match.group(1).strip()
-        domain_match = re.search(r"(?:^|[^a-z0-9.-])([a-z0-9-]+(?:\.[a-z0-9-]+)+)(?=[^a-z0-9.-]|$)", action, re.I)
-        domain = domain_match.group(1) if domain_match else ""
-        target = page.get_by_role("link", name=re.compile(re.escape(domain), re.I)) if domain else page.get_by_role("button", name=re.compile(re.escape(label), re.I))
-        if target.count() == 0 and domain:
-            target = page.get_by_text(re.compile(re.escape(domain), re.I))
-        if target.count() == 0:
-            target = page.get_by_text(label, exact=True)
+        target = _find_click_target(page, label, action)
         if target.count() == 0:
             raise RuntimeError(f"目标页面未找到“{label}”按钮或链接，请填写实际功能页面地址并确认页面内容与用例一致")
         target.first.click(timeout=8000)
@@ -112,9 +121,7 @@ def _run_natural_step(page: Any, step: dict[str, Any], logs: list[str], inferred
     elif any(word in action for word in ("提交", "登录", "确认", "保存", "下一步")):
         labels = [word for word in ("登录", "提交", "确认", "保存", "下一步") if word in action]
         label = labels[0]
-        target = page.get_by_role("button", name=re.compile(label, re.I))
-        if target.count() == 0:
-            target = page.get_by_text(label, exact=True)
+        target = _find_click_target(page, label, action)
         if target.count() == 0:
             raise RuntimeError(f"目标页面未找到“{label}”按钮，请填写实际功能页面地址并确认页面内容与用例一致")
         target.first.click(timeout=8000)
@@ -147,6 +154,11 @@ def run_browser_case(target_url: str, test_case: dict[str, Any]) -> dict[str, An
         page.on("console", lambda msg: logs.append(f"console.error: {msg.text}") if msg.type == "error" and "upgrade-insecure-requests" not in msg.text else None)
         page.on("pageerror", lambda exc: logs.append(f"pageerror: {exc}"))
         page.goto(url, wait_until="domcontentloaded", timeout=30000)
+        try:
+            page.evaluate("document.fonts ? document.fonts.ready : Promise.resolve()")
+        except Exception:
+            pass
+        page.wait_for_timeout(1200)
         logs.append(f"打开 {url}")
         inferred_value = _infer_case_value(test_case)
         for index, step in enumerate(test_case.get("steps") or [], start=1):
@@ -164,7 +176,11 @@ def run_browser_case(target_url: str, test_case: dict[str, Any]) -> dict[str, An
             "final_url": page.url,
         }
     except Exception as exc:
-        logs.append(f"FAILED: {exc.__class__.__name__}: {exc}")
+        message = str(exc)
+        blocked = "BLOCKED_BY_CHALLENGE" in message
+        needs_review = bool(re.search(r"未找到|缺少可执行|页面地址|页面内容与用例一致", message))
+        status = "blocked" if blocked else "needs_review" if needs_review else "failed"
+        logs.append(f"{status.upper()}: {exc.__class__.__name__}: {message.replace('BLOCKED_BY_CHALLENGE:', '').strip()}")
         try:
             pages = browser.contexts[0].pages if browser and browser.contexts else []
             if pages:
@@ -172,7 +188,9 @@ def run_browser_case(target_url: str, test_case: dict[str, Any]) -> dict[str, An
         except Exception as shot_exc:
             logs.append(f"截图失败: {shot_exc}")
         return {
-            "status": "failed",
+            "status": status,
+            "category": "site_challenge" if blocked else "page_mismatch" if needs_review else "execution_error",
+            "summary": "被目标网站风控拦截" if blocked else "页面与用例需要人工确认" if needs_review else "执行器运行失败",
             "duration_ms": int((time.monotonic() - started) * 1000),
             "log": "\n".join(logs),
             "screenshot_base64": screenshot,
