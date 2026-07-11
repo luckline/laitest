@@ -3,7 +3,7 @@
 Luckline 的个人站与产品集合。目前包含：
 
 - **个人主页**：作品、测试内容、个人介绍与联系方式
-- **laitest**：AI 测试用例生成、用例管理、轻量执行与结果汇总
+- **领测 LingTest**：AI 测试设计与质量工作台，提供用例生成、管理、轻量执行与结果汇总
 - **时光透卡 Web**：旅行路线、计划工作台、城市足迹与可分享路线详情
 - **JSON API / CLI**：供自动化流程、本地工具和其他服务调用
 
@@ -14,7 +14,7 @@ Luckline 的个人站与产品集合。目前包含：
 | 路径 | 说明 |
 | --- | --- |
 | `/` | Luckline 个人主页与作品入口 |
-| `/app` | laitest AI 测试工作台 |
+| `/app` | 领测 LingTest · AI 测试设计与质量工作台 |
 | `/timelens` | 时光透卡 PC 工作台 |
 | `/timelens-route?id=<route-id>` | 可独立转发的路线详情页 |
 | `/api/health` | 服务健康检查 |
@@ -35,7 +35,7 @@ Luckline 的个人站与产品集合。目前包含：
 ```text
 .
 ├── index.html                 # 个人主页
-├── app.html / app.js          # laitest 工作台
+├── app.html / app.js          # 领测 LingTest 工作台
 ├── timelens.html              # 时光透卡 PC 工作台
 ├── timelens.js
 ├── timelens-route.html        # 独立路线详情页
@@ -61,7 +61,7 @@ python3 -m laitest
 默认访问地址：
 
 - 个人主页：<http://127.0.0.1:8080/>
-- laitest：<http://127.0.0.1:8080/app>
+- 领测 LingTest：<http://127.0.0.1:8080/app>
 - 时光透卡：<http://127.0.0.1:8080/timelens.html>
 
 CLI 示例：
@@ -198,4 +198,4 @@ python3 -m json.tool vercel.json >/dev/null
 - 产品更新日志与订阅入口
 - 路线详情服务端动态 OG 分享卡片
 - 自媒体内容聚合和运营看板
-- laitest CI、通知、失败聚类与 Flaky 检测
+- 领测 LingTest 的 CI、通知、失败聚类与 Flaky 检测
