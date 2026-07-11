@@ -126,6 +126,15 @@ curl -X POST "http://127.0.0.1:8080/api/ai/travel_plan" \
 | `LAITEST_DATA_DIR` | SQLite 数据目录 |
 | `DEEPSEEK_API_KEY` | DeepSeek API Key |
 | `DEEPSEEK_MODEL` | 默认 `deepseek-chat` |
+| `PLAYWRIGHT_WS_ENDPOINT` | 线上 Playwright 浏览器 WebSocket 地址；Vercel 环境必须配置，本地留空时启动本机 Chromium |
+
+### Playwright 页面自动化
+
+领测生成用例后，可填写测试环境 URL 并逐条或批量执行。执行结果会在用例列表中显示，通过“查看详情”可以检查步骤日志与失败现场截图。
+
+- 本地：安装依赖后执行 `playwright install chromium`。
+- Vercel：Serverless 环境无法稳定启动完整浏览器，需要配置 `PLAYWRIGHT_WS_ENDPOINT` 连接 Browserless 等兼容 Playwright 协议的远程浏览器。
+- 安全：执行接口仅接受公网 `http/https` 地址，拒绝 localhost 和内网 IP，避免服务端请求伪造。
 | `QIANWEN_API_KEY` | 通义千问 API Key |
 | `QIANWEN_MODEL` | 默认 `qwen-plus` |
 | `GEMINI_API_KEY` | Gemini API Key |

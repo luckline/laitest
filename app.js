@@ -28,6 +28,9 @@ const state = {
   showRaw: false,
   lastOutput: null,
   lastRows: [],
+  lastCases: [],
+  executionResults: {},
+  runningCases: new Set(),
 };
 
 const SAMPLE_PROMPT = [
@@ -202,11 +205,15 @@ function renderSuggestions(list) {
     return;
   }
 
-  const rows = list
-    .map((item, idx) => {
-      const tc = normalizeTestCase(item, idx);
+  state.lastCases = list.map((item, idx) => item && item.case_id ? item : normalizeTestCase(item, idx));
+  const rows = state.lastCases
+    .map((tc) => {
+      const result = state.executionResults[tc.case_id];
+      const running = state.runningCases.has(tc.case_id);
+      const status = running ? "running" : result ? result.status : "idle";
+      const statusText = {running:"执行中",passed:"通过",failed:"失败",idle:"未执行"}[status] || status;
       return `
-      <tr>
+      <tr data-case-id="${escapeHtml(tc.case_id)}">
         <td><div class="ai-cell-lines">${escapeHtml(tc.case_id)}</div></td>
         <td><div class="ai-cell-lines">${escapeHtml(tc.module)}</div></td>
         <td><div class="ai-cell-lines">${escapeHtml(tc.title)}</div></td>
@@ -214,12 +221,12 @@ function renderSuggestions(list) {
         <td><div class="ai-cell-lines">${escapeHtml(renderLines(tc.preconditions)).replaceAll("\n", "<br />")}</div></td>
         <td><div class="ai-cell-lines">${escapeHtml(renderStepLines(tc.steps)).replaceAll("\n", "<br />")}</div></td>
         <td><div class="ai-cell-lines">${escapeHtml(tc.expected_result || "无")}</div></td>
+        <td class="execution-cell"><span class="run-status ${escapeHtml(status)}">${escapeHtml(statusText)}</span><button class="case-run-btn" data-run-case="${escapeHtml(tc.case_id)}" type="button" ${running ? "disabled" : ""}>${running ? "执行中…" : "执行"}</button>${result ? `<button class="case-detail-btn" data-show-result="${escapeHtml(tc.case_id)}" type="button">查看详情</button>` : ""}</td>
       </tr>`;
     })
     .join("");
 
-  state.lastRows = list.map((item, idx) => {
-    const tc = normalizeTestCase(item, idx);
+  state.lastRows = state.lastCases.map((tc) => {
     return {
       id: tc.case_id,
       module: tc.module,
@@ -243,11 +250,69 @@ function renderSuggestions(list) {
             <th>前置条件</th>
             <th>执行步骤</th>
             <th>预期结果</th>
+            <th class="execution-head">自动执行</th>
           </tr>
         </thead>
         <tbody>${rows}</tbody>
       </table>
     </div>`;
+}
+
+function getExecutionTarget() {
+  const target = el("executionTarget").value.trim();
+  if (!target) throw new Error("请先填写测试环境地址");
+  try { new URL(target); } catch (_) { throw new Error("请输入完整的 http/https 地址"); }
+  if (!/^https?:\/\//i.test(target)) throw new Error("测试地址仅支持 http/https");
+  return target;
+}
+
+function refreshResultsTable() {
+  renderSuggestions(state.lastCases);
+}
+
+async function executeCase(caseId) {
+  if (state.runningCases.has(caseId)) return;
+  const testCase = state.lastCases.find((item) => item.case_id === caseId);
+  if (!testCase) return;
+  let target;
+  try { target = getExecutionTarget(); } catch (e) { setStatus(e.message, "err"); return; }
+  state.runningCases.add(caseId);
+  refreshResultsTable();
+  setStatus(`正在执行 ${caseId}…`, "");
+  try {
+    const out = await api("/api/ai/execute_case", {method:"POST", body:JSON.stringify({target_url:target,test_case:testCase})});
+    state.executionResults[caseId] = out.result || {status:"failed",log:"服务未返回执行结果"};
+    const result = state.executionResults[caseId];
+    setStatus(`${caseId} 执行${result.status === "passed" ? "通过" : "失败"}，耗时 ${formatElapsed(result.duration_ms)}。`, result.status === "passed" ? "ok" : "err");
+  } catch (e) {
+    state.executionResults[caseId] = {status:"failed",duration_ms:0,log:String(e.message || e),error:String(e.message || e)};
+    setStatus(`${caseId} 执行失败：${e.message || e}`, "err");
+  } finally {
+    state.runningCases.delete(caseId);
+    refreshResultsTable();
+  }
+}
+
+async function executeAllCases() {
+  try { getExecutionTarget(); } catch (e) { setStatus(e.message, "err"); return; }
+  if (!state.lastCases.length) { setStatus("请先生成测试用例。", "err"); return; }
+  const btn = el("runAllCases"); btn.disabled = true; btn.textContent = "执行中…";
+  for (const item of state.lastCases) await executeCase(item.case_id);
+  btn.disabled = false; btn.textContent = "执行全部";
+}
+
+function showExecutionResult(caseId) {
+  const result = state.executionResults[caseId];
+  const testCase = state.lastCases.find((item) => item.case_id === caseId);
+  if (!result) return;
+  el("executionCaseId").textContent = caseId;
+  el("executionTitle").textContent = testCase ? testCase.title : "执行详情";
+  el("executionMeta").innerHTML = `<span class="run-status ${escapeHtml(result.status)}">${result.status === "passed" ? "通过" : "失败"}</span><span>耗时 ${escapeHtml(formatElapsed(result.duration_ms))}</span>${result.final_url ? `<span>${escapeHtml(result.final_url)}</span>` : ""}`;
+  el("executionLog").textContent = result.log || "暂无日志";
+  const hasShot = Boolean(result.screenshot_base64);
+  el("executionShotWrap").hidden = !hasShot;
+  el("executionScreenshot").src = hasShot ? `data:image/png;base64,${result.screenshot_base64}` : "";
+  el("executionDialog").showModal();
 }
 
 function downloadBlob(blob, filename) {
@@ -330,6 +395,8 @@ function downloadExcel() {
 
 function renderOutput(out) {
   state.lastOutput = out;
+  state.executionResults = {};
+  state.runningCases.clear();
   renderSummary(out);
   renderSuggestions(out.suggestions || []);
   el("aiOut").textContent = JSON.stringify(out, null, 2);
@@ -410,6 +477,14 @@ function bindEvents() {
   el("toggleRaw").addEventListener("click", toggleRaw);
   el("fillSample").addEventListener("click", fillSample);
   el("clearPrompt").addEventListener("click", clearPrompt);
+  el("runAllCases").addEventListener("click", executeAllCases);
+  el("closeExecutionDialog").addEventListener("click", () => el("executionDialog").close());
+  el("aiCards").addEventListener("click", (event) => {
+    const runButton = event.target.closest("[data-run-case]");
+    const detailButton = event.target.closest("[data-show-result]");
+    if (runButton) executeCase(runButton.dataset.runCase);
+    if (detailButton) showExecutionResult(detailButton.dataset.showResult);
+  });
 
   el("aiPrompt").addEventListener("keydown", (evt) => {
     if ((evt.metaKey || evt.ctrlKey) && evt.key === "Enter") {

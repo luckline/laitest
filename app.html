@@ -11,6 +11,7 @@
     <link rel="stylesheet" href="/css/styles.css?v=app-layout-2" />
     <link rel="stylesheet" href="/css/app-modern.css?v=1" />
     <link rel="stylesheet" href="/css/lingtest-resources.css?v=1" />
+    <link rel="stylesheet" href="/css/lingtest-execution.css?v=1" />
   </head>
   <body class="app-page">
     <div class="app-shell">
@@ -54,12 +55,16 @@
 
         <section class="result-card">
           <div class="ai-out-head">
-            <div><span class="step-number">STEP 02</span><h2>结构化结果</h2><p>生成后可直接评审、复制或导出。</p></div>
+            <div><span class="step-number">STEP 02</span><h2>结构化结果与自动执行</h2><p>生成后可评审、导出，并用 Playwright 在真实页面执行。</p></div>
             <div class="ai-toolbar right">
               <button id="downloadExcel" class="btn ghost" type="button">导出 Excel</button>
               <button id="copyJson" class="btn ghost" type="button">复制 JSON</button>
               <button id="toggleRaw" class="btn text" type="button">查看原始数据</button>
             </div>
+          </div>
+          <div class="execution-bar">
+            <label for="executionTarget"><span>测试环境地址</span><input id="executionTarget" type="url" inputmode="url" placeholder="https://example.com/login" autocomplete="url" /></label>
+            <div><span class="execution-hint">填写目标页面后，可执行右侧单条用例</span><button id="runAllCases" class="btn solid" type="button">执行全部</button></div>
           </div>
           <div id="aiSummary" class="ai-summary">暂无结果</div>
           <div id="aiCards" class="ai-cards"></div>
@@ -71,8 +76,15 @@
       <footer class="app-foot"><span>领测 LingTest · AI 测试设计与质量工作台</span><span>结构化 JSON · Excel 导出 · 多模型支持</span><a href="mailto:lanceqa@agent.qq.com">lanceqa@agent.qq.com</a></footer>
     </div>
 
+    <dialog id="executionDialog" class="execution-dialog">
+      <div class="execution-dialog-head"><div><span id="executionCaseId" class="step-number"></span><h3 id="executionTitle">执行详情</h3></div><button id="closeExecutionDialog" type="button" aria-label="关闭">×</button></div>
+      <div id="executionMeta" class="execution-meta"></div>
+      <section><h4>执行日志</h4><pre id="executionLog"></pre></section>
+      <section id="executionShotWrap" hidden><h4>页面截图</h4><img id="executionScreenshot" alt="Playwright 执行页面截图" /></section>
+    </dialog>
+
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-    <script src="/app.js?v=summary-key-elapsed-1"></script>
+    <script src="/app.js?v=playwright-execution-1"></script>
   <script defer src="/site-analytics.js"></script><script defer src="/_vercel/insights/script.js"></script>
 </body>
 </html>

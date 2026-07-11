@@ -12,6 +12,7 @@ from laitest.ai import ai_runtime_status, generate_cases, generate_travel_plan, 
 from laitest.db import db_conn, json_loads, row_to_dict, utc_now_iso
 from laitest.ids import new_id
 from laitest.runner import analyze_failures, run_case, summarize_run
+from laitest.browser_runner import run_browser_case
 
 app = Flask(__name__)
 
@@ -448,6 +449,19 @@ def post_ai_generate_cases() -> Any:
             "created_case_ids": created_ids,
         }
     )
+
+
+@app.post("/api/ai/execute_case")
+def post_ai_execute_case() -> tuple[Any, int] | Any:
+    body = _body()
+    target_url = str(body.get("target_url") or "").strip()
+    test_case = body.get("test_case") if isinstance(body.get("test_case"), dict) else {}
+    if not target_url:
+        return jsonify({"error": "missing target_url"}), 400
+    if not test_case:
+        return jsonify({"error": "missing test_case"}), 400
+    result = run_browser_case(target_url, test_case)
+    return jsonify({"result": result})
 
 
 @app.post("/api/ai/travel_plan")

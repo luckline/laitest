@@ -15,6 +15,7 @@ from .ai import ai_runtime_status, generate_cases, generate_travel_plan, profess
 from .db import db_conn, json_loads, row_to_dict, utc_now_iso
 from .ids import new_id
 from .runner import analyze_failures, run_case, summarize_run
+from .browser_runner import run_browser_case
 
 
 def _static_dir() -> Path:
@@ -567,6 +568,18 @@ class Handler(BaseHTTPRequestHandler):
                         "runtime": runtime,
                     },
                 )
+                return
+
+            if path == "/api/ai/execute_case":
+                target_url = str(body.get("target_url") or "").strip()
+                test_case = body.get("test_case") if isinstance(body.get("test_case"), dict) else {}
+                if not target_url:
+                    self._err(400, "missing target_url")
+                    return
+                if not test_case:
+                    self._err(400, "missing test_case")
+                    return
+                _send_json(self, 200, {"result": run_browser_case(target_url, test_case)})
                 return
 
         self._err(404, "not found")
