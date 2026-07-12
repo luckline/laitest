@@ -23,4 +23,13 @@ assert.deepEqual(
   { type: "page_loaded", value: "页面主体可见" },
 );
 
+assert.deepEqual(
+  normalizeAssertions({
+    title: "验证页面正常加载",
+    assertions: [{ type: "visible", value: "页面主体内容" }],
+    steps: [{ action: "在浏览器地址栏输入目标地址并回车", expected_result: "页面加载完成，无白屏或错误提示" }],
+  }),
+  [{ type: "page_loaded", value: "页面主体可见" }],
+);
+
 console.log("execute case intent tests: passed");

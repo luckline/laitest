@@ -162,7 +162,18 @@ async function runStep(page, step, logs, context) {
 
 function normalizeAssertions(testCase) {
   const explicit = Array.isArray(testCase?.assertions) ? testCase.assertions.filter((item) => item && typeof item === "object") : [];
-  if (explicit.length) return explicit.slice(0, 8);
+  if (explicit.length) {
+    const normalized = explicit.map((item) => {
+      const type = String(item.type || "text").trim();
+      const value = String(item.value || "").trim();
+      const vaguePageContent = /^(?:页面|网页)?(?:主体|主要|核心)?(?:内容|元素|区域|信息)$/.test(value);
+      if (["visible", "text"].includes(type) && vaguePageContent) {
+        return { type:"page_loaded", value:"页面主体可见" };
+      }
+      return item;
+    });
+    return normalized.slice(0, 8);
+  }
   const text = [testCase?.expected_result, ...(testCase?.steps || []).map((step) => step?.expected_result)].filter(Boolean).join("；");
   const assertions = [];
   const intentText = [testCase?.title, text].filter(Boolean).join("；");
