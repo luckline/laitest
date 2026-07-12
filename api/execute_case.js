@@ -46,9 +46,14 @@ function dataMap(text) {
 
 function isExplicitInputAction(action) {
   const text = String(action || "").trim();
+  if (/(?:浏览器)?地址栏.{0,12}(?:输入|填写)|(?:打开|访问|进入).{0,12}(?:网址|地址|URL|页面)/i.test(text)) return false;
   return /^(?:输入|填写)/.test(text) ||
     /(?:在|向).{0,30}?(?:输入|填写)/.test(text) ||
     /(?:输入|填写).{0,12}?(?:框|字段|手机号|手机号码|账号|用户名|密码|验证码|邮箱|关键词|内容)/.test(text);
+}
+
+function explicitClickTarget(action) {
+  return String(action || "").trim().match(/(?:点击|单击|按下)[「『\"']?([^，,。；;|「』\"']+?)[」』\"']?(?:按钮|链接|$)/)?.[1]?.trim() || "";
 }
 
 async function fillFields(page, data, logs) {
@@ -144,21 +149,15 @@ async function runStep(page, step, logs, context) {
     await input.fill(value);
     logs.push(`在文本框输入 ${value}`);
   }
-  const click = action.match(/(?:点击|单击|按下)[「『\"']?([^，,。；;|「』\"']+?)[」』\"']?(?:按钮|链接|$)/);
-  if (click) {
-    const label = click[1].trim();
+  const clickLabel = explicitClickTarget(action);
+  if (clickLabel) {
+    const label = clickLabel;
     const target = await findClickTarget(page, label, action);
     if (!(await target.count())) throw new Error(`目标页面未找到“${label}”按钮或链接，请填写实际功能页面地址并确认页面内容与用例一致`);
     await target.waitFor({ state: "visible", timeout: 8000 });
     await target.first().click({ timeout: 8000 }); logs.push(`点击 ${label}`); await assertNotBlocked(page); return;
   }
-  const label = ["登录","提交","确认","保存","下一步"].find((word) => action.includes(word));
-  if (label) {
-    const target = await findClickTarget(page, label, action);
-    if (!(await target.count())) throw new Error(`目标页面未找到“${label}”按钮，请填写实际功能页面地址并确认页面内容与用例一致`);
-    await target.first().click({ timeout: 8000 }); logs.push(`点击 ${label}`); await assertNotBlocked(page);
-  }
-  else logs.push(`执行步骤：${action}`);
+  logs.push(`执行步骤：${action}`);
 }
 
 function normalizeAssertions(testCase) {
@@ -257,4 +256,4 @@ module.exports = async function handler(req, res) {
 };
 
 module.exports.config = { maxDuration: 60 };
-module.exports._test = { normalizeAssertions, inferCaseValue, isExplicitInputAction };
+module.exports._test = { normalizeAssertions, inferCaseValue, isExplicitInputAction, explicitClickTarget };
