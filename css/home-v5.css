@@ -1,0 +1,31 @@
+/* Homepage rhythm: keep intentional breathing room without disconnected blank bands. */
+@media (min-width: 901px) {
+  .personal-home .hero {
+    padding-top: 20px;
+    padding-bottom: 30px;
+    gap: 32px;
+  }
+
+  .personal-home .hero-copy {
+    padding-top: 4px;
+  }
+
+  .personal-home .home-proof-strip {
+    margin-bottom: 0;
+  }
+
+  .personal-home #projects {
+    padding-top: 34px;
+  }
+}
+
+@media (min-width: 621px) and (max-width: 900px) {
+  .personal-home .hero {
+    padding-top: 24px;
+    padding-bottom: 36px;
+  }
+
+  .personal-home #projects {
+    padding-top: 40px;
+  }
+}

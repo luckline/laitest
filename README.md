@@ -258,7 +258,7 @@ Node.js 示例见 `examples/shiguang_touka_travel_plan_client.js`。
 | 内容 | 文件 |
 | --- | --- |
 | 首页文案与产品指标 | `index.html` |
-| 首页布局与字号 | `css/marketing.css`、`css/system-density.css` |
+| 首页布局与字号 | `css/marketing.css`、`css/system-density.css`、`css/home-v5.css` |
 | 领测产品介绍与案例 | `lingtest.html` |
 | 领测账户与版本状态 | `lingtest-account.js`、`css/lingtest-account.css` |
 | 领测定价与申请联动 | `lingtest-pricing.html`、`lingtest-pricing.js` |
