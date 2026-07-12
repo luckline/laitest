@@ -54,6 +54,9 @@
   function render() {
     const pro = entitlement.active && entitlement.plan === "pro";
     const loggedIn = Boolean(user?.id);
+    const applicationStatus = entitlement.applicationStatus;
+    const pending = ["new", "contacted"].includes(applicationStatus);
+    const approved = applicationStatus === "approved";
     const card = dialog.querySelector(".lingtest-account-card");
     const details = dialog.querySelector(".lingtest-account-details");
     const name = loggedIn ? userName() : "未登录";
@@ -61,20 +64,26 @@
     chip.classList.toggle("logged-in", loggedIn);
     chip.querySelector(".account-avatar").textContent = loggedIn ? name.trim().slice(0, 1) : "游";
     chip.querySelector(".account-name").textContent = name;
-    chip.querySelector("strong").textContent = pro ? "PRO" : "免费版";
+    chip.querySelector("strong").textContent = pro ? "PRO" : approved ? "待激活" : pending ? "审核中" : "免费版";
     card.classList.toggle("pro", pro);
-    card.querySelector("h2").textContent = pro ? "领测专业版" : "领测免费版";
+    card.querySelector("h2").textContent = pro ? "领测专业版" : approved ? "专业版待激活" : pending ? "专业版申请审核中" : "领测免费版";
     card.querySelector(".lingtest-account-sub").textContent = loggedIn ? "账户已登录，登录状态可在本站产品间共享" : "登录后，可在本站产品间共享账户身份";
     const identity = loggedIn
       ? `<div><span>账户</span><b>${escapeHtml(name)}</b></div><div><span>绑定信息</span><b>${escapeHtml(maskMobile(user.mobile) || maskEmail(user.email) || "微信账户")}</b></div>`
       : '<div><span>账户状态</span><b>未登录</b></div>';
     const plan = pro
       ? `<div><span>当前版本</span><b>专业版 PRO</b></div><div><span>有效期至</span><b>${entitlement.expiresAt ? new Date(entitlement.expiresAt).toLocaleDateString("zh-CN") : "长期有效"}</b></div><div><span>权益绑定</span><b>当前浏览器</b></div>`
-      : '<div><span>当前版本</span><b>免费版</b></div><div><span>每日生成</span><b>5 次</b></div><div><span>每日执行</span><b>3 次</b></div>';
+      : approved
+        ? '<div><span>申请状态</span><b>已通过，等待激活</b></div><div><span>当前权益</span><b>免费版</b></div><div><span>下一步</span><b>在工作台输入激活码</b></div>'
+        : pending
+          ? '<div><span>申请状态</span><b>审核中</b></div><div><span>当前权益</span><b>免费版</b></div><div><span>进度说明</span><b>通过后将获得激活码</b></div>'
+          : '<div><span>当前版本</span><b>免费版</b></div><div><span>每日生成</span><b>5 次</b></div><div><span>每日执行</span><b>3 次</b></div>';
     details.innerHTML = identity + plan;
-    dialog.querySelector(".lingtest-account-actions").innerHTML = loggedIn
-      ? '<a href="/timelens">账户中心</a><a class="primary" href="/lingtest-pricing">查看专业版</a>'
-      : '<a href="/timelens">登录</a><a class="primary" href="/lingtest-pricing">查看专业版</a>';
+    dialog.querySelector(".lingtest-account-actions").innerHTML = approved
+      ? '<a href="/timelens">账户中心</a><a class="primary" href="/app">前往激活</a>'
+      : loggedIn
+        ? '<a href="/timelens">账户中心</a><a class="primary" href="/lingtest-pricing">查看专业版</a>'
+        : '<a href="/timelens">登录</a><a class="primary" href="/lingtest-pricing">查看专业版</a>';
   }
 
   async function loadAccount() {
@@ -82,7 +91,8 @@
     const userRequest = token
       ? fetch(USER_API, { headers: { Authorization: `Bearer ${token}`, "X-Auth-Token": token } }).then((response) => response.json()).then((data) => { user = data.code === 0 ? data.data : null; }).catch(() => { user = null; })
       : Promise.resolve().then(() => { user = null; });
-    const licenseRequest = fetch(`${LICENSE_API}/status?browserId=${encodeURIComponent(browserId)}`).then((response) => response.json()).then((data) => { if (data.code === 0) entitlement = data.data || entitlement; }).catch(() => {});
+    const licenseHeaders = token ? { Authorization: `Bearer ${token}`, "X-Auth-Token": token } : {};
+    const licenseRequest = fetch(`${LICENSE_API}/status?browserId=${encodeURIComponent(browserId)}`, { headers: licenseHeaders }).then((response) => response.json()).then((data) => { if (data.code === 0) entitlement = data.data || entitlement; }).catch(() => {});
     await Promise.allSettled([userRequest, licenseRequest]);
     render();
   }

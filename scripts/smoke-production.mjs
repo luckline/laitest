@@ -11,12 +11,12 @@ const checks = [
   {
     name: "领测产品页",
     path: "/lingtest",
-    contains: ["领测 LingTest", 'href="/app"', "product-nav.js?v=3", "lingtest-account.js?v=2"],
+    contains: ["领测 LingTest", 'href="/app"', "product-nav.js?v=3", "lingtest-account.js?v=3"],
   },
   {
     name: "领测工作台",
     path: "/app",
-    contains: ["AI QUALITY WORKSPACE", "product-nav.js?v=4", "lingtest-account.js?v=2", "app-shell-fix.css?v=4", "monetization-p05-1", "PRO ACTIVATION", 'id="aiPrompt"'],
+    contains: ["AI QUALITY WORKSPACE", "product-nav.js?v=4", "lingtest-account.js?v=3", "app-shell-fix.css?v=4", "monetization-p05-1", "PRO ACTIVATION", 'id="aiPrompt"'],
   },
   {
     name: "领测定价",
@@ -40,7 +40,7 @@ const checks = [
   },
   {
     name: "领测版本入口",
-    path: "/lingtest-account.js?v=2",
+    path: "/lingtest-account.js?v=3",
     contains: ["当前版本", "专业版 PRO", "contactMasked", "/licenses/status"],
   },
   {
