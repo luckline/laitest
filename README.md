@@ -16,6 +16,7 @@ Luckline 的个人站与产品中心，统一承载个人介绍、产品发布�
 | `/` | Luckline 个人主页、作品与联系方式 |
 | `/lingtest` | 领测产品介绍与完整案例 |
 | `/app` | 领测工作台 |
+| `/lingtest-pricing` | 领测版本、服务与专业版申请 |
 | `/lingtest-guides` | 测试方法与质量工程实践 |
 | `/timelens` | 时光透卡 PC 版 |
 | `/timelens-route?id=<route-id>` | 可独立分享的公开路线详情 |
@@ -25,7 +26,7 @@ Luckline 的个人站与产品中心，统一承载个人介绍、产品发布�
 | `/api/health` | 服务健康检查 |
 | `/api/ai/status` | AI 服务状态 |
 
-顶部产品导航用于在个人主页、领测和时光透卡之间切换。产品页面和工作台同时保留明确的“个人主页”入口。
+顶部产品导航用于在个人主页、领测和时光透卡之间切换。个人主页以作品卡承接产品发现，产品页面通过“全部产品”完成跨产品导航。
 
 ## 快速开始
 
@@ -46,6 +47,7 @@ python3 -m laitest
 - 个人主页：<http://127.0.0.1:8080/>
 - 领测产品页：<http://127.0.0.1:8080/lingtest>
 - 领测工作台：<http://127.0.0.1:8080/app>
+- 领测定价页：<http://127.0.0.1:8080/lingtest-pricing>
 - 时光透卡：<http://127.0.0.1:8080/timelens>
 
 ### 可选：安装页面自动化环境
@@ -81,6 +83,7 @@ python3 -m laitest cli projects
 ├── index.html                     # 个人主页
 ├── lingtest.html                  # 领测产品介绍
 ├── lingtest-guides.html           # 领测方法库
+├── lingtest-pricing.html / .js    # 定价、服务与专业版申请
 ├── app.html / app.js              # 领测工作台
 ├── timelens.html / timelens.js    # 时光透卡 PC 版
 ├── timelens-route.html            # 公开路线详情
@@ -106,6 +109,13 @@ python3 -m laitest cli projects
 3. 覆盖正常、边界、异常和安全场景。
 4. 使用 Playwright 在真实公网页面执行。
 5. 查看结果分类、步骤日志和失败截图。
+
+变现 P0：
+
+- 免费版按浏览器自然日提供 5 次生成和 3 次页面执行
+- `/lingtest-pricing` 展示免费版、专业版内测和测试落地服务
+- 专业版申请写入 `timelens-server` 的 `lingtest_leads` 表
+- 生产部署后端前需执行 `sql/023_lingtest_leads.sql`
 
 执行器优先使用 `role`、`label`、`placeholder`、可见文本和表单语义定位元素，不绑定特定网站。验证码和网站风控不会被绕过。
 

@@ -12,7 +12,7 @@
     <link rel="stylesheet" href="/css/app-modern.css?v=1" />
     <link rel="stylesheet" href="/css/lingtest-execution.css?v=1" />
     <link rel="stylesheet" href="/css/lingtest-workspace-v2.css?v=2" />
-    <link rel="stylesheet" href="/css/app-shell-fix.css?v=2" />
+    <link rel="stylesheet" href="/css/app-shell-fix.css?v=3" />
     <link rel="stylesheet" href="/css/system-density.css?v=1" />
     <link rel="stylesheet" href="/css/product-nav.css?v=2" />
   </head>
@@ -26,6 +26,7 @@
         <nav class="shared-links" aria-label="领测导航">
           <a href="/lingtest">产品介绍</a>
           <a href="/lingtest-guides">方法库</a>
+          <a href="/lingtest-pricing">定价</a>
         </nav>
         <div class="nav-actions">
           <div class="workspace-state"><span></span>工作台在线</div>
@@ -48,6 +49,7 @@
           <i>→</i><div><span>02</span><b>生成测试资产</b><p>覆盖正常、边界、异常和安全场景</p></div>
           <i>→</i><div><span>03</span><b>真实页面验证</b><p>运行 Playwright 并保留失败现场</p></div>
         </section>
+        <section class="usage-strip" aria-label="免费额度"><div><span>FREE PLAN</span><b id="quotaSummary">今日免费额度加载中…</b><small>额度按当前浏览器自然日计算</small></div><div class="usage-actions"><span id="generationQuota">生成 0/5</span><span id="executionQuota">执行 0/3</span><a href="/lingtest-pricing">查看专业版 →</a></div></section>
 
         <section class="composer-card">
           <div class="composer-head">
@@ -99,7 +101,7 @@
 
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <script src="/product-nav.js?v=4"></script>
-    <script src="/app.js?v=p0-quality-loop-1"></script>
+    <script src="/app.js?v=monetization-p0-1"></script>
   <script defer src="/site-analytics.js"></script><script defer src="/_vercel/insights/script.js"></script>
 </body>
 </html>

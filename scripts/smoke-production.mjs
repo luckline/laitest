@@ -16,7 +16,17 @@ const checks = [
   {
     name: "领测工作台",
     path: "/app",
-    contains: ["AI QUALITY WORKSPACE", "product-nav.js?v=4", "app-shell-fix.css?v=2", 'id="aiPrompt"', 'src="/app.js'],
+    contains: ["AI QUALITY WORKSPACE", "product-nav.js?v=4", "app-shell-fix.css?v=3", "monetization-p0-1", "FREE PLAN", 'id="aiPrompt"'],
+  },
+  {
+    name: "领测定价",
+    path: "/lingtest-pricing",
+    contains: ["免费版", "专业版", "测试落地服务", "leadDialog", "lingtest-pricing.js?v=1"],
+  },
+  {
+    name: "领测申请脚本",
+    path: "/lingtest-pricing.js?v=1",
+    contains: ["/api/lingtest/leads", "lingtest_lead_submitted", "正在提交"],
   },
   {
     name: "领测方法库",

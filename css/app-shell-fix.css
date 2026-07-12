@@ -25,9 +25,30 @@
   max-width: 100%;
 }
 
+.usage-strip {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  margin: 0 0 22px;
+  padding: 14px 18px;
+  border: 1px solid #d8e2de;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, .82);
+}
+
+.usage-strip > div:first-child { display: grid; }
+.usage-strip > div:first-child span { color: #137a67; font-size: 9px; font-weight: 900; letter-spacing: 1.3px; }
+.usage-strip > div:first-child small { color: #7a8985; font-size: 10px; }
+.usage-actions { display: flex; align-items: center; gap: 8px; }
+.usage-actions > span { padding: 6px 9px; border-radius: 999px; background: #edf5f1; color: #526c65; font-size: 10px; font-weight: 800; }
+.usage-actions > a { margin-left: 4px; color: #137a67; font-weight: 800; text-decoration: none; }
+
 @media (max-width: 680px) {
   .app-page:not(.guides-page) .app-shell {
     width: calc(100vw - 14px) !important;
     max-width: calc(100vw - 14px);
   }
+  .usage-strip { align-items: flex-start; flex-direction: column; }
+  .usage-actions { width: 100%; flex-wrap: wrap; }
 }
