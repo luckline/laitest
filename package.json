@@ -4,7 +4,8 @@
   "scripts": {
     "smoke:prod": "node scripts/smoke-production.mjs",
     "smoke:local": "SMOKE_BASE_URL=http://127.0.0.1:8080 node scripts/smoke-production.mjs",
-    "test:timelens-plan": "node scripts/test-timelens-plan.mjs"
+    "test:timelens-plan": "node scripts/test-timelens-plan.mjs",
+    "test:execute-case": "node scripts/test-execute-case.mjs"
   },
   "engines": { "node": ">=20" },
   "dependencies": {

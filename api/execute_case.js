@@ -44,6 +44,13 @@ function dataMap(text) {
   return out;
 }
 
+function isExplicitInputAction(action) {
+  const text = String(action || "").trim();
+  return /^(?:输入|填写)/.test(text) ||
+    /(?:在|向).{0,30}?(?:输入|填写)/.test(text) ||
+    /(?:输入|填写).{0,12}?(?:框|字段|手机号|手机号码|账号|用户名|密码|验证码|邮箱|关键词|内容)/.test(text);
+}
+
 async function fillFields(page, data, logs) {
   const aliases = { "手机号":["手机号","手机号码","phone","mobile"], "账号":["账号","用户名","username","account"], "密码":["密码","password"], "验证码":["验证码","verification","code"], "邮箱":["邮箱","email"] };
   let filledCount = 0;
@@ -124,8 +131,9 @@ async function findClickTarget(page, label, action) {
 async function runStep(page, step, logs, context) {
   const action = String(step?.action || "").trim();
   const mapped = dataMap(step?.test_data);
-  const filledCount = await fillFields(page, mapped, logs);
-  if (/输入|填写/.test(action) && filledCount === 0) {
+  const shouldInput = isExplicitInputAction(action);
+  const filledCount = shouldInput ? await fillFields(page, mapped, logs) : 0;
+  if (shouldInput && filledCount === 0) {
     const directValue = action.match(/(?:输入|填写)[「『\"']?([^，,。；;|「』\"']+)[」』\"']?/)?.[1]?.trim();
     const generic = !directValue || /^(?:关键词|内容|数据|信息)$/.test(directValue);
     const value = Object.values(mapped)[0] || (generic ? context.inferredValue : directValue);
@@ -158,6 +166,10 @@ function normalizeAssertions(testCase) {
   if (explicit.length) return explicit.slice(0, 8);
   const text = [testCase?.expected_result, ...(testCase?.steps || []).map((step) => step?.expected_result)].filter(Boolean).join("；");
   const assertions = [];
+  const intentText = [testCase?.title, text].filter(Boolean).join("；");
+  if (/页面.{0,12}(?:正常加载|加载完成|正常显示|可正常访问|无白屏)|核心页面.{0,12}正常/.test(intentText)) {
+    assertions.push({ type:"page_loaded", value:"页面主体可见" });
+  }
   const url = text.match(/(?:跳转|进入|地址|URL)[^。；]*?((?:https?:\/\/)?[a-z0-9-]+(?:\.[a-z0-9-]+)+[^，。；\s]*)/i)?.[1];
   if (url) assertions.push({ type:"url_contains", value:url.replace(/^https?:\/\//, "") });
   for (const match of text.matchAll(/(?:显示|出现|包含|看到)[“「『\"']?([^，。；|”」』\"']{1,50})/g)) {
@@ -176,7 +188,14 @@ async function runAssertions(page, testCase, logs) {
     const value = String(assertion.value || "").trim();
     if (!value) continue;
     let passed = false; let actual = "";
-    if (type === "url_contains") { actual = page.url(); passed = actual.includes(value); }
+    if (type === "page_loaded") {
+      const body = page.locator("body");
+      const text = await body.innerText().catch(() => "");
+      const title = await page.title().catch(() => "");
+      passed = await body.isVisible().catch(() => false) && Boolean(text.trim() || title.trim());
+      actual = passed ? `页面主体可见${title ? `，标题：${title}` : ""}` : "页面主体不可见或内容为空";
+    }
+    else if (type === "url_contains") { actual = page.url(); passed = actual.includes(value); }
     else if (type === "title_contains") { actual = await page.title(); passed = actual.includes(value); }
     else if (type === "visible") { passed = await page.getByText(value, { exact:false }).first().isVisible().catch(() => false); actual = passed ? "visible" : "not visible"; }
     else { actual = (await page.locator("body").innerText()).slice(0, 5000); passed = actual.includes(value); }
@@ -238,4 +257,4 @@ module.exports = async function handler(req, res) {
 };
 
 module.exports.config = { maxDuration: 60 };
-module.exports._test = { normalizeAssertions, inferCaseValue };
+module.exports._test = { normalizeAssertions, inferCaseValue, isExplicitInputAction };
