@@ -72,18 +72,20 @@
       ? `<div><span>账户</span><b>${escapeHtml(name)}</b></div><div><span>绑定信息</span><b>${escapeHtml(maskMobile(user.mobile) || maskEmail(user.email) || "微信账户")}</b></div>`
       : '<div><span>账户状态</span><b>未登录</b></div>';
     const plan = pro
-      ? `<div><span>当前版本</span><b>专业版 PRO</b></div><div><span>有效期至</span><b>${entitlement.expiresAt ? new Date(entitlement.expiresAt).toLocaleDateString("zh-CN") : "长期有效"}</b></div><div><span>权益绑定</span><b>当前浏览器</b></div>`
+      ? `<div><span>当前版本</span><b>专业版 PRO</b></div><div><span>有效期至</span><b>${entitlement.expiresAt ? new Date(entitlement.expiresAt).toLocaleDateString("zh-CN") : "长期有效"}</b></div><div><span>权益绑定</span><b>${escapeHtml(maskMobile(user?.mobile) || entitlement.contactMasked || "登录账户")}</b></div>`
       : approved
         ? '<div><span>申请状态</span><b>已通过，等待激活</b></div><div><span>当前权益</span><b>免费版</b></div><div><span>下一步</span><b>在工作台输入激活码</b></div>'
         : pending
           ? '<div><span>申请状态</span><b>审核中</b></div><div><span>当前权益</span><b>免费版</b></div><div><span>进度说明</span><b>通过后将获得激活码</b></div>'
           : '<div><span>当前版本</span><b>免费版</b></div><div><span>每日生成</span><b>5 次</b></div><div><span>每日执行</span><b>3 次</b></div>';
     details.innerHTML = identity + plan;
-    dialog.querySelector(".lingtest-account-actions").innerHTML = approved
-      ? '<a href="/timelens">账户中心</a><a class="primary" href="/app">前往激活</a>'
-      : loggedIn
-        ? '<a href="/timelens">账户中心</a><a class="primary" href="/lingtest-pricing">查看专业版</a>'
-        : '<a href="/timelens">登录</a><a class="primary" href="/lingtest-pricing">查看专业版</a>';
+    dialog.querySelector(".lingtest-account-actions").innerHTML = pro
+      ? '<a class="primary" href="/app">进入工作台</a>'
+      : approved
+        ? '<a class="primary" href="/app">前往激活</a>'
+        : loggedIn
+          ? '<a class="primary" href="/lingtest-pricing">查看专业版</a>'
+          : '<a href="/timelens">登录</a><a class="primary" href="/lingtest-pricing">查看专业版</a>';
   }
 
   async function loadAccount() {
@@ -95,6 +97,7 @@
     const licenseRequest = fetch(`${LICENSE_API}/status?browserId=${encodeURIComponent(browserId)}`, { headers: licenseHeaders }).then((response) => response.json()).then((data) => { if (data.code === 0) entitlement = data.data || entitlement; }).catch(() => {});
     await Promise.allSettled([userRequest, licenseRequest]);
     render();
+    window.dispatchEvent(new CustomEvent("lingtest:account-loaded", { detail: { user, entitlement } }));
   }
 
   chip.addEventListener("click", () => { render(); dialog.showModal(); });

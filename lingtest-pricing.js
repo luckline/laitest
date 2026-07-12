@@ -1,6 +1,16 @@
 const API_BASE="https://timelens.cc";
 const dialog=document.getElementById("leadDialog"),form=document.getElementById("leadForm"),message=document.getElementById("leadMessage");
 document.querySelectorAll("[data-open-lead]").forEach(button=>button.addEventListener("click",()=>{form.elements.source.value=button.dataset.openLead||"pricing";message.textContent="";message.className="";dialog.showModal()}));
+window.addEventListener("lingtest:account-loaded",event=>{
+  const entitlement=event.detail?.entitlement||{};
+  const pro=entitlement.active&&entitlement.plan==="pro";
+  if(!pro)return;
+  document.body.classList.add("has-pro-plan");
+  document.querySelectorAll("[data-plan-entry]").forEach(link=>link.textContent="进入工作台");
+  document.querySelectorAll("[data-free-action]").forEach(link=>{link.textContent="当前为专业版";link.setAttribute("aria-disabled","true");link.removeAttribute("href")});
+  document.querySelectorAll('[data-open-lead="pro"]').forEach(button=>{button.textContent="专业版已生效";button.disabled=true;button.removeAttribute("data-open-lead")});
+  document.querySelector('[data-plan-card="pro"]')?.classList.add("is-current");
+});
 document.querySelector(".dialog-close").addEventListener("click",()=>dialog.close());
 dialog.addEventListener("click",event=>{if(event.target===dialog)dialog.close()});
 form.addEventListener("submit",async event=>{
