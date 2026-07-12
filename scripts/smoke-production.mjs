@@ -31,13 +31,19 @@ const checks = [
       'name="description"',
       "TimeLens（时光透卡）是一款在线旅行规划与城市足迹工具",
       "<h1>时光透卡",
-      'src="/timelens.js?v=feedback-1',
+      'src="/timelens-plan.js?v=1',
+      'src="/timelens.js?v=plan-db-1',
     ],
   },
   {
     name: "时光透卡注册",
-    path: "/timelens.js?v=feedback-1",
-    contains: ["注册新账户", "/api/auth/mobile/register", "registerPasswordConfirm", "modal-error", "处理中…"],
+    path: "/timelens.js?v=plan-db-1",
+    contains: ["注册新账户", "/api/auth/mobile/register", "travel_plan", "ai-plans/latest", "savePlanRecord"],
+  },
+  {
+    name: "路线方案格式化",
+    path: "/timelens-plan.js?v=1",
+    contains: ["TimeLensPlan", "travel-plan-section", "AI TRAVEL PLAN"],
   },
   {
     name: "公开路线详情",

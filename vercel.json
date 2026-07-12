@@ -17,6 +17,7 @@
     { "src": "lingtest-guides.html", "use": "@vercel/static" },
     { "src": "lingtest.html", "use": "@vercel/static" },
     { "src": "timelens.js", "use": "@vercel/static" },
+    { "src": "timelens-plan.js", "use": "@vercel/static" },
     { "src": "timelens.html", "use": "@vercel/static" },
     { "src": "timelens-route.js", "use": "@vercel/static" },
     { "src": "timelens-route.html", "use": "@vercel/static" },
@@ -37,6 +38,7 @@
     { "source": "/lingtest-guides", "destination": "/lingtest-guides.html" },
     { "source": "/lingtest", "destination": "/lingtest.html" },
     { "source": "/timelens", "destination": "/timelens.html" },
+    { "source": "/timelens-plan.js", "destination": "/timelens-plan.js" },
     { "source": "/timelens-route", "destination": "/api/timelens_share.py" },
     { "source": "/(.*)", "destination": "/$1" }
   ]
