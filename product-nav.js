@@ -3,20 +3,18 @@
   if(!nav)return;
   const product=nav.dataset.product||'luckline';
   const brand=nav.querySelector('.brand,.product-brand,.logo');
+  let actions=nav.querySelector('.nav-actions,.workspace-actions,.route-actions');
+  if(!actions){actions=document.createElement('div');actions.className='nav-actions';nav.appendChild(actions)}
 
   // 首页已有作品导航和产品卡；切换器只服务产品页之间的跨产品导航。
-  if(product!=='luckline'&&brand&&!brand.parentElement.classList.contains('nav-brand-group')){
-    const group=document.createElement('div');
-    group.className='nav-brand-group';
-    brand.parentNode.insertBefore(group,brand);
-    group.appendChild(brand);
+  if(product!=='luckline'&&brand&&!nav.querySelector('.product-switch-button')){
     const switchButton=document.createElement('button');
     switchButton.type='button';
     switchButton.className='product-switch-button';
     switchButton.setAttribute('aria-label','打开全部产品');
     switchButton.setAttribute('aria-expanded','false');
     switchButton.innerHTML='<span>全部产品</span><i>⌄</i>';
-    group.appendChild(switchButton);
+    actions.insertBefore(switchButton,actions.firstChild);
     const menu=document.createElement('div');
     menu.className='product-switch-menu';
     menu.hidden=true;
@@ -40,8 +38,6 @@
     document.addEventListener('keydown',e=>{if(e.key==='Escape'){close();nav.classList.remove('nav-mobile-open')}});
   }
 
-  let actions=nav.querySelector('.nav-actions,.workspace-actions,.route-actions');
-  if(!actions){actions=document.createElement('div');actions.className='nav-actions';nav.appendChild(actions)}
   const toggle=document.createElement('button');
   toggle.type='button';
   toggle.className='nav-mobile-toggle';
