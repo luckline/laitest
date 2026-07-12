@@ -6,17 +6,17 @@ const checks = [
   {
     name: "个人主页",
     path: "/",
-    contains: ["Luckline", 'href="/lingtest"', 'href="/timelens"', "product-nav.js?v=3", "5 类 · 22 项出发清单", "home-growth-p0.css?v=2"],
+    contains: ["Luckline", 'href="/lingtest"', 'href="/timelens"', "product-nav.js?v=5", "5 类 · 22 项出发清单", "home-growth-p0.css?v=2"],
   },
   {
     name: "领测产品页",
     path: "/lingtest",
-    contains: ["领测 LingTest", 'href="/app"', "product-nav.js?v=3", "lingtest-account.js?v=5"],
+    contains: ["领测 LingTest", 'href="/app"', "product-nav.js?v=5", "lingtest-account.js?v=5"],
   },
   {
     name: "领测工作台",
     path: "/app",
-    contains: ["AI QUALITY WORKSPACE", "product-nav.js?v=4", "lingtest-account.js?v=5", "app-shell-fix.css?v=5", "quota-metering-1", "登录后次数翻倍", "PRO ACTIVATION", 'id="aiPrompt"'],
+    contains: ["AI QUALITY WORKSPACE", "product-nav.js?v=5", "lingtest-account.js?v=5", "app-shell-fix.css?v=5", "quota-metering-1", "登录后次数翻倍", "PRO ACTIVATION", 'id="aiPrompt"'],
   },
   {
     name: "领测定价",
@@ -56,7 +56,7 @@ const checks = [
   {
     name: "领测方法库",
     path: "/lingtest-guides",
-    contains: ["方法与实践", 'href="/app"', "product-nav.js?v=2"],
+    contains: ["方法与实践", 'href="/app"', "product-nav.js?v=5"],
   },
   {
     name: "时光透卡",
@@ -87,13 +87,13 @@ const checks = [
   },
   {
     name: "产品导航脚本",
-    path: "/product-nav.js?v=3",
-    contains: ["product!=='luckline'", "打开全部产品", "返回个人主页", "领测 LingTest", "时光透卡"],
+    path: "/product-nav.js?v=5",
+    contains: ["product!=='luckline'", "site-home-link", "返回 Luckline 个人主页", "home.textContent='主页'"],
   },
   {
     name: "产品导航样式",
-    path: "/css/product-nav.css?v=2",
-    contains: [".unified-nav", ".product-switch-menu", ".nav-mobile-toggle"],
+    path: "/css/product-nav.css?v=3",
+    contains: [".unified-nav", ".site-home-link", ".nav-mobile-toggle"],
   },
   {
     name: "百度站点验证",

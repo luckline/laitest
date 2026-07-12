@@ -2,40 +2,18 @@
   const nav=document.querySelector('.unified-nav');
   if(!nav)return;
   const product=nav.dataset.product||'luckline';
-  const brand=nav.querySelector('.brand,.product-brand,.logo');
+  const links=nav.querySelector('.shared-links,.links,nav');
   let actions=nav.querySelector('.nav-actions,.workspace-actions,.route-actions');
   if(!actions){actions=document.createElement('div');actions.className='nav-actions';nav.appendChild(actions)}
 
-  // 首页已有作品导航和产品卡；切换器只服务产品页之间的跨产品导航。
-  if(product!=='luckline'&&brand&&!nav.querySelector('.product-switch-button')){
-    const switchButton=document.createElement('button');
-    switchButton.type='button';
-    switchButton.className='product-switch-button';
-    switchButton.setAttribute('aria-label','打开全部产品');
-    switchButton.setAttribute('aria-expanded','false');
-    switchButton.innerHTML='<span>全部产品</span><i>⌄</i>';
-    actions.insertBefore(switchButton,actions.firstChild);
-    const menu=document.createElement('div');
-    menu.className='product-switch-menu';
-    menu.hidden=true;
-    menu.innerHTML='<p>产品导航</p>'+[
-      ['luckline','L','Luckline','返回个人主页','/'],
-      ['lingtest','领','领测 LingTest','AI 质量工作台','/lingtest'],
-      ['timelens','时','时光透卡','旅行与城市足迹','/timelens']
-    ].map(x=>`<a href="${x[4]}" class="${x[0]===product?'active':''}"><i>${x[1]}</i><b>${x[2]}</b><small>${x[3]}</small></a>`).join('');
-    document.body.appendChild(menu);
-    const close=()=>{menu.hidden=true;switchButton.setAttribute('aria-expanded','false')};
-    switchButton.onclick=e=>{
-      e.stopPropagation();
-      if(!menu.hidden){close();return}
-      const rect=switchButton.getBoundingClientRect();
-      menu.style.left=Math.min(rect.left,innerWidth-242)+'px';
-      menu.style.top=rect.bottom+8+'px';
-      menu.hidden=false;
-      switchButton.setAttribute('aria-expanded','true');
-    };
-    document.addEventListener('click',e=>{if(!menu.contains(e.target))close()});
-    document.addEventListener('keydown',e=>{if(e.key==='Escape'){close();nav.classList.remove('nav-mobile-open')}});
+  // 产品页使用稳定可见的主页入口，避免下拉菜单与页面中的产品展示重复。
+  if(product!=='luckline'&&links&&!links.querySelector('.site-home-link')){
+    const home=document.createElement('a');
+    home.href='/';
+    home.className='site-home-link';
+    home.textContent='主页';
+    home.setAttribute('aria-label','返回 Luckline 个人主页');
+    links.insertBefore(home,links.firstChild);
   }
 
   const toggle=document.createElement('button');
@@ -49,4 +27,5 @@
     toggle.setAttribute('aria-label',open?'关闭导航菜单':'打开导航菜单');
   };
   actions.insertBefore(toggle,actions.firstChild);
+  document.addEventListener('keydown',e=>{if(e.key==='Escape')nav.classList.remove('nav-mobile-open')});
 })();
