@@ -31,12 +31,15 @@ const state = {
   lastCases: [],
   executionResults: {},
   runningCases: new Set(),
+  entitlement: { plan: "free", active: false },
 };
 
 const STORAGE_CASES = "lingtest:last-cases:v1";
 const STORAGE_HISTORY = "lingtest:run-history:v1";
 const STORAGE_QUOTA = "lingtest:daily-quota:v1";
+const STORAGE_BROWSER_ID = "lingtest:browser-id:v1";
 const FREE_LIMITS = { generation: 5, execution: 3 };
+const ENTITLEMENT_API = "https://timelens.cc/api/lingtest/licenses";
 const DEMOS = {
   content: { target:"https://example.com/", case:{case_id:"DEMO-CONTENT-001",module:"页面内容",title:"验证示例页面核心内容",priority:"P1",preconditions:["示例页面可访问"],steps:[{step_no:1,action:"打开页面并读取主要内容",test_data:"",expected_result:"页面显示 Example Domain"}],expected_result:"页面显示 Example Domain",assertions:[{type:"text",value:"Example Domain"}]}},
   search: { target:"https://www.wikipedia.org/", case:{case_id:"DEMO-SEARCH-001",module:"站内搜索",title:"搜索 Playwright 并进入结果页",priority:"P1",preconditions:["Wikipedia 可访问"],steps:[{step_no:1,action:"在搜索框中输入关键词",test_data:"关键词: Playwright",expected_result:"输入成功"},{step_no:2,action:"点击搜索按钮",test_data:"",expected_result:"进入搜索结果"}],expected_result:"结果页标题包含 Playwright",assertions:[{type:"title_contains",value:"Playwright"}]}},
@@ -55,6 +58,21 @@ function quotaToday() {
   return `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,"0")}-${String(now.getDate()).padStart(2,"0")}`;
 }
 
+function browserId() {
+  let id=localStorage.getItem(STORAGE_BROWSER_ID);
+  if(!id){id=crypto.randomUUID();localStorage.setItem(STORAGE_BROWSER_ID,id)}
+  return id;
+}
+
+async function refreshEntitlement() {
+  try {
+    const response=await fetch(`${ENTITLEMENT_API}/status?browserId=${encodeURIComponent(browserId())}`);
+    const data=await response.json();
+    if(response.ok&&data.code===0)state.entitlement=data.data||{plan:"free",active:false};
+  } catch (_) { state.entitlement={plan:"free",active:false}; }
+  renderQuota();
+}
+
 function readQuota() {
   const stored = safeRead(STORAGE_QUOTA, {});
   return stored.date === quotaToday() ? { date: stored.date, generation: Number(stored.generation||0), execution: Number(stored.execution||0) } : { date: quotaToday(), generation: 0, execution: 0 };
@@ -62,12 +80,18 @@ function readQuota() {
 
 function renderQuota() {
   const quota = readQuota(), generationLeft = Math.max(0, FREE_LIMITS.generation-quota.generation), executionLeft = Math.max(0, FREE_LIMITS.execution-quota.execution);
+  const pro=state.entitlement.active&&state.entitlement.plan==="pro",strip=document.querySelector(".usage-strip");
+  strip?.classList.toggle("pro",pro);
+  el("planLabel").textContent=pro?"PRO PLAN":"FREE PLAN";
+  if(pro){el("generationQuota").textContent="生成额度 已解锁";el("executionQuota").textContent="执行额度 已解锁";el("quotaSummary").textContent="专业版权益已生效";el("quotaNote").textContent=state.entitlement.expiresAt?`有效期至 ${new Date(state.entitlement.expiresAt).toLocaleDateString()}`:"当前浏览器已授权";el("openActivation").hidden=true;return}
+  el("openActivation").hidden=false;el("quotaNote").textContent="额度按当前浏览器自然日计算";
   el("generationQuota").textContent = `生成剩余 ${generationLeft}/${FREE_LIMITS.generation}`;
   el("executionQuota").textContent = `执行剩余 ${executionLeft}/${FREE_LIMITS.execution}`;
   el("quotaSummary").textContent = generationLeft || executionLeft ? "先免费验证真实需求" : "今日免费额度已用完";
 }
 
 function hasQuota(kind) {
+  if(state.entitlement.active&&state.entitlement.plan==="pro")return true;
   const quota = readQuota();
   if (quota[kind] < FREE_LIMITS[kind]) return true;
   setStatus(`今日免费${kind === "generation" ? "生成" : "执行"}额度已用完，可明天继续或申请专业版。`, "warn");
@@ -76,6 +100,7 @@ function hasQuota(kind) {
 }
 
 function consumeQuota(kind) {
+  if(state.entitlement.active&&state.entitlement.plan==="pro")return;
   const quota = readQuota(); quota[kind] += 1; safeWrite(STORAGE_QUOTA, quota); renderQuota();
 }
 
@@ -557,6 +582,9 @@ function bindEvents() {
   el("executionTarget").addEventListener("change", persistCases);
   el("runAllCases").addEventListener("click", executeAllCases);
   el("closeExecutionDialog").addEventListener("click", () => el("executionDialog").close());
+  el("openActivation").addEventListener("click",()=>{el("activationMessage").textContent="";el("activationDialog").showModal()});
+  el("closeActivation").addEventListener("click",()=>el("activationDialog").close());
+  el("activationForm").addEventListener("submit",async event=>{event.preventDefault();const button=event.submitter,label=button.textContent,message=el("activationMessage");button.disabled=true;button.textContent="正在激活…";message.textContent="";message.className="";try{const response=await fetch(`${ENTITLEMENT_API}/activate`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({activationCode:el("activationCodeInput").value,browserId:browserId()})});const data=await response.json().catch(()=>({}));if(!response.ok||data.code!==0)throw new Error(data.message||"激活失败");state.entitlement=data.data;message.textContent="专业版已激活";message.className="success";renderQuota();setTimeout(()=>el("activationDialog").close(),1200)}catch(error){message.textContent=error.message||"激活失败"}finally{button.disabled=false;button.textContent=label}});
   el("aiCards").addEventListener("click", (event) => {
     const runButton = event.target.closest("[data-run-case]");
     const detailButton = event.target.closest("[data-show-result]");
@@ -579,6 +607,7 @@ function main() {
   restoreWorkspace();
   renderHistory();
   renderQuota();
+  refreshEntitlement();
   if (!state.lastCases.length) setStatus("就绪。按 Ctrl/Cmd + Enter 可快速生成。", "");
 }
 

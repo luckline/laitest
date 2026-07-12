@@ -42,7 +42,19 @@
 .usage-strip > div:first-child small { color: #7a8985; font-size: 10px; }
 .usage-actions { display: flex; align-items: center; gap: 8px; }
 .usage-actions > span { padding: 6px 9px; border-radius: 999px; background: #edf5f1; color: #526c65; font-size: 10px; font-weight: 800; }
+.usage-actions > button { padding: 6px 9px; border: 1px solid #cbdad5; border-radius: 999px; background: #fff; color: #526c65; font-size: 10px; font-weight: 800; cursor: pointer; }
 .usage-actions > a { margin-left: 4px; color: #137a67; font-weight: 800; text-decoration: none; }
+.usage-strip.pro { border-color: #aebfe9; background: linear-gradient(100deg, #f7f9ff, #eef4ff); }
+.usage-strip.pro #planLabel { color: #3157d5; }
+.activation-dialog { width: min(480px, calc(100% - 24px)); padding: 0; border: 0; border-radius: 19px; box-shadow: 0 30px 100px rgba(13, 40, 34, .28); }
+.activation-dialog::backdrop { background: rgba(13, 40, 34, .58); backdrop-filter: blur(5px); }
+.activation-dialog form { position: relative; display: grid; gap: 12px; padding: 30px; }
+.activation-dialog h3 { margin: 0; font-size: 25px; }
+.activation-dialog p { margin: 0; color: #667873; }
+.activation-dialog input { padding: 12px; border: 1px solid #cbd8d4; border-radius: 9px; font: 700 17px ui-monospace, monospace; letter-spacing: 1px; text-transform: uppercase; }
+#closeActivation { position: absolute; right: 14px; top: 12px; width: 38px; height: 38px; padding: 0; border: 0; border-radius: 50%; background: #edf3f0; font-size: 20px; cursor: pointer; }
+#activationMessage { min-height: 22px; color: #b84b42; }
+#activationMessage.success { color: #137a67; }
 
 @media (max-width: 680px) {
   .app-page:not(.guides-page) .app-shell {

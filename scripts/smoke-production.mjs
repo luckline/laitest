@@ -16,7 +16,7 @@ const checks = [
   {
     name: "领测工作台",
     path: "/app",
-    contains: ["AI QUALITY WORKSPACE", "product-nav.js?v=4", "app-shell-fix.css?v=3", "monetization-p0-1", "FREE PLAN", 'id="aiPrompt"'],
+    contains: ["AI QUALITY WORKSPACE", "product-nav.js?v=4", "app-shell-fix.css?v=4", "monetization-p05-1", "PRO ACTIVATION", 'id="aiPrompt"'],
   },
   {
     name: "领测定价",
@@ -27,6 +27,16 @@ const checks = [
     name: "领测申请脚本",
     path: "/lingtest-pricing.js?v=1",
     contains: ["/api/lingtest/leads", "lingtest_lead_submitted", "正在提交"],
+  },
+  {
+    name: "领测管理后台",
+    path: "/lingtest-admin",
+    contains: ["noindex,nofollow", "管理员登录", "专业版申请", "lingtest-admin.js?v=1"],
+  },
+  {
+    name: "领测管理脚本",
+    path: "/lingtest-admin.js?v=1",
+    contains: ["lingtest:admin-token", "/admin/leads", "activationCode"],
   },
   {
     name: "领测方法库",

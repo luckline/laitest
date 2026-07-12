@@ -188,6 +188,7 @@ class Handler(BaseHTTPRequestHandler):
             "/lingtest": "lingtest.html",
             "/lingtest-guides": "lingtest-guides.html",
             "/lingtest-pricing": "lingtest-pricing.html",
+            "/lingtest-admin": "lingtest-admin.html",
             "/timelens": "timelens.html",
             "/timelens-route": "timelens-route.html",
         }

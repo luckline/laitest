@@ -17,6 +17,7 @@ Luckline 的个人站与产品中心，统一承载个人介绍、产品发布�
 | `/lingtest` | 领测产品介绍与完整案例 |
 | `/app` | 领测工作台 |
 | `/lingtest-pricing` | 领测版本、服务与专业版申请 |
+| `/lingtest-admin` | 领测申请审核与激活码管理（管理员 Token） |
 | `/lingtest-guides` | 测试方法与质量工程实践 |
 | `/timelens` | 时光透卡 PC 版 |
 | `/timelens-route?id=<route-id>` | 可独立分享的公开路线详情 |
@@ -116,6 +117,10 @@ python3 -m laitest cli projects
 - `/lingtest-pricing` 展示免费版、专业版内测和测试落地服务
 - 专业版申请写入 `timelens-server` 的 `lingtest_leads` 表
 - 生产部署后端前需执行 `sql/023_lingtest_leads.sql`
+- 管理员通过 `/lingtest-admin` 审核申请并生成 24 小时有效的一次性激活码
+- 用户在工作台输入激活码后，专业版权益绑定当前浏览器
+- 管理员 Token 通过后端环境变量 `LINGTEST_ADMIN_TOKEN` 配置
+- 审核与激活功能还需执行 `sql/024_lingtest_licenses.sql`
 
 执行器优先使用 `role`、`label`、`placeholder`、可见文本和表单语义定位元素，不绑定特定网站。验证码和网站风控不会被绕过。
 
