@@ -183,8 +183,15 @@ class Handler(BaseHTTPRequestHandler):
         if path in ("/", "/index.html"):
             _send_file(self, sdir / "index.html")
             return
-        if path in ("/app", "/app.html"):
-            _send_file(self, sdir / "app.html")
+        page_routes = {
+            "/app": "app.html",
+            "/lingtest": "lingtest.html",
+            "/lingtest-guides": "lingtest-guides.html",
+            "/timelens": "timelens.html",
+            "/timelens-route": "timelens-route.html",
+        }
+        if path in page_routes:
+            _send_file(self, sdir / page_routes[path])
             return
         if path.startswith("/static/"):
             rel = path.removeprefix("/static/").lstrip("/")

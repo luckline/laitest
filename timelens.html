@@ -2,12 +2,19 @@
 <html lang="zh-CN">
 <head>
   <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>时光透卡 · PC 版</title>
-  <meta name="description" content="把旅行计划和游记整理成可执行、可分享的路线内容。">
+  <title>时光透卡 - TimeLens 官方网站｜在线旅行规划与城市足迹工具</title>
+  <meta name="description" content="TimeLens（时光透卡）是一款在线旅行规划与城市足迹工具，提供目的地路线搜索、AI 行程规划、出发清单、旅行记录和公开路线分享。">
+  <meta name="keywords" content="时光透卡,TimeLens,旅行规划,旅游路线,城市足迹,AI行程规划">
+  <meta name="robots" content="index,follow,max-image-preview:large">
   <link rel="canonical" href="https://laitest.tech/timelens">
-  <meta property="og:title" content="时光透卡 · 旅行计划与城市足迹">
-  <meta property="og:description" content="发现路线灵感，规划旅程，并记录走过的城市足迹。">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://laitest.tech/timelens">
+  <meta property="og:site_name" content="时光透卡 TimeLens">
+  <meta property="og:title" content="时光透卡 - TimeLens 在线旅行规划与城市足迹工具">
+  <meta property="og:description" content="使用时光透卡搜索目的地路线、规划旅行、管理出发清单，并记录走过的城市足迹。">
   <meta property="og:image" content="https://laitest.tech/img/timelens-miniapp.jpg">
+  <meta property="og:image:alt" content="时光透卡 TimeLens 微信小程序码">
+  <meta name="twitter:card" content="summary_large_image">
   <meta name="theme-color" content="#147d69"><link rel="icon" href="/img/favicon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="">
   <link rel="stylesheet" href="/css/timelens.css?v=1">
@@ -19,7 +26,7 @@
 <body>
   <div class="layout">
     <aside class="sidebar">
-      <a class="logo" href="/timelens.html"><span>时</span><div><b>时光透卡</b><small>TIMELENS</small></div></a>
+      <a class="logo" href="/timelens" aria-label="时光透卡 TimeLens 官方网站首页"><span>时</span><div><b>时光透卡</b><small>TIMELENS</small></div></a>
       <nav id="nav">
         <button data-page="explore" class="active"><i>⌁</i>路线广场</button>
         <button data-page="workspace"><i>◫</i>计划工作台</button>
@@ -32,13 +39,14 @@
     <main>
       <header><div><b id="pageTitle">路线广场</b><span id="pageSub">发现值得出发的路线灵感</span></div><div class="header-actions"><button class="miniapp-trigger" id="miniappBtn" data-event="scan_miniapp">▦ 小程序</button><button class="search" id="searchBtn">⌕ 搜索目的地</button><button class="primary" id="newTrip" data-event="create_trip">＋ 创建计划</button><button class="avatar" id="loginBtn" data-event="open_login">旅</button></div></header>
       <div id="notice" class="notice" hidden></div>
-      <section id="content"></section>
+      <section id="content"><div class="hero"><div><span class="eyebrow">TIMELENS · 时光透卡</span><h1>时光透卡，<br>把想去的地方变成真正出发的路线。</h1><p>TimeLens（时光透卡）提供目的地路线搜索、AI 旅行规划、出发清单和城市足迹记录，让每一次旅程更容易规划、回看与分享。</p></div></div><div class="section-head"><div><h2>时光透卡精选旅行路线</h2><p>发现值得出发的城市、景点与多日路线灵感。</p></div></div></section>
     </main>
   </div>
   <dialog id="modal"><form method="dialog" id="modalBody"></form></dialog>
   <dialog id="miniappModal" class="miniapp-modal"><div><button class="miniapp-close" id="miniappClose" aria-label="关闭">×</button><span class="eyebrow">TIMELENS MINI PROGRAM</span><h2>把旅程装进口袋</h2><p>微信扫码进入时光透卡小程序，随时规划路线、记录足迹和查看旅程。</p><img src="/img/timelens-miniapp.jpg" alt="时光透卡微信小程序码"><small>手机端可长按图片识别小程序码</small></div></dialog>
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
   <script defer src="/site-analytics.js"></script><script defer src="/_vercel/insights/script.js"></script>
-  <script src="/timelens.js?v=modal-cancel-fix-1"></script>
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"SoftwareApplication","name":"时光透卡","alternateName":"TimeLens","url":"https://laitest.tech/timelens","applicationCategory":"TravelApplication","operatingSystem":"Web","inLanguage":"zh-CN","description":"时光透卡是一款在线旅行规划与城市足迹工具，提供路线搜索、AI 行程规划、出发清单、旅行记录和路线分享。","image":"https://laitest.tech/img/timelens-miniapp.jpg","offers":{"@type":"Offer","price":"0","priceCurrency":"CNY"}}</script>
+  <script src="/timelens.js?v=seo-1"></script>
 </body>
 </html>
