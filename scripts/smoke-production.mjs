@@ -16,7 +16,7 @@ const checks = [
   {
     name: "领测工作台",
     path: "/app",
-    contains: ["AI QUALITY WORKSPACE", "product-nav.js?v=4", "app-shell-fix.css?v=1", 'id="aiPrompt"', 'src="/app.js'],
+    contains: ["AI QUALITY WORKSPACE", "product-nav.js?v=4", "app-shell-fix.css?v=2", 'id="aiPrompt"', 'src="/app.js'],
   },
   {
     name: "领测方法库",

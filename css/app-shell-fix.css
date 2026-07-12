@@ -1,18 +1,33 @@
 /* Keep the LingTest workspace aligned with the shared 1180px navigation grid. */
 .app-page:not(.guides-page) .app-shell {
-  width: min(1180px, calc(100% - 32px));
+  width: min(1180px, calc(100vw - 32px)) !important;
+  max-width: calc(100vw - 32px);
 }
 
 .app-page:not(.guides-page) .unified-nav {
-  width: 100%;
+  width: 100% !important;
+  max-width: 100%;
 }
 
 .app-page:not(.guides-page) .ai-main {
+  width: 100% !important;
+  max-width: 100%;
+  min-width: 0;
+}
+
+.app-page:not(.guides-page) .ai-main > * {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.app-page:not(.guides-page) .app-foot {
   width: 100%;
+  max-width: 100%;
 }
 
 @media (max-width: 680px) {
   .app-page:not(.guides-page) .app-shell {
-    width: calc(100% - 14px);
+    width: calc(100vw - 14px) !important;
+    max-width: calc(100vw - 14px);
   }
 }
