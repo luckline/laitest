@@ -6,12 +6,12 @@ const checks = [
   {
     name: "个人主页",
     path: "/",
-    contains: ["Luckline", 'href="/lingtest"', 'href="/timelens"', "product-nav.js?v=2"],
+    contains: ["Luckline", 'href="/lingtest"', 'href="/timelens"', "product-nav.js?v=3", "5 类 · 22 项出发清单", "home-growth-p0.css?v=2"],
   },
   {
     name: "领测产品页",
     path: "/lingtest",
-    contains: ["领测 LingTest", "← 个人主页", 'href="/app"', "product-nav.js?v=2"],
+    contains: ["领测 LingTest", 'href="/app"', "product-nav.js?v=3"],
   },
   {
     name: "领测工作台",
@@ -32,13 +32,13 @@ const checks = [
       "TimeLens（时光透卡）是一款在线旅行规划与城市足迹工具",
       "<h1>时光透卡",
       'src="/timelens-plan.js?v=1',
-      'src="/timelens.js?v=plan-db-1',
+      'src="/timelens.js?v=checklist-v2',
     ],
   },
   {
     name: "时光透卡注册",
-    path: "/timelens.js?v=plan-db-1",
-    contains: ["注册新账户", "/api/auth/mobile/register", "travel_plan", "ai-plans/latest", "savePlanRecord"],
+    path: "/timelens.js?v=checklist-v2",
+    contains: ["注册新账户", "/api/auth/mobile/register", "travel_plan", "ai-plans/latest", "savePlanRecord", "DEFAULT_CHECKLIST", "创口贴"],
   },
   {
     name: "路线方案格式化",
@@ -52,8 +52,8 @@ const checks = [
   },
   {
     name: "产品导航脚本",
-    path: "/product-nav.js?v=2",
-    contains: ["打开全部产品", "返回个人主页", "领测 LingTest", "时光透卡"],
+    path: "/product-nav.js?v=3",
+    contains: ["product!=='luckline'", "打开全部产品", "返回个人主页", "领测 LingTest", "时光透卡"],
   },
   {
     name: "产品导航样式",
