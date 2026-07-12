@@ -17,6 +17,7 @@ Luckline 的个人站与产品中心，统一承载个人介绍、产品发布�
 | `/lingtest` | 领测产品介绍与完整案例 |
 | `/app` | 领测工作台 |
 | `/lingtest-pricing` | 领测版本、服务与专业版申请 |
+| `/lingtest-login` | 领测登录与注册（专业版申请前置） |
 | `/lingtest-admin` | 领测申请审核与激活码管理（管理员 Token） |
 | `/lingtest-guides` | 测试方法与质量工程实践 |
 | `/timelens` | 时光透卡 PC 版 |
@@ -85,6 +86,7 @@ python3 -m laitest cli projects
 ├── lingtest.html                  # 领测产品介绍
 ├── lingtest-guides.html           # 领测方法库
 ├── lingtest-pricing.html / .js    # 定价、服务、专业版申请与状态联动
+├── lingtest-login.html / .js      # 领测登录、注册与申请回跳
 ├── lingtest-admin.html / .js      # 专业版申请审核与激活码管理
 ├── lingtest-account.js            # 跨页面账户身份与版本组件
 ├── app.html / app.js              # 领测工作台
@@ -131,11 +133,12 @@ python3 -m laitest cli projects
 
 专业版运营流程：
 
-1. 用户在 `/lingtest-pricing` 提交专业版申请。
-2. 管理员在 `/lingtest-admin` 查看申请并完成审核。
-3. 审核通过后生成 24 小时有效的一次性激活码。
-4. 用户在 `/app` 输入激活码，专业版立即生效。
-5. 登录用户后续通过已验证手机号识别权益，无需在每台设备重复申请。
+1. 游客在 `/lingtest-pricing` 点击申请后，先完成手机号注册或登录。
+2. 登录成功后自动返回定价页，申请表自动填写已验证手机号。
+3. 管理员在 `/lingtest-admin` 查看申请并完成审核。
+4. 审核通过后生成 24 小时有效的一次性激活码。
+5. 用户在 `/app` 输入激活码，专业版立即生效。
+6. 登录用户后续通过已验证手机号识别权益，无需在每台设备重复申请。
 
 账户身份来自时光透卡的同域登录令牌，但领测页面统一使用“登录”“账户”“当前版本”等产品中立文案，不向用户暴露跨产品实现细节。
 

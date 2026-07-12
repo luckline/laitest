@@ -11,22 +11,32 @@ const checks = [
   {
     name: "领测产品页",
     path: "/lingtest",
-    contains: ["领测 LingTest", 'href="/app"', "product-nav.js?v=3", "lingtest-account.js?v=4"],
+    contains: ["领测 LingTest", 'href="/app"', "product-nav.js?v=3", "lingtest-account.js?v=5"],
   },
   {
     name: "领测工作台",
     path: "/app",
-    contains: ["AI QUALITY WORKSPACE", "product-nav.js?v=4", "lingtest-account.js?v=4", "app-shell-fix.css?v=4", "monetization-p05-1", "PRO ACTIVATION", 'id="aiPrompt"'],
+    contains: ["AI QUALITY WORKSPACE", "product-nav.js?v=4", "lingtest-account.js?v=5", "app-shell-fix.css?v=4", "account-plan-1", "PRO ACTIVATION", 'id="aiPrompt"'],
   },
   {
     name: "领测定价",
     path: "/lingtest-pricing",
-    contains: ["免费版", "专业版", "测试落地服务", "leadDialog", "lingtest-pricing.js?v=2"],
+    contains: ["免费版", "专业版", "测试落地服务", "leadDialog", "lingtest-pricing.js?v=3"],
   },
   {
     name: "领测申请脚本",
-    path: "/lingtest-pricing.js?v=2",
+    path: "/lingtest-pricing.js?v=3",
     contains: ["/api/lingtest/leads", "lingtest_lead_submitted", "正在提交"],
+  },
+  {
+    name: "领测登录注册",
+    path: "/lingtest-login",
+    contains: ["登录后继续", "注册新账户", "lingtest-login.js?v=1"],
+  },
+  {
+    name: "领测登录脚本",
+    path: "/lingtest-login.js?v=1",
+    contains: ["/auth/mobile/register", "/auth/mobile/password-login", "timelens.pc.token", "intent"],
   },
   {
     name: "领测管理后台",
@@ -40,7 +50,7 @@ const checks = [
   },
   {
     name: "领测版本入口",
-    path: "/lingtest-account.js?v=4",
+    path: "/lingtest-account.js?v=5",
     contains: ["当前版本", "专业版 PRO", "contactMasked", "/licenses/status"],
   },
   {

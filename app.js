@@ -40,6 +40,7 @@ const STORAGE_QUOTA = "lingtest:daily-quota:v1";
 const STORAGE_BROWSER_ID = "lingtest:browser-id:v1";
 const FREE_LIMITS = { generation: 5, execution: 3 };
 const ENTITLEMENT_API = "https://timelens.cc/api/lingtest/licenses";
+const ACCOUNT_TOKEN_KEY = "timelens.pc.token";
 const DEMOS = {
   content: { target:"https://example.com/", case:{case_id:"DEMO-CONTENT-001",module:"页面内容",title:"验证示例页面核心内容",priority:"P1",preconditions:["示例页面可访问"],steps:[{step_no:1,action:"打开页面并读取主要内容",test_data:"",expected_result:"页面显示 Example Domain"}],expected_result:"页面显示 Example Domain",assertions:[{type:"text",value:"Example Domain"}]}},
   search: { target:"https://www.wikipedia.org/", case:{case_id:"DEMO-SEARCH-001",module:"站内搜索",title:"搜索 Playwright 并进入结果页",priority:"P1",preconditions:["Wikipedia 可访问"],steps:[{step_no:1,action:"在搜索框中输入关键词",test_data:"关键词: Playwright",expected_result:"输入成功"},{step_no:2,action:"点击搜索按钮",test_data:"",expected_result:"进入搜索结果"}],expected_result:"结果页标题包含 Playwright",assertions:[{type:"title_contains",value:"Playwright"}]}},
@@ -64,9 +65,20 @@ function browserId() {
   return id;
 }
 
+function accountToken() {
+  const raw=localStorage.getItem(ACCOUNT_TOKEN_KEY);
+  if(!raw)return "";
+  try{const parsed=JSON.parse(raw);return typeof parsed==="string"?parsed:parsed?.token||""}catch{return raw}
+}
+
+function accountHeaders() {
+  const token=accountToken();
+  return token?{Authorization:`Bearer ${token}`,"X-Auth-Token":token}:{};
+}
+
 async function refreshEntitlement() {
   try {
-    const response=await fetch(`${ENTITLEMENT_API}/status?browserId=${encodeURIComponent(browserId())}`);
+    const response=await fetch(`${ENTITLEMENT_API}/status?browserId=${encodeURIComponent(browserId())}`,{headers:accountHeaders()});
     const data=await response.json();
     if(response.ok&&data.code===0)state.entitlement=data.data||{plan:"free",active:false};
   } catch (_) { state.entitlement={plan:"free",active:false}; }
@@ -83,7 +95,7 @@ function renderQuota() {
   const pro=state.entitlement.active&&state.entitlement.plan==="pro",strip=document.querySelector(".usage-strip");
   strip?.classList.toggle("pro",pro);
   el("planLabel").textContent=pro?"PRO PLAN":"FREE PLAN";
-  if(pro){el("generationQuota").textContent="生成额度 已解锁";el("executionQuota").textContent="执行额度 已解锁";el("quotaSummary").textContent="专业版权益已生效";el("quotaNote").textContent=state.entitlement.expiresAt?`有效期至 ${new Date(state.entitlement.expiresAt).toLocaleDateString()}`:"当前浏览器已授权";el("openActivation").hidden=true;return}
+  if(pro){el("generationQuota").textContent="生成额度 已解锁";el("executionQuota").textContent="执行额度 已解锁";el("quotaSummary").textContent="专业版权益已生效";el("quotaNote").textContent=state.entitlement.expiresAt?`有效期至 ${new Date(state.entitlement.expiresAt).toLocaleDateString()}`:"当前账户已授权";el("openActivation").hidden=true;return}
   el("openActivation").hidden=false;el("quotaNote").textContent="额度按当前浏览器自然日计算";
   el("generationQuota").textContent = `生成剩余 ${generationLeft}/${FREE_LIMITS.generation}`;
   el("executionQuota").textContent = `执行剩余 ${executionLeft}/${FREE_LIMITS.execution}`;
@@ -584,7 +596,7 @@ function bindEvents() {
   el("closeExecutionDialog").addEventListener("click", () => el("executionDialog").close());
   el("openActivation").addEventListener("click",()=>{el("activationMessage").textContent="";el("activationDialog").showModal()});
   el("closeActivation").addEventListener("click",()=>el("activationDialog").close());
-  el("activationForm").addEventListener("submit",async event=>{event.preventDefault();const button=event.submitter,label=button.textContent,message=el("activationMessage");button.disabled=true;button.textContent="正在激活…";message.textContent="";message.className="";try{const response=await fetch(`${ENTITLEMENT_API}/activate`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({activationCode:el("activationCodeInput").value,browserId:browserId()})});const data=await response.json().catch(()=>({}));if(!response.ok||data.code!==0)throw new Error(data.message||"激活失败");state.entitlement=data.data;message.textContent="专业版已激活";message.className="success";renderQuota();setTimeout(()=>el("activationDialog").close(),1200)}catch(error){message.textContent=error.message||"激活失败"}finally{button.disabled=false;button.textContent=label}});
+  el("activationForm").addEventListener("submit",async event=>{event.preventDefault();const button=event.submitter,label=button.textContent,message=el("activationMessage");button.disabled=true;button.textContent="正在激活…";message.textContent="";message.className="";try{const response=await fetch(`${ENTITLEMENT_API}/activate`,{method:"POST",headers:{"Content-Type":"application/json",...accountHeaders()},body:JSON.stringify({activationCode:el("activationCodeInput").value,browserId:browserId()})});const data=await response.json().catch(()=>({}));if(!response.ok||data.code!==0)throw new Error(data.message||"激活失败");state.entitlement=data.data;message.textContent="专业版已激活";message.className="success";renderQuota();setTimeout(()=>el("activationDialog").close(),1200)}catch(error){message.textContent=error.message||"激活失败"}finally{button.disabled=false;button.textContent=label}});
   el("aiCards").addEventListener("click", (event) => {
     const runButton = event.target.closest("[data-run-case]");
     const detailButton = event.target.closest("[data-show-result]");

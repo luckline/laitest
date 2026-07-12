@@ -49,7 +49,7 @@
 
   let user = null;
   let entitlement = { plan: "free", active: false };
-  const userName = () => user?.nickname || (user?.mobile ? `用户 ${maskMobile(user.mobile)}` : "时光透卡用户");
+  const userName = () => user?.nickname || (user?.mobile ? `用户 ${maskMobile(user.mobile)}` : "领测用户");
 
   function render() {
     const pro = entitlement.active && entitlement.plan === "pro";
@@ -65,6 +65,10 @@
     chip.querySelector(".account-avatar").textContent = loggedIn ? name.trim().slice(0, 1) : "游";
     chip.querySelector(".account-name").textContent = name;
     chip.querySelector("strong").textContent = pro ? "PRO" : approved ? "待激活" : pending ? "审核中" : "免费版";
+    document.querySelectorAll("[data-plan-cta]").forEach((link) => {
+      link.textContent = pro ? "进入工作台" : approved ? "前往激活" : pending ? "申请审核中" : link.dataset.freeLabel || "开始使用";
+      link.setAttribute("href", pro || approved ? "/app" : pending ? "/lingtest-pricing" : link.dataset.freeHref || "/app");
+    });
     card.classList.toggle("pro", pro);
     card.querySelector("h2").textContent = pro ? "领测专业版" : approved ? "专业版待激活" : pending ? "专业版申请审核中" : "领测免费版";
     card.querySelector(".lingtest-account-sub").textContent = loggedIn ? "账户已登录，登录状态可在本站产品间共享" : "登录后，可在本站产品间共享账户身份";
@@ -85,7 +89,7 @@
         ? '<a class="primary" href="/app">前往激活</a>'
         : loggedIn
           ? '<a class="primary" href="/lingtest-pricing">查看专业版</a>'
-          : '<a href="/timelens">登录</a><a class="primary" href="/lingtest-pricing">查看专业版</a>';
+        : `<a href="/lingtest-login?return=${encodeURIComponent(location.pathname)}">登录</a><a class="primary" href="/lingtest-pricing">查看专业版</a>`;
   }
 
   async function loadAccount() {
@@ -97,6 +101,7 @@
     const licenseRequest = fetch(`${LICENSE_API}/status?browserId=${encodeURIComponent(browserId)}`, { headers: licenseHeaders }).then((response) => response.json()).then((data) => { if (data.code === 0) entitlement = data.data || entitlement; }).catch(() => {});
     await Promise.allSettled([userRequest, licenseRequest]);
     render();
+    window.LingTestAccount = { user, entitlement };
     window.dispatchEvent(new CustomEvent("lingtest:account-loaded", { detail: { user, entitlement } }));
   }
 

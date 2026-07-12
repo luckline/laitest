@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="robots" content="noindex,nofollow">
+  <title>登录领测 LingTest</title>
+  <meta name="description" content="登录或注册领测账户，继续申请专业版。">
+  <link rel="icon" href="/img/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/css/lingtest-login.css?v=1">
+</head>
+<body>
+  <main class="login-shell">
+    <a class="login-brand" href="/lingtest"><span>领</span><div><b>领测 LingTest</b><small>AI QUALITY WORKSPACE</small></div></a>
+    <section class="login-card">
+      <p class="eyebrow">ACCOUNT ACCESS</p>
+      <h1 id="loginHeading">登录后继续</h1>
+      <p id="loginIntro">专业版权益与已验证手机号关联，请先登录或创建账户。</p>
+      <div class="mode-switch" role="tablist" aria-label="登录或注册">
+        <button type="button" class="active" data-mode="login">登录</button>
+        <button type="button" data-mode="register">注册新账户</button>
+      </div>
+      <form id="loginForm">
+        <label>手机号<input name="mobile" inputmode="numeric" autocomplete="username" maxlength="11" required placeholder="请输入 11 位手机号"></label>
+        <label>密码<input name="password" type="password" autocomplete="current-password" maxlength="72" required placeholder="请输入密码"></label>
+        <label id="confirmField" hidden>确认密码<input name="passwordConfirm" type="password" autocomplete="new-password" maxlength="72" placeholder="再次输入密码"></label>
+        <p class="register-note" id="registerNote" hidden>密码需为 10–72 位，并同时包含字母和数字。</p>
+        <div id="loginMessage" role="alert"></div>
+        <button class="submit" type="submit">登录并继续</button>
+      </form>
+      <p class="privacy-note">登录后只会使用脱敏手机号识别账户和专业版权益。</p>
+    </section>
+    <a class="back" href="/lingtest-pricing">← 返回版本与服务</a>
+  </main>
+  <script src="/lingtest-login.js?v=1"></script>
+</body>
+</html>
