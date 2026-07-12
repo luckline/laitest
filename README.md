@@ -119,6 +119,8 @@ python3 -m laitest cli projects
 - 生产部署后端前需执行 `sql/023_lingtest_leads.sql`
 - 管理员通过 `/lingtest-admin` 审核申请并生成 24 小时有效的一次性激活码
 - 用户在工作台输入激活码后，专业版权益绑定当前浏览器
+- 领测产品页、工作台和定价页右上角统一展示当前版本；专业版使用紫金色标识
+- 点击版本入口可查看申请人称呼、脱敏联系方式、版本与有效期
 - 管理员 Token 通过后端环境变量 `LINGTEST_ADMIN_TOKEN` 配置
 - 审核与激活功能还需执行 `sql/024_lingtest_licenses.sql`
 
