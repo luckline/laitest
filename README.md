@@ -117,7 +117,7 @@ python3 -m laitest cli projects
 
 ### 版本与商业化
 
-- 免费版按浏览器自然日提供 5 次生成和 3 次页面执行
+- 游客按浏览器提供 5 次生成/日、15 次生成/月和 3 次执行/日、10 次执行/月；登录免费用户提升为 10/30 次生成和 6/20 次执行（日/月）
 - `/lingtest-pricing` 展示免费版、专业版内测和测试落地服务
 - 专业版申请写入 `timelens-server` 的 `lingtest_leads` 表
 - 生产部署后端前需执行 `sql/023_lingtest_leads.sql`
@@ -130,6 +130,8 @@ python3 -m laitest cli projects
 - 点击版本入口可查看申请人称呼、脱敏联系方式、版本与有效期
 - 管理员 Token 通过后端环境变量 `LINGTEST_ADMIN_TOKEN` 配置
 - 审核与激活功能还需执行 `sql/024_lingtest_licenses.sql`
+- 统一用量硬限制需执行 `sql/025_lingtest_usage.sql`；额度按账户或游客浏览器在后端原子扣减
+- ¥59/月专业版：AI 生成 50 次/日、1,000 次/月；页面执行 80 次/日、1,500 次/月
 
 专业版运营流程：
 
@@ -193,6 +195,8 @@ PC 版当前支持：
 | POST | `https://timelens.cc/api/lingtest/leads` | 提交专业版或服务申请 |
 | GET | `https://timelens.cc/api/lingtest/licenses/status` | 按登录手机号或浏览器查询权益 |
 | POST | `https://timelens.cc/api/lingtest/licenses/activate` | 使用一次性激活码开通专业版 |
+| GET | `https://timelens.cc/api/lingtest/usage/status` | 查询账户或游客的日/月额度与用量 |
+| POST | `https://timelens.cc/api/lingtest/usage/consume` | 原子校验并扣减一次生成或执行额度 |
 | GET | `https://timelens.cc/api/user/info` | 获取当前统一账户信息 |
 
 设置 `LAITEST_TOKEN` 后，API 请求需要携带：
@@ -234,9 +238,10 @@ Node.js 示例见 `examples/shiguang_touka_travel_plan_client.js`。
 | --- | --- |
 | `LAITEST_TOKEN` | 可选的 API Bearer Token |
 | `LAITEST_DATA_DIR` | SQLite 数据目录 |
+| `LINGTEST_QUOTA_API_URL` | 领测统一用量扣减接口，默认 `https://timelens.cc/api/lingtest/usage/consume` |
 | `LAITEST_DEFAULT_LANG` | 默认生成语言，默认 `zh-CN` |
 | `DEEPSEEK_API_KEY` | DeepSeek API Key |
-| `DEEPSEEK_MODEL` | 默认 `deepseek-chat` |
+| `DEEPSEEK_MODEL` | 默认 `deepseek-v4-flash`；旧值 `deepseek-chat` 会自动迁移 |
 | `QIANWEN_API_KEY` | 通义千问 API Key |
 | `QIANWEN_MODEL` | 默认 `qwen-plus` |
 | `GEMINI_API_KEY` | Gemini API Key |

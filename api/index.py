@@ -4,6 +4,8 @@ import json
 import os
 import time
 import traceback
+import urllib.error
+import urllib.request
 from typing import Any
 
 from flask import Flask, jsonify, request
@@ -15,6 +17,32 @@ from laitest.runner import analyze_failures, run_case, summarize_run
 from laitest.browser_runner import run_browser_case
 
 app = Flask(__name__)
+
+
+def _consume_lingtest_usage(kind: str) -> tuple[dict[str, Any] | None, tuple[Any, int] | None]:
+    quota_url = os.environ.get("LINGTEST_QUOTA_API_URL", "https://timelens.cc/api/lingtest/usage/consume").strip()
+    account_token = request.headers.get("X-Account-Token", "").strip()
+    browser_id = request.headers.get("X-Browser-Id", "").strip()
+    payload = json.dumps({"kind": kind, "browserId": browser_id}).encode("utf-8")
+    headers = {"Content-Type": "application/json", "User-Agent": "laitest-quota/1.0"}
+    if account_token:
+        headers["Authorization"] = f"Bearer {account_token}"
+    try:
+        quota_request = urllib.request.Request(quota_url, data=payload, headers=headers, method="POST")
+        with urllib.request.urlopen(quota_request, timeout=8) as response:
+            data = json.loads(response.read().decode("utf-8"))
+        if int(data.get("code", 500)) != 0:
+            return None, (jsonify({"error": data.get("message") or "用量校验失败", "quota": data.get("data")}), 429)
+        return data.get("data") or {}, None
+    except urllib.error.HTTPError as error:
+        try:
+            data = json.loads(error.read().decode("utf-8"))
+        except Exception:
+            data = {}
+        status = 429 if error.code == 429 else error.code
+        return None, (jsonify({"error": data.get("message") or "用量校验失败", "quota": data.get("data")}), status)
+    except Exception:
+        return None, (jsonify({"error": "用量服务暂不可用，请稍后重试"}), 503)
 
 
 def _require_token() -> tuple[bool, tuple[Any, int] | None]:
@@ -391,6 +419,11 @@ def post_ai_generate_cases() -> Any:
     project_id = str(body.get("project_id") or "").strip()
     suite_id = str(body.get("suite_id") or "").strip() or None
     create = bool(body.get("create"))
+    if not prompt.strip():
+        return jsonify({"error": "missing prompt"}), 400
+    quota_data, quota_error = _consume_lingtest_usage("generation")
+    if quota_error:
+        return quota_error
 
     t0 = time.monotonic()
     suggestions, provider, warning = generate_cases(prompt, model_provider=model_provider)
@@ -447,6 +480,7 @@ def post_ai_generate_cases() -> Any:
             "elapsed_ms": elapsed_ms,
             "runtime": runtime,
             "created_case_ids": created_ids,
+            "quota": quota_data,
         }
     )
 

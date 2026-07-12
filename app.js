@@ -4,7 +4,7 @@ function el(id) {
 
 async function api(path, opts) {
   const res = await fetch(path, {
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json", "X-Browser-Id": browserId(), ...(accountToken()?{"X-Account-Token":accountToken()}:{}) },
     ...opts,
   });
   const data = await res.json().catch(() => ({}));
@@ -32,6 +32,8 @@ const state = {
   executionResults: {},
   runningCases: new Set(),
   entitlement: { plan: "free", active: false },
+  accountLoggedIn: false,
+  remoteUsage: null,
 };
 
 const STORAGE_CASES = "lingtest:last-cases:v1";
@@ -39,6 +41,8 @@ const STORAGE_HISTORY = "lingtest:run-history:v1";
 const STORAGE_QUOTA = "lingtest:daily-quota:v1";
 const STORAGE_BROWSER_ID = "lingtest:browser-id:v1";
 const FREE_LIMITS = { generation: 5, execution: 3 };
+const LOGGED_LIMITS = { generation: 10, execution: 6 };
+const PRO_LIMITS = { generation: { daily: 50, monthly: 1000 }, execution: { daily: 80, monthly: 1500 } };
 const ENTITLEMENT_API = "https://timelens.cc/api/lingtest/licenses";
 const ACCOUNT_TOKEN_KEY = "timelens.pc.token";
 const DEMOS = {
@@ -85,34 +89,54 @@ async function refreshEntitlement() {
   renderQuota();
 }
 
+async function refreshUsage() {
+  try {
+    const response=await fetch(`${ENTITLEMENT_API.replace('/licenses','')}/usage/status?browserId=${encodeURIComponent(browserId())}`,{headers:accountHeaders()});
+    const data=await response.json();
+    if(response.ok&&data.code===0)state.remoteUsage=data.data||null;
+  } catch (_) { state.remoteUsage=null; }
+  renderQuota();
+}
+
 function readQuota() {
   const stored = safeRead(STORAGE_QUOTA, {});
   return stored.date === quotaToday() ? { date: stored.date, generation: Number(stored.generation||0), execution: Number(stored.execution||0) } : { date: quotaToday(), generation: 0, execution: 0 };
 }
 
+function activeFreeLimits() {
+  if(state.remoteUsage?.limits)return state.remoteUsage.limits;
+  if(state.entitlement.active&&state.entitlement.plan==="pro")return PRO_LIMITS;
+  const source=state.accountLoggedIn?LOGGED_LIMITS:FREE_LIMITS;
+  return {generation:{daily:source.generation,monthly:state.accountLoggedIn?30:15},execution:{daily:source.execution,monthly:state.accountLoggedIn?20:10}};
+}
+
 function renderQuota() {
-  const quota = readQuota(), generationLeft = Math.max(0, FREE_LIMITS.generation-quota.generation), executionLeft = Math.max(0, FREE_LIMITS.execution-quota.execution);
+  const limits=activeFreeLimits(),localQuota=readQuota(),usage=state.remoteUsage?.usage||{daily:localQuota,monthly:localQuota};
+  const generationLeft=Math.max(0,Number(limits.generation.daily)-Number(usage.daily.generation||0)),executionLeft=Math.max(0,Number(limits.execution.daily)-Number(usage.daily.execution||0));
+  const generationMonthLeft=Math.max(0,Number(limits.generation.monthly)-Number(usage.monthly.generation||0)),executionMonthLeft=Math.max(0,Number(limits.execution.monthly)-Number(usage.monthly.execution||0));
   const pro=state.entitlement.active&&state.entitlement.plan==="pro",strip=document.querySelector(".usage-strip");
   strip?.classList.toggle("pro",pro);
   el("planLabel").textContent=pro?"PRO PLAN":"FREE PLAN";
-  if(pro){el("generationQuota").textContent="生成额度 已解锁";el("executionQuota").textContent="执行额度 已解锁";el("quotaSummary").textContent="专业版权益已生效";el("quotaNote").textContent=state.entitlement.expiresAt?`有效期至 ${new Date(state.entitlement.expiresAt).toLocaleDateString()}`:"当前账户已授权";el("openActivation").hidden=true;return}
-  el("openActivation").hidden=false;el("quotaNote").textContent="额度按当前浏览器自然日计算";
-  el("generationQuota").textContent = `生成剩余 ${generationLeft}/${FREE_LIMITS.generation}`;
-  el("executionQuota").textContent = `执行剩余 ${executionLeft}/${FREE_LIMITS.execution}`;
-  el("quotaSummary").textContent = generationLeft || executionLeft ? "先免费验证真实需求" : "今日免费额度已用完";
+  if(pro){el("generationQuota").textContent=`生成 今日 ${generationLeft} · 本月 ${generationMonthLeft}`;el("executionQuota").textContent=`执行 今日 ${executionLeft} · 本月 ${executionMonthLeft}`;el("quotaSummary").textContent="专业版权益已生效";el("quotaNote").textContent=state.entitlement.expiresAt?`有效期至 ${new Date(state.entitlement.expiresAt).toLocaleDateString()} · 用量按账户统计`:"用量按当前账户统计";el("openActivation").hidden=true;el("accountLoginPrompt").hidden=true;return}
+  el("openActivation").hidden=false;el("accountLoginPrompt").hidden=state.accountLoggedIn;
+  el("quotaNote").textContent=state.accountLoggedIn?"已登录，免费体验次数已翻倍":"游客每天可生成 5 次、执行 3 次；登录后次数翻倍";
+  el("generationQuota").textContent = `生成 今日 ${generationLeft} · 本月 ${generationMonthLeft}`;
+  el("executionQuota").textContent = `执行 今日 ${executionLeft} · 本月 ${executionMonthLeft}`;
+  el("quotaSummary").textContent = generationLeft || executionLeft ? (state.accountLoggedIn?"登录用户双倍体验额度":"先免费验证真实需求") : "今日免费额度已用完";
 }
 
 function hasQuota(kind) {
-  if(state.entitlement.active&&state.entitlement.plan==="pro")return true;
-  const quota = readQuota();
-  if (quota[kind] < FREE_LIMITS[kind]) return true;
-  setStatus(`今日免费${kind === "generation" ? "生成" : "执行"}额度已用完，可明天继续或申请专业版。`, "warn");
+  const limits=activeFreeLimits();
+  const local=readQuota(),usage=state.remoteUsage?.usage||{daily:local,monthly:local};
+  if (Number(usage.daily[kind]||0)<limits[kind].daily&&Number(usage.monthly[kind]||0)<limits[kind].monthly) return true;
+  const pro=state.entitlement.active&&state.entitlement.plan==="pro";
+  setStatus(`${pro?"专业版":"免费"}${kind === "generation" ? "生成" : "执行"}额度已用完，${pro?"可下月继续使用或联系升级":"登录后可获得更多体验次数"}。`, "warn");
   document.querySelector(".usage-strip")?.scrollIntoView({behavior:"smooth",block:"center"});
   return false;
 }
 
 function consumeQuota(kind) {
-  if(state.entitlement.active&&state.entitlement.plan==="pro")return;
+  if(state.remoteUsage)return;
   const quota = readQuota(); quota[kind] += 1; safeWrite(STORAGE_QUOTA, quota); renderQuota();
 }
 
@@ -359,6 +383,7 @@ async function executeCase(caseId) {
   setStatus(`正在执行 ${caseId}…`, "");
   try {
     const out = await api("/api/ai/execute_case", {method:"POST", body:JSON.stringify({target_url:target,test_case:testCase})});
+    if(out.quota)state.remoteUsage=out.quota;
     consumeQuota("execution");
     state.executionResults[caseId] = out.result || {status:"failed",log:"服务未返回执行结果"};
     const result = state.executionResults[caseId];
@@ -533,6 +558,7 @@ async function generate() {
         create: false,
       }),
     });
+    if(out.quota)state.remoteUsage=out.quota;
     consumeQuota("generation");
     const t1 = typeof performance !== "undefined" ? performance.now() : Date.now();
     out.client_elapsed_ms = Math.max(0, Math.round(t1 - t0));
@@ -620,7 +646,17 @@ function main() {
   renderHistory();
   renderQuota();
   refreshEntitlement();
+  refreshUsage();
   if (!state.lastCases.length) setStatus("就绪。按 Ctrl/Cmd + Enter 可快速生成。", "");
 }
+
+function syncAccountState(detail) {
+  state.accountLoggedIn=Boolean(detail?.user?.id);
+  if(detail?.entitlement)state.entitlement=detail.entitlement;
+  renderQuota();
+}
+
+window.addEventListener("lingtest:account-loaded",event=>syncAccountState(event.detail));
+if(window.LingTestAccount)syncAccountState(window.LingTestAccount);
 
 main();

@@ -488,7 +488,9 @@ def _gemini_model() -> str:
 
 
 def _deepseek_model() -> str:
-    raw = os.environ.get("DEEPSEEK_MODEL", "deepseek-chat").strip() or "deepseek-chat"
+    raw = os.environ.get("DEEPSEEK_MODEL", "deepseek-v4-flash").strip() or "deepseek-v4-flash"
+    if raw == "deepseek-chat":
+        raw = "deepseek-v4-flash"
     if raw.startswith("models/"):
         raw = raw.removeprefix("models/")
     return raw

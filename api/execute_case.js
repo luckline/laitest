@@ -15,6 +15,29 @@ function enforceRateLimit(req) {
   recent.push(now); rateBuckets.set(ip, recent);
 }
 
+async function consumeUsage(req, kind) {
+  const url = String(process.env.LINGTEST_QUOTA_API_URL || "https://timelens.cc/api/lingtest/usage/consume").trim();
+  const accountToken = String(req.headers?.["x-account-token"] || "").trim();
+  const browserId = String(req.headers?.["x-browser-id"] || "").trim();
+  let response;
+  try {
+    response = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...(accountToken ? { Authorization: `Bearer ${accountToken}` } : {}) },
+      body: JSON.stringify({ kind, browserId }),
+      signal: AbortSignal.timeout(8000),
+    });
+  } catch (_) {
+    const error = new Error("用量服务暂不可用，请稍后重试"); error.httpStatus = 503; throw error;
+  }
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok || data.code !== 0) {
+    const error = new Error(data.message || "用量校验失败");
+    error.httpStatus = response.status || 429; error.quota = data.data; throw error;
+  }
+  return data.data;
+}
+
 function isPrivateIp(value) {
   if (net.isIP(value) === 4) {
     const p = value.split(".").map(Number);
@@ -224,7 +247,7 @@ async function launchBrowser() {
 
 module.exports = async function handler(req, res) {
   if (req.method !== "POST") return res.status(405).json({ error: "method not allowed" });
-  const started = Date.now(); const logs = []; let browser; let page;
+  const started = Date.now(); const logs = []; let browser; let page; let quota;
   try {
     enforceRateLimit(req);
     const target = await validateTarget(req.body?.target_url);
@@ -232,6 +255,7 @@ module.exports = async function handler(req, res) {
     if (!testCase || typeof testCase !== "object") return res.status(400).json({ error: "missing test_case" });
     if (!Array.isArray(testCase.steps) || !testCase.steps.length) return res.status(400).json({ error: "用例缺少执行步骤" });
     if (testCase.steps.length > MAX_STEPS) return res.status(400).json({ error: `单条用例最多支持 ${MAX_STEPS} 个步骤` });
+    quota = await consumeUsage(req, "execution");
     const launched = await launchBrowser(); browser = launched.browser; logs.push(`已启动${launched.mode}`);
     const context = await browser.newContext({ viewport: { width: 1440, height: 900 }, locale: "zh-CN" });
     page = await context.newPage();
@@ -249,9 +273,10 @@ module.exports = async function handler(req, res) {
     for (const [index, step] of (testCase.steps || []).entries()) { logs.push(`STEP ${index + 1} START`); await runStep(page, step, logs, executionContext); await page.waitForTimeout(500); await assertNotBlocked(page); logs.push(`STEP ${index + 1} PASS`); }
     const assertions = await runAssertions(page, testCase, logs);
     const shot = await page.screenshot({ type: "jpeg", quality: 70 });
-    return res.status(200).json({ result: { status:"passed", category:"assertion_passed", summary:`步骤完成，${assertions.length} 项断言通过`, assertions, duration_ms:Date.now()-started, log:logs.join("\n"), screenshot_base64:shot.toString("base64"), screenshot_mime:"image/jpeg", final_url:page.url() } });
+    return res.status(200).json({ result: { status:"passed", category:"assertion_passed", summary:`步骤完成，${assertions.length} 项断言通过`, assertions, duration_ms:Date.now()-started, log:logs.join("\n"), screenshot_base64:shot.toString("base64"), screenshot_mime:"image/jpeg", final_url:page.url() }, quota });
   } catch (error) {
     const message = String(error?.message || error);
+    if (error?.httpStatus) return res.status(error.httpStatus).json({ error: message, quota: error.quota });
     const blocked = message.includes("BLOCKED_BY_CHALLENGE");
     const needsReview = /未找到|缺少可执行|页面地址|页面内容与用例一致|ASSERTION_REQUIRED/.test(message);
     const assertionFailed = message.includes("ASSERTION_FAILED");
@@ -262,7 +287,7 @@ module.exports = async function handler(req, res) {
     logs.push(`${status.toUpperCase()}: ${error?.name || "Error"}: ${message.replace(/^BLOCKED_BY_CHALLENGE:\s*/, "")}`);
     let screenshot = "";
     try { if (page) screenshot = (await page.screenshot({ type:"jpeg", quality:70 })).toString("base64"); } catch (_) {}
-    return res.status(200).json({ result: { status, category, summary, duration_ms:Date.now()-started, log:logs.join("\n"), screenshot_base64:screenshot, screenshot_mime:"image/jpeg", error:message } });
+    return res.status(200).json({ result: { status, category, summary, duration_ms:Date.now()-started, log:logs.join("\n"), screenshot_base64:screenshot, screenshot_mime:"image/jpeg", error:message }, quota });
   } finally { if (browser) await browser.close().catch(() => {}); }
 };
 

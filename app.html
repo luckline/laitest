@@ -12,7 +12,7 @@
     <link rel="stylesheet" href="/css/app-modern.css?v=1" />
     <link rel="stylesheet" href="/css/lingtest-execution.css?v=1" />
     <link rel="stylesheet" href="/css/lingtest-workspace-v2.css?v=2" />
-    <link rel="stylesheet" href="/css/app-shell-fix.css?v=4" />
+    <link rel="stylesheet" href="/css/app-shell-fix.css?v=5" />
     <link rel="stylesheet" href="/css/system-density.css?v=1" />
     <link rel="stylesheet" href="/css/product-nav.css?v=2" />
     <link rel="stylesheet" href="/css/lingtest-account.css?v=2" />
@@ -50,7 +50,7 @@
           <i>→</i><div><span>02</span><b>生成测试资产</b><p>覆盖正常、边界、异常和安全场景</p></div>
           <i>→</i><div><span>03</span><b>真实页面验证</b><p>运行 Playwright 并保留失败现场</p></div>
         </section>
-        <section class="usage-strip" aria-label="使用额度"><div><span id="planLabel">FREE PLAN</span><b id="quotaSummary">今日免费额度加载中…</b><small id="quotaNote">额度按当前浏览器自然日计算</small></div><div class="usage-actions"><span id="generationQuota">生成 0/5</span><span id="executionQuota">执行 0/3</span><button id="openActivation" type="button">输入激活码</button><a href="/lingtest-pricing">查看专业版 →</a></div></section>
+        <section class="usage-strip" aria-label="使用额度"><div><span id="planLabel">FREE PLAN</span><b id="quotaSummary">今日免费额度加载中…</b><small id="quotaNote">游客每天可生成 5 次、执行 3 次</small></div><div class="usage-actions"><span id="generationQuota">生成 0/5</span><span id="executionQuota">执行 0/3</span><a id="accountLoginPrompt" href="/lingtest-login?return=%2Fapp">登录后次数翻倍</a><button id="openActivation" type="button">输入激活码</button><a href="/lingtest-pricing">查看专业版 →</a></div></section>
 
         <section class="composer-card">
           <div class="composer-head">
@@ -104,7 +104,7 @@
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <script src="/product-nav.js?v=4"></script>
     <script src="/lingtest-account.js?v=5"></script>
-    <script src="/app.js?v=account-plan-1"></script>
+    <script src="/app.js?v=quota-metering-1"></script>
   <script defer src="/site-analytics.js"></script><script defer src="/_vercel/insights/script.js"></script>
 </body>
 </html>

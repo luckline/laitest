@@ -16,7 +16,7 @@ const checks = [
   {
     name: "领测工作台",
     path: "/app",
-    contains: ["AI QUALITY WORKSPACE", "product-nav.js?v=4", "lingtest-account.js?v=5", "app-shell-fix.css?v=4", "account-plan-1", "PRO ACTIVATION", 'id="aiPrompt"'],
+    contains: ["AI QUALITY WORKSPACE", "product-nav.js?v=4", "lingtest-account.js?v=5", "app-shell-fix.css?v=5", "quota-metering-1", "登录后次数翻倍", "PRO ACTIVATION", 'id="aiPrompt"'],
   },
   {
     name: "领测定价",
