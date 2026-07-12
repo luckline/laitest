@@ -84,7 +84,9 @@ python3 -m laitest cli projects
 ├── index.html                     # 个人主页
 ├── lingtest.html                  # 领测产品介绍
 ├── lingtest-guides.html           # 领测方法库
-├── lingtest-pricing.html / .js    # 定价、服务与专业版申请
+├── lingtest-pricing.html / .js    # 定价、服务、专业版申请与状态联动
+├── lingtest-admin.html / .js      # 专业版申请审核与激活码管理
+├── lingtest-account.js            # 跨页面账户身份与版本组件
 ├── app.html / app.js              # 领测工作台
 ├── timelens.html / timelens.js    # 时光透卡 PC 版
 ├── timelens-route.html            # 公开路线详情
@@ -111,19 +113,31 @@ python3 -m laitest cli projects
 4. 使用 Playwright 在真实公网页面执行。
 5. 查看结果分类、步骤日志和失败截图。
 
-变现 P0：
+### 版本与商业化
 
 - 免费版按浏览器自然日提供 5 次生成和 3 次页面执行
 - `/lingtest-pricing` 展示免费版、专业版内测和测试落地服务
 - 专业版申请写入 `timelens-server` 的 `lingtest_leads` 表
 - 生产部署后端前需执行 `sql/023_lingtest_leads.sql`
 - 管理员通过 `/lingtest-admin` 审核申请并生成 24 小时有效的一次性激活码
-- 用户在工作台输入激活码后，专业版权益绑定当前浏览器
+- 用户在工作台输入一次性激活码后开通专业版；登录用户的权益按已验证手机号关联
+- 浏览器 ID 仅作为未登录场景和历史激活记录的兼容兜底
 - 领测产品页、工作台和定价页右上角统一展示当前版本；专业版使用紫金色标识
-- 领测复用同域登录态展示账户身份；专业版优先按登录手机号关联，浏览器权益作为未登录兼容方案，并展示申请审核或待激活状态
+- 领测复用同域登录态展示账户身份，并区分免费版、审核中、待激活和专业版状态
+- 专业版用户进入定价页后隐藏重复申请操作，页面直接展示当前版本与工作台入口
 - 点击版本入口可查看申请人称呼、脱敏联系方式、版本与有效期
 - 管理员 Token 通过后端环境变量 `LINGTEST_ADMIN_TOKEN` 配置
 - 审核与激活功能还需执行 `sql/024_lingtest_licenses.sql`
+
+专业版运营流程：
+
+1. 用户在 `/lingtest-pricing` 提交专业版申请。
+2. 管理员在 `/lingtest-admin` 查看申请并完成审核。
+3. 审核通过后生成 24 小时有效的一次性激活码。
+4. 用户在 `/app` 输入激活码，专业版立即生效。
+5. 登录用户后续通过已验证手机号识别权益，无需在每台设备重复申请。
+
+账户身份来自时光透卡的同域登录令牌，但领测页面统一使用“登录”“账户”“当前版本”等产品中立文案，不向用户暴露跨产品实现细节。
 
 执行器优先使用 `role`、`label`、`placeholder`、可见文本和表单语义定位元素，不绑定特定网站。验证码和网站风控不会被绕过。
 
@@ -168,6 +182,15 @@ PC 版当前支持：
 | POST | `/api/ai/generate_cases` | 生成测试用例 |
 | POST | `/api/ai/execute_case` | 执行页面用例 |
 | POST | `/api/ai/travel_plan` | 生成旅行计划 |
+
+领测商业化相关接口由 `timelens-server` 提供：
+
+| 方法 | 路径 | 用途 |
+| --- | --- | --- |
+| POST | `https://timelens.cc/api/lingtest/leads` | 提交专业版或服务申请 |
+| GET | `https://timelens.cc/api/lingtest/licenses/status` | 按登录手机号或浏览器查询权益 |
+| POST | `https://timelens.cc/api/lingtest/licenses/activate` | 使用一次性激活码开通专业版 |
+| GET | `https://timelens.cc/api/user/info` | 获取当前统一账户信息 |
 
 设置 `LAITEST_TOKEN` 后，API 请求需要携带：
 
@@ -237,6 +260,9 @@ Node.js 示例见 `examples/shiguang_touka_travel_plan_client.js`。
 | 首页文案与产品指标 | `index.html` |
 | 首页布局与字号 | `css/marketing.css`、`css/system-density.css` |
 | 领测产品介绍与案例 | `lingtest.html` |
+| 领测账户与版本状态 | `lingtest-account.js`、`css/lingtest-account.css` |
+| 领测定价与申请联动 | `lingtest-pricing.html`、`lingtest-pricing.js` |
+| 领测申请审核 | `lingtest-admin.html`、`lingtest-admin.js` |
 | 测试方法文章 | `lingtest-guides.html` |
 | 跨产品导航 | `product-nav.js`、`css/product-nav.css` |
 | 公众号二维码 | `img/qrcode_laitest.jpg` |
@@ -278,9 +304,11 @@ git diff --check
 1. 首页能进入两个产品。
 2. 领测产品页和工作台能返回个人主页。
 3. 领测可生成用例、执行用例并查看失败日志和截图。
-4. 时光透卡可登录、同步计划、查看城市足迹和清单。
-5. 公开路线详情可加载、翻页和分享。
-6. 手机端导航可展开，弹窗可以关闭。
+4. 登录后，领测右上角能显示账户和正确版本，专业版权益按手机号识别。
+5. 专业版用户访问定价页时不会再次看到申请入口。
+6. 时光透卡可登录、同步计划、查看城市足迹和清单。
+7. 公开路线详情可加载、翻页和分享。
+8. 手机端导航可展开，弹窗可以关闭。
 
 ## 部署
 
@@ -301,8 +329,8 @@ git push origin main
 
 ## 下一步
 
-- 为核心生产路由建立自动化冒烟检查
-- 用真实访问和转化数据替换静态产品指标
-- 完善领测用例历史、运行历史和失败聚类
+- 补充账户登录、专业版识别和定价状态的自动化回归
+- 用真实访问、申请和激活数据替换静态产品指标
+- 完善领测云端项目、运行历史和失败聚类
 - 优化路线分享卡片与服务端动态 Open Graph
 - 建立内容更新节奏和产品更新日志
