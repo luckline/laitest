@@ -6,12 +6,12 @@ const checks = [
   {
     name: "个人主页",
     path: "/",
-    contains: ["Luckline", 'href="/lingtest"', 'href="/timelens"', "product-nav.js?v=5", "5 类 · 22 项出发清单", "home-growth-p0.css?v=2"],
+    contains: ["Luckline", 'href="/lingtest"', 'href="/timelens"', "product-nav.js?v=5", "5 类 · 22 项出发清单", "home-growth-p0.css?v=2", "product-visuals.css?v=1", "lingtest-workspace-preview.png", "timelens-workspace-preview.png"],
   },
   {
     name: "领测产品页",
     path: "/lingtest",
-    contains: ["领测 LingTest", 'href="/app"', "product-nav.js?v=5", "lingtest-account.js?v=5"],
+    contains: ["领测 LingTest", 'href="/app"', "product-nav.js?v=5", "lingtest-account.js?v=5", "一张图看懂：需求如何变成测试证据", "evidence-board", "product-visuals.css?v=1"],
   },
   {
     name: "领测工作台",
