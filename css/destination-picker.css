@@ -19,7 +19,19 @@
 .destination-choice:disabled { color: var(--muted); cursor: default; }
 .destination-empty { margin: 8px 0; color: var(--muted); font-size: 12px; }
 .route-filter-actions { display: flex; align-items: center; gap: 8px; }
+.footprint-metrics { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin: 20px 0; }
+.footprint-metrics div { padding: 18px; border: 1px solid var(--line); border-radius: 14px; background: #fff; text-align: center; }
+.footprint-metrics b, .footprint-metrics small { display: block; }
+.footprint-metrics b { font-size: 26px; }
+.footprint-metrics small { color: var(--muted); }
+.footprint-destinations { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.footprint-destinations article { padding: 14px; border: 1px solid var(--line); border-radius: 12px; background: #fbfcfb; }
+.footprint-destinations small, .footprint-destinations b, .footprint-destinations span { display: block; }
+.footprint-destinations small, .footprint-destinations span { color: var(--muted); }
+.footprint-destinations b { margin: 4px 0; }
 @media (max-width: 620px) {
   .route-filter-actions { width: 100%; margin-top: 12px; }
   .route-filter-actions .ghost { flex: 1; }
+  .footprint-metrics { grid-template-columns: repeat(2, 1fr); }
+  .footprint-destinations { grid-template-columns: 1fr; }
 }
