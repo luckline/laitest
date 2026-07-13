@@ -18,3 +18,8 @@
 .destination-choice { padding: 6px 9px; border: 1px solid transparent; border-radius: 8px; background: transparent; color: var(--ink); text-align: left; cursor: pointer; }
 .destination-choice:disabled { color: var(--muted); cursor: default; }
 .destination-empty { margin: 8px 0; color: var(--muted); font-size: 12px; }
+.route-filter-actions { display: flex; align-items: center; gap: 8px; }
+@media (max-width: 620px) {
+  .route-filter-actions { width: 100%; margin-top: 12px; }
+  .route-filter-actions .ghost { flex: 1; }
+}
