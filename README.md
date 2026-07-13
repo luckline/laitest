@@ -160,6 +160,7 @@ python3 -m laitest cli projects
 PC 版当前支持：
 
 - 公开路线广场与目的地搜索
+- 创建计划时可搜索目的地，或按国内/国外层级树逐层选择
 - AI 旅行规划
 - 旅行计划工作台
 - 出发清单与云端同步
@@ -171,6 +172,13 @@ PC 版当前支持：
 - 微信小程序二维码引导
 
 时光透卡业务数据由 `https://timelens.cc` API 提供。PC 登录与小程序原微信数据通过已绑定手机号关联。
+
+目的地选择器使用以下接口：
+
+- `GET https://timelens.cc/api/destinations?scene=trip&format=tree`
+- `GET https://timelens.cc/api/destinations/search?q=北疆&scene=trip&limit=20`
+
+如果目的地服务暂时不可用，创建计划仍允许用户手动输入目的地。
 
 ## API
 
