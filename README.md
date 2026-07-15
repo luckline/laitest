@@ -208,9 +208,9 @@ PC 版当前支持：
 | GET | `https://timelens.cc/api/lingtest/usage/status` | 查询账户或游客的日/月额度与用量 |
 | POST | `https://timelens.cc/api/lingtest/usage/consume` | 原子校验并扣减一次生成或执行额度 |
 | GET | `https://timelens.cc/api/user/info` | 获取当前统一账户信息 |
-| GET/POST | `https://timelens.cc/api/trips/:id/comments` | 查看或发布公开路线评论 |
+| GET/POST | `https://timelens.cc/api/trips/:id/comments` | 查看或发布公开路线评论；传 `parentCommentId` 回复评论 |
 | DELETE | `https://timelens.cc/api/trips/:id/comments/:commentId` | 删除自己的评论；路线作者也可管理 |
-| GET | `https://timelens.cc/api/notifications` | 获取点赞、收藏与评论站内消息 |
+| GET | `https://timelens.cc/api/notifications` | 获取点赞、收藏、评论与回复站内消息 |
 | GET | `https://timelens.cc/api/notifications/unread-count` | 获取未读消息数量 |
 | PUT | `https://timelens.cc/api/notifications/read-all` | 全部标记为已读 |
 
