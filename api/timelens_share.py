@@ -54,15 +54,15 @@ def share_page() -> Response:
     path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "timelens-route.html")
     with open(path, "r", encoding="utf-8") as f:
         page = f.read()
-    page_title = f"{title}｜{destination}旅行路线 · 时光透卡"
-    page = page.replace("<title>路线详情 · 时光透卡</title>", f"<title>{html.escape(page_title)}</title>")
-    page = page.replace('<meta name="description" content="查看并分享时光透卡旅行路线合集。">', _meta("description", summary))
-    page = page.replace('<meta property="og:title" content="路线详情 · 时光透卡">', _meta("og:title", page_title, prop=True))
+    page_title = f"{title}｜{destination}旅行路线 · 时光智行"
+    page = page.replace("<title>路线详情 · 时光智行</title>", f"<title>{html.escape(page_title)}</title>")
+    page = page.replace('<meta name="description" content="查看并分享时光智行旅行路线合集。">', _meta("description", summary))
+    page = page.replace('<meta property="og:title" content="路线详情 · 时光智行">', _meta("og:title", page_title, prop=True))
     page = page.replace('<meta property="og:description" content="查看完整逐日路线，扫码收藏并继续规划旅程。">', _meta("og:description", summary, prop=True))
     page = page.replace('<meta property="og:image" content="https://laitest.tech/img/timelens-miniapp.jpg">', _meta("og:image", image, prop=True))
     extras = "".join([
         _meta("og:type", "article", prop=True), _meta("og:url", url, prop=True),
-        _meta("og:site_name", "时光透卡 TimeLens", prop=True), _meta("twitter:title", page_title),
+        _meta("og:site_name", "时光智行 TimeLens", prop=True), _meta("twitter:title", page_title),
         _meta("twitter:description", summary), _meta("twitter:image", image),
         f'<link rel="canonical" href="{html.escape(url, quote=True)}">',
     ])

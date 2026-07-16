@@ -5,7 +5,7 @@ Luckline 的个人站与产品中心，统一承载个人介绍、产品发布�
 当前包含两个持续迭代的产品：
 
 - **领测 LingTest**：AI 测试设计与质量工作台，将业务需求转成结构化用例，并使用 Playwright 验证真实页面。
-- **时光透卡 TimeLens**：旅行计划、公开路线、出发清单、逐日记录与城市足迹工具。
+- **时光智行 TimeLens**（原时光透卡）：AI 旅行规划、公开路线、出发清单、逐日记录与城市足迹工具。
 
 生产地址：[https://laitest.tech](https://laitest.tech)
 
@@ -20,7 +20,7 @@ Luckline 的个人站与产品中心，统一承载个人介绍、产品发布�
 | `/lingtest-login` | 领测登录与注册（专业版申请前置） |
 | `/lingtest-admin` | 领测申请审核与激活码管理（管理员 Token） |
 | `/lingtest-guides` | 测试方法与质量工程实践 |
-| `/timelens` | 时光透卡 PC 版 |
+| `/timelens` | 时光智行 PC 版 |
 | `/timelens-route?id=<route-id>` | 可独立分享的公开路线详情 |
 | `/privacy.html` | 隐私政策 |
 | `/terms.html` | 使用条款 |
@@ -28,7 +28,7 @@ Luckline 的个人站与产品中心，统一承载个人介绍、产品发布�
 | `/api/health` | 服务健康检查 |
 | `/api/ai/status` | AI 服务状态 |
 
-顶部产品导航用于在个人主页、领测和时光透卡之间切换。个人主页以作品卡承接产品发现，产品页面通过“全部产品”完成跨产品导航。
+顶部产品导航用于在个人主页、领测和时光智行之间切换。个人主页以作品卡承接产品发现，产品页面通过“全部产品”完成跨产品导航。
 
 ## 快速开始
 
@@ -50,7 +50,7 @@ python3 -m laitest
 - 领测产品页：<http://127.0.0.1:8080/lingtest>
 - 领测工作台：<http://127.0.0.1:8080/app>
 - 领测定价页：<http://127.0.0.1:8080/lingtest-pricing>
-- 时光透卡：<http://127.0.0.1:8080/timelens>
+- 时光智行：<http://127.0.0.1:8080/timelens>
 
 ### 可选：安装页面自动化环境
 
@@ -74,7 +74,7 @@ python3 -m laitest cli projects
 - 线上 API：Vercel Python Functions + Flask
 - 页面执行：Vercel Node Function + Playwright Core + Serverless Chromium
 - 本地数据：SQLite，默认位于 `.laitest/laitest.db`
-- 时光透卡云数据：`https://timelens.cc`
+- 时光智行云数据：`https://timelens.cc`
 - 部署：Vercel，`main` 分支推送后自动发布
 - 统计：Vercel Web Analytics
 
@@ -90,7 +90,7 @@ python3 -m laitest cli projects
 ├── lingtest-admin.html / .js      # 专业版申请审核与激活码管理
 ├── lingtest-account.js            # 跨页面账户身份与版本组件
 ├── app.html / app.js              # 领测工作台
-├── timelens.html / timelens.js    # 时光透卡 PC 版
+├── timelens.html / timelens.js    # 时光智行 PC 版
 ├── timelens-route.html            # 公开路线详情
 ├── timelens-route.js
 ├── product-nav.js                 # 跨产品导航与产品切换
@@ -142,7 +142,7 @@ python3 -m laitest cli projects
 5. 用户在 `/app` 输入激活码，专业版立即生效。
 6. 登录用户后续通过已验证手机号识别权益，无需在每台设备重复申请。
 
-账户身份来自时光透卡的同域登录令牌，但领测页面统一使用“登录”“账户”“当前版本”等产品中立文案，不向用户暴露跨产品实现细节。
+账户身份来自时光智行的同域登录令牌，但领测页面统一使用“登录”“账户”“当前版本”等产品中立文案，不向用户暴露跨产品实现细节。
 
 执行器优先使用 `role`、`label`、`placeholder`、可见文本和表单语义定位元素，不绑定特定网站。验证码和网站风控不会被绕过。
 
@@ -155,7 +155,9 @@ python3 -m laitest cli projects
 - 只有明确断言成立才判定通过
 - 最近用例和最多 12 条执行摘要保存在浏览器 `localStorage`
 
-## 时光透卡 TimeLens
+## 时光智行 TimeLens
+
+> 2026-07-16 起，“时光透卡”正式升级为“时光智行”。现有 `/timelens` 地址、账户、旅行计划及接口保持不变。
 
 PC 版当前支持：
 
@@ -173,7 +175,7 @@ PC 版当前支持：
 - 公开路线详情、相邻路线翻页和分享
 - 微信小程序二维码引导
 
-时光透卡业务数据由 `https://timelens.cc` API 提供。PC 登录与小程序原微信数据通过已绑定手机号关联。
+时光智行业务数据由 `https://timelens.cc` API 提供。PC 登录与小程序原微信数据通过已绑定手机号关联。
 
 目的地选择器使用以下接口：
 
@@ -289,7 +291,7 @@ Node.js 示例见 `examples/shiguang_touka_travel_plan_client.js`。
 | 测试方法文章 | `lingtest-guides.html` |
 | 跨产品导航 | `product-nav.js`、`css/product-nav.css` |
 | 公众号二维码 | `img/qrcode_laitest.jpg` |
-| 时光透卡小程序码 | `img/timelens-miniapp.jpg` |
+| 时光智行小程序码 | `img/timelens-miniapp.jpg` |
 | SEO 页面清单 | `sitemap.xml` |
 | Vercel 路由 | `vercel.json` |
 
@@ -329,7 +331,7 @@ git diff --check
 3. 领测可生成用例、执行用例并查看失败日志和截图。
 4. 登录后，领测右上角能显示账户和正确版本，专业版权益按手机号识别。
 5. 专业版用户访问定价页时不会再次看到申请入口。
-6. 时光透卡可登录、同步计划、查看城市足迹和清单。
+6. 时光智行可登录、同步计划、查看城市足迹和清单。
 7. 公开路线详情可加载、翻页和分享。
 8. 手机端导航可展开，弹窗可以关闭。
 

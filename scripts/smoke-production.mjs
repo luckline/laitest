@@ -59,19 +59,19 @@ const checks = [
     contains: ["方法与实践", 'href="/app"', "product-nav.js?v=5"],
   },
   {
-    name: "时光透卡",
+    name: "时光智行",
     path: "/timelens",
     contains: [
-      "时光透卡 - TimeLens 官方网站",
+      "时光智行 - TimeLens 官方网站",
       'name="description"',
-      "TimeLens（时光透卡）是一款在线旅行规划与城市足迹工具",
-      "<h1>时光透卡",
+      "TimeLens（时光智行，原时光透卡）是一款 AI 旅行规划与城市足迹工具",
+      "<h1>时光智行",
       'src="/timelens-plan.js?v=1',
       'src="/timelens.js?v=trip-duration',
     ],
   },
   {
-    name: "时光透卡注册",
+    name: "时光智行注册",
     path: "/timelens.js?v=trip-duration",
     contains: ["注册新账户", "/api/auth/mobile/register", "travel_plan", "ai-plans/latest", "savePlanRecord", "DEFAULT_CHECKLIST", "创口贴"],
   },
@@ -83,7 +83,7 @@ const checks = [
   {
     name: "公开路线详情",
     path: `/timelens-route?id=${routeId}`,
-    contains: ["时光透卡", 'id="routeContent"', "timelens-route.js?v=comment-replies"],
+    contains: ["时光智行", 'id="routeContent"', "timelens-route.js?v=comment-replies"],
   },
   {
     name: "产品导航脚本",
