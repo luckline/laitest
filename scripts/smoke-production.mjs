@@ -61,12 +61,12 @@ const checks = [
   {
     name: "领测工具箱",
     path: "/lingtest-tools",
-    contains: ["Unix 时间戳转换", "Base64 编解码", "lingtest-tools.js?v=1", "仅浏览器本地运行"],
+    contains: ["JSON 格式化与校验", "Diff 文本对比", "正则表达式测试器", "Unix 时间戳转换", "Base64 编解码", "lingtest-tools.js?v=2", "仅浏览器本地运行"],
   },
   {
     name: "领测工具脚本",
-    path: "/lingtest-tools.js?v=1",
-    contains: ["normalizeTimestamp", "TextEncoder", "TextDecoder", "base64Encode"],
+    path: "/lingtest-tools.js?v=2",
+    contains: ["normalizeTimestamp", "TextEncoder", "TextDecoder", "jsonHighlight", "diffLines", "runRegex"],
   },
   {
     name: "时光智行",

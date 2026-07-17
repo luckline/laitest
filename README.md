@@ -20,7 +20,7 @@ Luckline 的个人站与产品中心，统一承载个人介绍、产品发布�
 | `/lingtest-login` | 领测登录与注册（专业版申请前置） |
 | `/lingtest-admin` | 领测申请审核与激活码管理（管理员 Token） |
 | `/lingtest-guides` | 测试方法与质量工程实践 |
-| `/lingtest-tools` | 时间戳转换、Base64 编解码等常用测试工具 |
+| `/lingtest-tools` | JSON、Diff、正则、时间戳和 Base64 等纯前端测试工具 |
 | `/timelens` | 时光智行 PC 版 |
 | `/timelens-route?id=<route-id>` | 可独立分享的公开路线详情 |
 | `/privacy.html` | 隐私政策 |

@@ -2,10 +2,10 @@
 <html lang="zh-CN">
 <head>
   <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>领测工具箱｜时间戳转换、Base64 编解码</title>
-  <meta name="description" content="领测 LingTest 常用测试工具箱，提供 Unix 时间戳转换和支持中文的 Base64 编解码，数据仅在浏览器本地处理。">
+  <title>领测工具箱｜JSON、Diff、正则、时间戳与 Base64</title>
+  <meta name="description" content="领测 LingTest 常用测试工具箱，提供 JSON 格式化校验、Diff 文本对比、正则测试、Unix 时间戳转换和 Base64 编解码。">
   <link rel="canonical" href="https://laitest.tech/lingtest-tools"><link rel="icon" href="/img/favicon.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="/css/marketing.css?v=personal-1"><link rel="stylesheet" href="/css/product-nav.css?v=3"><link rel="stylesheet" href="/css/lingtest-tools.css?v=1">
+  <link rel="stylesheet" href="/css/marketing.css?v=personal-1"><link rel="stylesheet" href="/css/product-nav.css?v=3"><link rel="stylesheet" href="/css/lingtest-tools.css?v=2">
 </head>
 <body class="tools-page">
   <header class="product-nav unified-nav" data-product="lingtest">
@@ -14,8 +14,20 @@
     <div class="nav-actions"><a class="btn solid nav-primary" href="/app">进入工作台</a></div>
   </header>
   <main class="tools-main">
-    <section class="tools-hero"><div><p class="eyebrow">LINGTEST · QA TOOLBOX</p><h1>常用测试工具，<br>随手即用。</h1><p>处理接口时间、构造编码数据，不必在多个网站之间切换。</p></div><aside><b>本地处理</b><span>输入内容不会上传服务器</span></aside></section>
-    <nav class="tool-tabs" aria-label="工具选择"><a href="#timestamp"><span>01</span><b>时间戳转换</b><small>Unix Timestamp</small></a><a href="#base64"><span>02</span><b>Base64 编解码</b><small>Unicode Ready</small></a></nav>
+    <section class="tools-hero"><div><p class="eyebrow">LINGTEST · QA TOOLBOX</p><h1>常用测试工具，<br>随手即用。</h1><p>格式化接口数据、比较响应差异、调试断言表达式，不必在多个网站之间切换。</p></div><aside><b>纯前端处理</b><span>输入内容不会上传服务器</span></aside></section>
+    <nav class="tool-tabs" aria-label="工具选择"><a href="#json"><span>01</span><b>JSON 格式化</b><small>Parser / Viewer</small></a><a href="#diff"><span>02</span><b>Diff 文本对比</b><small>Line Comparison</small></a><a href="#regex"><span>03</span><b>正则测试器</b><small>Regex Tester</small></a><a href="#timestamp"><span>04</span><b>时间戳转换</b><small>Unix Timestamp</small></a><a href="#base64"><span>05</span><b>Base64 编解码</b><small>Unicode Ready</small></a></nav>
+    <section class="tool-card" id="json">
+      <div class="tool-head"><div><p class="eyebrow">DATA FORMAT</p><h2>JSON 格式化与校验</h2><p>检查语法、展开压缩数据，并用颜色区分键、字符串、数字和布尔值。</p></div><span class="safe-badge">支持对象与数组</span></div>
+      <div class="json-workspace"><label>输入 JSON<textarea id="jsonInput" class="code-input" spellcheck="false" placeholder='例如：{"status":"ok","count":2}'></textarea></label><div class="tool-actions"><button id="jsonFormat" type="button">格式化</button><button id="jsonMinify" class="secondary" type="button">压缩</button><button id="jsonValidate" class="text-button" type="button">仅校验</button><button id="jsonSample" class="text-button" type="button">填入示例</button><button id="jsonClear" class="text-button" type="button">清空</button></div><div class="code-output-wrap"><div><b>格式化结果</b><button type="button" data-copy-target="jsonOutput">复制结果</button></div><pre id="jsonOutput" class="code-output" aria-live="polite">等待输入 JSON</pre></div><p class="tool-message" id="jsonMessage" role="alert"></p></div>
+    </section>
+    <section class="tool-card" id="diff">
+      <div class="tool-head"><div><p class="eyebrow">REGRESSION TOOL</p><h2>Diff 文本对比</h2><p>逐行比较接口响应、日志和配置，快速定位新增、删除与未变化内容。</p></div><span class="safe-badge">最多各 400 行</span></div>
+      <div class="diff-inputs"><label>原始文本<textarea id="diffBefore" class="code-input" spellcheck="false" placeholder="粘贴旧版本内容"></textarea></label><label>新文本<textarea id="diffAfter" class="code-input" spellcheck="false" placeholder="粘贴新版本内容"></textarea></label></div><div class="tool-actions"><button id="diffCompare" type="button">开始对比</button><button id="diffJsonFormat" class="secondary" type="button">两侧 JSON 格式化</button><button id="diffSwap" class="text-button" type="button">⇄ 交换</button><button id="diffSample" class="text-button" type="button">填入示例</button><button id="diffClear" class="text-button" type="button">清空</button></div><div class="diff-summary" id="diffSummary">等待对比</div><div id="diffOutput" class="diff-output" aria-live="polite"><p>差异结果将在这里显示</p></div><p class="tool-message" id="diffMessage" role="alert"></p>
+    </section>
+    <section class="tool-card" id="regex">
+      <div class="tool-head"><div><p class="eyebrow">ASSERTION TOOL</p><h2>正则表达式测试器</h2><p>调试接口断言、数据提取和输入框校验，实时查看匹配范围与捕获组。</p></div><span class="safe-badge">JavaScript Regex</span></div>
+      <div class="regex-builder"><span>/</span><input id="regexPattern" spellcheck="false" placeholder="例如：1[3-9]\\d{9}"><span>/</span><div class="regex-flags" aria-label="正则标志"><label><input type="checkbox" value="g" checked>g</label><label><input type="checkbox" value="i">i</label><label><input type="checkbox" value="m">m</label><label><input type="checkbox" value="s">s</label></div><button id="regexRun" type="button">测试匹配</button></div><label class="regex-source-label">测试文本<textarea id="regexText" class="code-input" spellcheck="false" placeholder="输入需要匹配的文本"></textarea></label><div class="regex-results"><div><b id="regexSummary">等待测试</b><pre id="regexHighlight" class="regex-highlight">匹配内容将在这里高亮</pre></div><aside><b>匹配结果</b><ol id="regexMatches"><li>暂无结果</li></ol></aside></div><div class="tool-actions"><button id="regexPhone" class="text-button" type="button">手机号示例</button><button id="regexEmail" class="text-button" type="button">邮箱示例</button><button id="regexClear" class="text-button" type="button">清空</button></div><p class="tool-message" id="regexMessage" role="alert"></p>
+    </section>
     <section class="tool-card" id="timestamp">
       <div class="tool-head"><div><p class="eyebrow">TIME TOOL</p><h2>Unix 时间戳转换</h2><p>自动识别秒、毫秒、微秒和纳秒，显示本地时间与 UTC 时间。</p></div><div class="live-time"><span>当前时间戳（秒）</span><b id="currentTimestamp">--</b><button type="button" data-copy-target="currentTimestamp">复制</button></div></div>
       <div class="timestamp-grid">
@@ -27,8 +39,8 @@
       <div class="tool-head"><div><p class="eyebrow">ENCODING TOOL</p><h2>Base64 编解码</h2><p>完整支持中文、Emoji 和多行文本，可交换输入输出继续处理。</p></div><span class="safe-badge">仅浏览器本地运行</span></div>
       <div class="base64-workspace"><label>原始内容<textarea id="base64Input" spellcheck="false" placeholder="输入需要编码或解码的文本"></textarea></label><div class="base64-actions"><button id="base64Encode" type="button">编码 Encode ↓</button><button id="base64Decode" class="secondary" type="button">解码 Decode ↓</button><button id="base64Swap" class="text-button" type="button">⇅ 交换</button><button id="base64Clear" class="text-button" type="button">清空</button></div><label>处理结果<textarea id="base64Output" spellcheck="false" readonly placeholder="结果将在这里显示"></textarea></label><div class="result-actions"><p class="tool-message" id="base64Message" role="alert"></p><button type="button" data-copy-target="base64Output">复制结果</button></div></div>
     </section>
-    <section class="tools-next"><div><p class="eyebrow">MORE TOOLS</p><h2>后续会继续补充测试常用能力</h2><p>JSON 格式化、URL 编解码、哈希计算和正则调试。</p></div><a href="mailto:lanceqa@agent.qq.com?subject=领测工具箱建议">建议下一个工具 →</a></section>
+    <section class="tools-next"><div><p class="eyebrow">MORE TOOLS</p><h2>后续会继续补充测试常用能力</h2><p>URL 编解码、哈希计算、JWT 解析和 Mock 数据生成。</p></div><a href="mailto:lanceqa@agent.qq.com?subject=领测工具箱建议">建议下一个工具 →</a></section>
   </main>
   <footer class="tools-footer"><a href="/">Luckline</a><span>领测 LingTest · QA 工具箱</span><a href="/app">进入工作台</a></footer>
-  <script src="/product-nav.js?v=5"></script><script src="/lingtest-tools.js?v=1"></script><script defer src="/site-analytics.js"></script><script defer src="/_vercel/insights/script.js"></script>
+  <script src="/product-nav.js?v=5"></script><script src="/lingtest-tools.js?v=2"></script><script defer src="/site-analytics.js"></script><script defer src="/_vercel/insights/script.js"></script>
 </body></html>
