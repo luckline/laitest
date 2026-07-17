@@ -61,7 +61,7 @@ const checks = [
   {
     name: "领测工具箱",
     path: "/lingtest-tools",
-    contains: ["JSON 格式化与校验", "Diff 文本对比", "正则表达式测试器", "Unix 时间戳转换", "Base64 编解码", "lingtest-tools.js?v=2", "仅浏览器本地运行"],
+    contains: ["JSON 格式化与校验", "Diff 文本对比", "正则表达式测试器", "Unix 时间戳转换", "Base64 编解码", "lingtest-tools.js?v=2", "lingtest-tools.css?v=3", "仅浏览器本地运行"],
   },
   {
     name: "领测工具脚本",
