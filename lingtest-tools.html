@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>领测工具箱｜时间戳转换、Base64 编解码</title>
+  <meta name="description" content="领测 LingTest 常用测试工具箱，提供 Unix 时间戳转换和支持中文的 Base64 编解码，数据仅在浏览器本地处理。">
+  <link rel="canonical" href="https://laitest.tech/lingtest-tools"><link rel="icon" href="/img/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/css/marketing.css?v=personal-1"><link rel="stylesheet" href="/css/product-nav.css?v=3"><link rel="stylesheet" href="/css/lingtest-tools.css?v=1">
+</head>
+<body class="tools-page">
+  <header class="product-nav unified-nav" data-product="lingtest">
+    <a class="product-brand" href="/lingtest"><span>领</span><div><b>领测 LingTest</b><small>AI QUALITY WORKSPACE</small></div></a>
+    <nav aria-label="领测导航"><a href="/lingtest">产品介绍</a><a href="/lingtest-guides">方法库</a><a href="/lingtest-tools" aria-current="page">工具箱</a><a href="/lingtest-pricing">定价</a></nav>
+    <div class="nav-actions"><a class="btn solid nav-primary" href="/app">进入工作台</a></div>
+  </header>
+  <main class="tools-main">
+    <section class="tools-hero"><div><p class="eyebrow">LINGTEST · QA TOOLBOX</p><h1>常用测试工具，<br>随手即用。</h1><p>处理接口时间、构造编码数据，不必在多个网站之间切换。</p></div><aside><b>本地处理</b><span>输入内容不会上传服务器</span></aside></section>
+    <nav class="tool-tabs" aria-label="工具选择"><a href="#timestamp"><span>01</span><b>时间戳转换</b><small>Unix Timestamp</small></a><a href="#base64"><span>02</span><b>Base64 编解码</b><small>Unicode Ready</small></a></nav>
+    <section class="tool-card" id="timestamp">
+      <div class="tool-head"><div><p class="eyebrow">TIME TOOL</p><h2>Unix 时间戳转换</h2><p>自动识别秒、毫秒、微秒和纳秒，显示本地时间与 UTC 时间。</p></div><div class="live-time"><span>当前时间戳（秒）</span><b id="currentTimestamp">--</b><button type="button" data-copy-target="currentTimestamp">复制</button></div></div>
+      <div class="timestamp-grid">
+        <form id="timestampForm" class="tool-panel"><label for="timestampInput">时间戳</label><div class="input-action"><input id="timestampInput" inputmode="numeric" autocomplete="off" placeholder="例如 1784275529"><button type="submit">转换</button></div><p class="field-hint">支持 10 / 13 / 16 / 19 位时间戳</p><dl class="result-list"><div><dt>识别精度</dt><dd id="timestampUnit">--</dd></div><div><dt>本地时间</dt><dd id="timestampLocal">--</dd></div><div><dt>UTC 时间</dt><dd id="timestampUtc">--</dd></div><div><dt>ISO 8601</dt><dd id="timestampIso">--</dd></div></dl><p class="tool-message" id="timestampMessage" role="alert"></p></form>
+        <form id="dateForm" class="tool-panel"><label for="dateInput">日期时间转时间戳</label><input id="dateInput" type="datetime-local" step="1"><div class="precision-choice" aria-label="输出精度"><label><input type="radio" name="precision" value="seconds" checked> 秒</label><label><input type="radio" name="precision" value="milliseconds"> 毫秒</label></div><button class="wide-button" type="submit">生成时间戳</button><div class="generated-result"><span>转换结果</span><b id="dateTimestamp">--</b><button type="button" data-copy-target="dateTimestamp">复制</button></div></form>
+      </div>
+    </section>
+    <section class="tool-card" id="base64">
+      <div class="tool-head"><div><p class="eyebrow">ENCODING TOOL</p><h2>Base64 编解码</h2><p>完整支持中文、Emoji 和多行文本，可交换输入输出继续处理。</p></div><span class="safe-badge">仅浏览器本地运行</span></div>
+      <div class="base64-workspace"><label>原始内容<textarea id="base64Input" spellcheck="false" placeholder="输入需要编码或解码的文本"></textarea></label><div class="base64-actions"><button id="base64Encode" type="button">编码 Encode ↓</button><button id="base64Decode" class="secondary" type="button">解码 Decode ↓</button><button id="base64Swap" class="text-button" type="button">⇅ 交换</button><button id="base64Clear" class="text-button" type="button">清空</button></div><label>处理结果<textarea id="base64Output" spellcheck="false" readonly placeholder="结果将在这里显示"></textarea></label><div class="result-actions"><p class="tool-message" id="base64Message" role="alert"></p><button type="button" data-copy-target="base64Output">复制结果</button></div></div>
+    </section>
+    <section class="tools-next"><div><p class="eyebrow">MORE TOOLS</p><h2>后续会继续补充测试常用能力</h2><p>JSON 格式化、URL 编解码、哈希计算和正则调试。</p></div><a href="mailto:lanceqa@agent.qq.com?subject=领测工具箱建议">建议下一个工具 →</a></section>
+  </main>
+  <footer class="tools-footer"><a href="/">Luckline</a><span>领测 LingTest · QA 工具箱</span><a href="/app">进入工作台</a></footer>
+  <script src="/product-nav.js?v=5"></script><script src="/lingtest-tools.js?v=1"></script><script defer src="/site-analytics.js"></script><script defer src="/_vercel/insights/script.js"></script>
+</body></html>

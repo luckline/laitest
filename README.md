@@ -20,6 +20,7 @@ Luckline 的个人站与产品中心，统一承载个人介绍、产品发布�
 | `/lingtest-login` | 领测登录与注册（专业版申请前置） |
 | `/lingtest-admin` | 领测申请审核与激活码管理（管理员 Token） |
 | `/lingtest-guides` | 测试方法与质量工程实践 |
+| `/lingtest-tools` | 时间戳转换、Base64 编解码等常用测试工具 |
 | `/timelens` | 时光智行 PC 版 |
 | `/timelens-route?id=<route-id>` | 可独立分享的公开路线详情 |
 | `/privacy.html` | 隐私政策 |
@@ -85,6 +86,7 @@ python3 -m laitest cli projects
 ├── index.html                     # 个人主页
 ├── lingtest.html                  # 领测产品介绍
 ├── lingtest-guides.html           # 领测方法库
+├── lingtest-tools.html / .js      # 本地运行的常用测试工具箱
 ├── lingtest-pricing.html / .js    # 定价、服务、专业版申请与状态联动
 ├── lingtest-login.html / .js      # 领测登录、注册与申请回跳
 ├── lingtest-admin.html / .js      # 专业版申请审核与激活码管理

@@ -59,6 +59,16 @@ const checks = [
     contains: ["方法与实践", 'href="/app"', "product-nav.js?v=5"],
   },
   {
+    name: "领测工具箱",
+    path: "/lingtest-tools",
+    contains: ["Unix 时间戳转换", "Base64 编解码", "lingtest-tools.js?v=1", "仅浏览器本地运行"],
+  },
+  {
+    name: "领测工具脚本",
+    path: "/lingtest-tools.js?v=1",
+    contains: ["normalizeTimestamp", "TextEncoder", "TextDecoder", "base64Encode"],
+  },
+  {
     name: "时光智行",
     path: "/timelens",
     contains: [
