@@ -148,7 +148,7 @@ function setStatus(text, kind) {
 
 function setBusy(busy) {
   state.busy = busy;
-  ["aiGo", "fillSample", "clearPrompt", "copyJson", "toggleRaw", "downloadExcel", "aiModel"].forEach((id) => {
+  ["aiGo", "fillSample", "clearPrompt", "copyJson", "toggleRaw", "downloadExcel", "downloadCaseHome", "aiModel"].forEach((id) => {
     const node = el(id);
     if (node) {
       node.disabled = busy;
@@ -501,11 +501,45 @@ function downloadExcel() {
   setStatus("未加载 Excel 引擎，已下载 CSV。", "warn");
 }
 
+function downloadCaseHome() {
+  const delivery = state.lastOutput?.pipeline?.case_home;
+  if (!delivery || !Array.isArray(delivery.records) || !delivery.records.length) {
+    setStatus("暂无 Case Home 交付数据，请先完成生成。", "err");
+    return;
+  }
+  const blob = new Blob([JSON.stringify(delivery, null, 2)], { type: "application/json;charset=utf-8" });
+  downloadBlob(blob, `case_home_ai_${new Date().toISOString().slice(0, 10)}.json`);
+  setStatus(`已导出 ${delivery.total} 条 Case Home JSON。`, "ok");
+}
+
+function renderPipeline(pipeline) {
+  const box = el("pipelineResult");
+  if (!box) return;
+  if (!pipeline || !Array.isArray(pipeline.stages)) {
+    box.hidden = true;
+    box.innerHTML = "";
+    return;
+  }
+  const issues = pipeline.spec_review?.issues || [];
+  const risk = pipeline.risk_plan?.risk_distribution || {};
+  const ends = pipeline.requirement_units?.map((item) => item.end).join(" · ") || "待识别";
+  box.hidden = false;
+  box.innerHTML = `
+    <div class="pipeline-result-head"><div><span>GENERATION PIPELINE · ${escapeHtml(pipeline.version || "2.0")}</span><b>${escapeHtml(pipeline.mode_label || pipeline.mode)}</b></div><em>需求质量 ${escapeHtml(pipeline.spec_review?.score ?? "--")} / 100</em></div>
+    <div class="pipeline-stage-grid">${pipeline.stages.map((stage, index) => `<article class="pipeline-stage ${escapeHtml(stage.status || "")}"><small>0${index + 1}</small><b>${escapeHtml(stage.name)}</b><span>${escapeHtml(stage.summary)}</span></article>`).join("")}</div>
+    <div class="pipeline-insights">
+      <article class="${issues.length ? "attention" : ""}"><small>Spec 待澄清</small><b>${issues.length ? `${issues.length} 项 · ${issues.slice(0, 2).map((x) => x.category).join(" / ")}` : "未发现阻断项"}</b></article>
+      <article><small>风险分布</small><b>高 ${risk.high || 0} · 中 ${risk.medium || 0} · 低 ${risk.low || 0}</b></article>
+      <article><small>端归属与追溯</small><b>${escapeHtml(ends)} · ${pipeline.traceability?.length || 0} 组映射</b></article>
+    </div>`;
+}
+
 function renderOutput(out) {
   state.lastOutput = out;
   state.executionResults = {};
   state.runningCases.clear();
   renderSummary(out);
+  renderPipeline(out.pipeline);
   renderSuggestions(out.suggestions || []);
   el("aiOut").textContent = JSON.stringify(out, null, 2);
   persistCases();
@@ -540,6 +574,7 @@ function restoreWorkspace() {
 async function generate() {
   const prompt = el("aiPrompt").value.trim();
   const selectedProvider = (el("aiModel") && el("aiModel").value ? el("aiModel").value : "deepseek").trim();
+  const generationMode = document.querySelector('input[name="generationMode"]:checked')?.value || "sketch";
   if (!prompt) {
     setStatus("请输入需求文本后再生成。", "err");
     return;
@@ -555,6 +590,9 @@ async function generate() {
       body: JSON.stringify({
         prompt,
         model_provider: selectedProvider,
+        generation_mode: generationMode,
+        sdd_spec: generationMode === "standard" ? el("sddSpec").value.trim() : "",
+        code_diff: el("codeDiff").value.trim(),
         create: false,
       }),
     });
@@ -605,16 +643,28 @@ function fillSample() {
 
 function clearPrompt() {
   el("aiPrompt").value = "";
+  if (el("sddSpec")) el("sddSpec").value = "";
+  if (el("codeDiff")) el("codeDiff").value = "";
   setStatus("已清空输入。", "");
+}
+
+function syncGenerationMode() {
+  const mode = document.querySelector('input[name="generationMode"]:checked')?.value || "sketch";
+  el("standardFields").hidden = mode !== "standard";
+  el("aiPrompt").placeholder = mode === "standard"
+    ? "粘贴原始需求、用户故事与验收标准；SDD Spec 请填写在下方。"
+    : "描述功能目标、业务规则、成功条件、异常限制和关键测试数据。";
 }
 
 function bindEvents() {
   el("aiGo").addEventListener("click", generate);
   el("downloadExcel").addEventListener("click", downloadExcel);
+  el("downloadCaseHome").addEventListener("click", downloadCaseHome);
   el("copyJson").addEventListener("click", copyJson);
   el("toggleRaw").addEventListener("click", toggleRaw);
   el("fillSample").addEventListener("click", fillSample);
   el("clearPrompt").addEventListener("click", clearPrompt);
+  document.querySelectorAll('input[name="generationMode"]').forEach((radio) => radio.addEventListener("change", syncGenerationMode));
   document.querySelectorAll("[data-demo]").forEach((button) => button.addEventListener("click", () => loadDemo(button.dataset.demo)));
   el("clearHistory").addEventListener("click", () => { localStorage.removeItem(STORAGE_HISTORY); renderHistory(); setStatus("本地执行记录已清空。", ""); });
   el("executionTarget").addEventListener("change", persistCases);
@@ -642,6 +692,7 @@ function bindEvents() {
 
 function main() {
   bindEvents();
+  syncGenerationMode();
   restoreWorkspace();
   renderHistory();
   renderQuota();

@@ -4,7 +4,7 @@ Luckline 的个人站与产品中心，统一承载个人介绍、产品发布�
 
 当前包含两个持续迭代的产品：
 
-- **领测 LingTest**：AI 测试设计与质量工作台，将业务需求转成结构化用例，并使用 Playwright 验证真实页面。
+- **领测 LingTest**：AI 测试设计与质量工作台，以 Standard / Sketch 双模式完成 Spec 验证、风险计划、覆盖设计、结构化用例与 Playwright 验证。
 - **时光智行 TimeLens**（原时光透卡）：AI 旅行规划、公开路线、出发清单、逐日记录与城市足迹工具。
 
 生产地址：[https://laitest.tech](https://laitest.tech)
@@ -92,6 +92,7 @@ python3 -m laitest cli projects
 ├── lingtest-admin.html / .js      # 专业版申请审核与激活码管理
 ├── lingtest-account.js            # 跨页面账户身份与版本组件
 ├── app.html / app.js              # 领测工作台
+├── laitest/test_pipeline.py       # 六步用例生成流水线、追溯矩阵与 Case Home 交付
 ├── timelens.html / timelens.js    # 时光智行 PC 版
 ├── timelens-route.html            # 公开路线详情
 ├── timelens-route.js
@@ -226,16 +227,21 @@ Authorization: Bearer <LAITEST_TOKEN>
 
 ### 生成测试用例
 
+领测用 6 步流水线替代一次性简单生成：需求与 Spec 验证 → 风险计划 → 端拆分 → 覆盖维度 → 详细用例 → Case Home JSON 交付。`sketch` 适合轻量需求，`standard` 适合原始需求与 SDD 联合驱动；旧客户端不传模式时默认使用 `sketch`。
+
 ```bash
 curl -X POST "http://127.0.0.1:8080/api/ai/generate_cases" \
   -H "Content-Type: application/json" \
   -d '{
     "prompt": "登录连续失败 5 次后锁定账户",
-    "model_provider": "deepseek"
+    "model_provider": "deepseek",
+    "generation_mode": "standard",
+    "sdd_spec": "连续失败 5 次后锁定 30 分钟，登录成功进入首页",
+    "code_diff": "可选：关键改动文件与代码 diff"
   }'
 ```
 
-支持 DeepSeek、Qianwen 和 Gemini。远程模型不可用时会回退到本地启发式生成。
+响应在兼容原 `suggestions` 数组的同时新增 `pipeline`，包含需求问题清单、风险分布、端归属、7 种测试设计方法、需求追溯矩阵以及可直接下载的 Case Home JSON。支持 DeepSeek、Qianwen 和 Gemini；远程模型不可用时会回退到本地启发式生成，且不会将系统流水线说明混入业务用例。
 
 ### 生成旅行计划
 

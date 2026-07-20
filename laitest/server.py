@@ -11,7 +11,8 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import parse_qs, urlparse
 
-from .ai import ai_runtime_status, generate_cases, generate_travel_plan, professional_case_from_suggested
+from .ai import ai_runtime_status, generate_cases, generate_cases_local, generate_travel_plan, professional_case_from_suggested
+from .test_pipeline import build_pipeline_delivery, compose_pipeline_prompt, normalize_generation_mode
 from .db import db_conn, json_loads, row_to_dict, utc_now_iso
 from .ids import new_id
 from .runner import analyze_failures, run_case, summarize_run
@@ -474,12 +475,20 @@ class Handler(BaseHTTPRequestHandler):
 
             if path == "/api/ai/generate_cases":
                 prompt = str(body.get("prompt") or "")
+                generation_mode = normalize_generation_mode(body.get("generation_mode"))
+                sdd_spec = str(body.get("sdd_spec") or "")
+                code_diff = str(body.get("code_diff") or "")
                 model_provider = str(body.get("model_provider") or "").strip().lower() or None
                 project_id = str(body.get("project_id") or "").strip()
                 suite_id = str(body.get("suite_id") or "").strip() or None
 
                 t0 = time.monotonic()
-                suggestions, provider, warning = generate_cases(prompt, model_provider=model_provider)
+                effective_prompt = compose_pipeline_prompt(prompt, generation_mode, sdd_spec, code_diff)
+                suggestions, provider, warning = generate_cases(effective_prompt, model_provider=model_provider)
+                # The heuristic fallback parses lines literally. Keep system pipeline
+                # instructions away from it so only the user's requirement becomes cases.
+                if provider.startswith("local"):
+                    suggestions = generate_cases_local(prompt)
                 elapsed_ms = int((time.monotonic() - t0) * 1000)
                 runtime = ai_runtime_status()
                 default_mode = runtime.get("mode")
@@ -513,21 +522,26 @@ class Handler(BaseHTTPRequestHandler):
                         )
                         created_ids.append(cid)
                     con.commit()
+                serialized_suggestions = [
+                    {
+                        "title": s.title,
+                        "description": s.description,
+                        "tags": s.tags,
+                        "kind": s.kind,
+                        "spec": s.spec,
+                        "test_case": professional_case_from_suggested(s),
+                    }
+                    for s in suggestions
+                ]
+                normalized_cases = [row["test_case"] for row in serialized_suggestions]
+                pipeline = build_pipeline_delivery(prompt, normalized_cases, generation_mode, sdd_spec, code_diff)
                 _send_json(
                     self,
                     200,
                     {
-                        "suggestions": [
-                            {
-                                "title": s.title,
-                                "description": s.description,
-                                "tags": s.tags,
-                                "kind": s.kind,
-                                "spec": s.spec,
-                                "test_case": professional_case_from_suggested(s),
-                            }
-                            for s in suggestions
-                        ],
+                        "suggestions": serialized_suggestions,
+                        "pipeline": pipeline,
+                        "generation_mode": generation_mode,
                         "provider": provider,
                         "requested_provider": model_provider,
                         "warning": warning,

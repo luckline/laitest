@@ -16,6 +16,7 @@
     <link rel="stylesheet" href="/css/system-density.css?v=1" />
     <link rel="stylesheet" href="/css/product-nav.css?v=3" />
     <link rel="stylesheet" href="/css/lingtest-account.css?v=2" />
+    <link rel="stylesheet" href="/css/lingtest-pipeline.css?v=1" />
   </head>
   <body class="app-page">
     <div class="app-shell">
@@ -47,22 +48,33 @@
         </section>
 
         <section class="workspace-overview" aria-label="领测工作流">
-          <div><span>01</span><b>输入业务需求</b><p>支持需求、验收标准与用户故事</p></div>
-          <i>→</i><div><span>02</span><b>生成测试资产</b><p>覆盖正常、边界、异常和安全场景</p></div>
-          <i>→</i><div><span>03</span><b>真实页面验证</b><p>运行 Playwright 并保留失败现场</p></div>
+          <div><span>01</span><b>验证需求</b><p>Spec 完整性与可测试性</p></div>
+          <i>→</i><div><span>02</span><b>风险与拆分</b><p>端归属、风险等级与覆盖深度</p></div>
+          <i>→</i><div><span>03</span><b>设计与交付</b><p>标准用例、追溯矩阵与平台 JSON</p></div>
         </section>
         <section class="usage-strip" aria-label="使用额度"><div><span id="planLabel">FREE PLAN</span><b id="quotaSummary">今日免费额度加载中…</b><small id="quotaNote">游客每天可生成 5 次、执行 3 次</small></div><div class="usage-actions"><span id="generationQuota">生成 0/5</span><span id="executionQuota">执行 0/3</span><a id="accountLoginPrompt" href="/lingtest-login?return=%2Fapp">登录后次数翻倍</a><button id="openActivation" type="button">输入激活码</button><a href="/lingtest-pricing">查看专业版 →</a></div></section>
 
         <section class="composer-card">
           <div class="composer-head">
-            <div><span class="step-number">TEST DESIGN</span><h2>描述需要验证的业务</h2><p>建议包含业务规则、成功条件、异常限制和关键测试数据。</p></div>
+            <div><span class="step-number">AI TEST PIPELINE</span><h2>从需求到可交付测试资产</h2><p>选择输入模式，领测会先审查需求与风险，再生成用例。</p></div>
             <div class="model-field"><label for="aiModel">生成模型</label><select id="aiModel" class="ai-select"><option value="deepseek" selected>DeepSeek</option><option value="qianwen">Qianwen</option><option value="gemini">Gemini</option></select></div>
           </div>
+          <div class="generation-mode" role="radiogroup" aria-label="用例生成模式">
+            <label><input type="radio" name="generationMode" value="standard"><span><b>Standard</b><small>SDD Spec + 原始需求，适合正式交付</small></span></label>
+            <label><input type="radio" name="generationMode" value="sketch" checked><span><b>Sketch</b><small>轻量需求快速生成，适合探索与补测</small></span></label>
+          </div>
+          <div class="pipeline-steps" aria-label="六步生成流水线"><span><b>01</b>Spec 验证</span><i>→</i><span><b>02</b>风险计划</span><i>→</i><span><b>03</b>需求拆分</span><i>→</i><span><b>04</b>覆盖维度</span><i>→</i><span><b>05</b>详细用例</span><i>→</i><span><b>06</b>交付闭环</span></div>
           <div class="demo-scenarios"><span>可运行示例</span><button type="button" data-demo="content">页面内容验证</button><button type="button" data-demo="search">站内搜索</button><button type="button" data-demo="login">登录流程</button><small>选择后会自动填入测试地址和用例</small></div>
           <textarea
             id="aiPrompt"
+            aria-label="原始需求或轻量需求文档"
             placeholder="- 登录成功：手机号+密码+验证码正确&#10;- 登录失败：密码错误&#10;- 登录失败：验证码错误超过5次被锁定"
           ></textarea>
+          <div id="standardFields" class="standard-fields" hidden>
+            <label for="sddSpec"><span>SDD Spec</span><small>粘贴技术方案、接口契约、状态设计与验收标准</small></label>
+            <textarea id="sddSpec" placeholder="例如：接口契约、数据结构、状态流转、权限边界、灰度策略……"></textarea>
+          </div>
+          <details class="diff-context"><summary>可选：加入代码 Diff 影响面</summary><textarea id="codeDiff" placeholder="粘贴关键代码 diff、改动文件或影响模块；领测会将其纳入风险评估。"></textarea></details>
           <div class="ai-toolbar">
             <div><button id="fillSample" class="btn ghost" type="button">使用示例</button><button id="clearPrompt" class="btn text" type="button">清空输入</button></div>
             <button id="aiGo" class="btn solid generate" type="button"><span>生成测试用例</span><i>→</i></button>
@@ -75,10 +87,12 @@
             <div><span class="step-number">TEST ASSETS</span><h2>用例与执行结果</h2><p>统一评审测试设计，并在真实页面验证关键路径。</p></div>
             <div class="ai-toolbar right">
               <button id="downloadExcel" class="btn ghost" type="button">导出 Excel</button>
+              <button id="downloadCaseHome" class="btn ghost" type="button">导出 Case Home JSON</button>
               <button id="copyJson" class="btn ghost" type="button">复制 JSON</button>
               <button id="toggleRaw" class="btn text" type="button">查看原始数据</button>
             </div>
           </div>
+          <div id="pipelineResult" class="pipeline-result" hidden></div>
           <div class="execution-bar">
             <label for="executionTarget"><span>测试环境地址</span><input id="executionTarget" type="url" inputmode="url" placeholder="https://example.com/login" autocomplete="url" /></label>
             <div><span class="execution-hint">填写目标页面后，可执行右侧单条用例</span><button id="runAllCases" class="btn solid" type="button">执行全部</button></div>
@@ -105,7 +119,7 @@
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <script src="/product-nav.js?v=5"></script>
     <script src="/lingtest-account.js?v=5"></script>
-    <script src="/app.js?v=quota-metering-1"></script>
+    <script src="/app.js?v=test-pipeline-1"></script>
   <script defer src="/site-analytics.js"></script><script defer src="/_vercel/insights/script.js"></script>
 </body>
 </html>
