@@ -43,4 +43,15 @@ assert spec_skill["skill"]["name"] == "需求验证"
 assert "score" in spec_skill["artifact"]
 delivery_skill = run_pipeline_skill("delivery", requirement, delivery["case_home"]["records"], "standard")
 assert delivery_skill["artifact"]["case_home"]["total"] == 1
+
+registration_requirement = """注册登录功能。手机号输入使用纯数字键盘。页面交互见五。
+手机号为空时提示，多次点击提示频繁操作；验证码错误最多尝试3次；验证码已过期时提示已过期。"""
+registration_delivery = build_pipeline_delivery(registration_requirement, [], "sketch")
+issue_details = [item["detail"] for item in registration_delivery["spec_review"]["issues"]]
+assert any("章节引用" in detail for detail in issue_details)
+assert any("频繁操作" in detail for detail in issue_details)
+assert any("验证码有效期" in detail for detail in issue_details)
+assert len(registration_delivery["requirement_units"]) >= 3
+assert len(registration_delivery["risk_plan"]["risks"]) >= 3
+assert len(registration_delivery["coverage"]["dimensions"]) >= 3
 print("LingTest six-stage pipeline: OK")

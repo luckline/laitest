@@ -18,7 +18,7 @@ const checks = [
   {
     name: "领测工作台",
     path: "/app",
-    contains: ["AI QUALITY WORKSPACE", "product-nav.js?v=5", "lingtest-account.js?v=5", "app-shell-fix.css?v=5", "lingtest-pipeline.css?v=3", "pipeline-skills-1", "快速生成", "文档驱动", "分步调试", "运行当前技能", "一键运行完整流程", "sddSpecFile", "Case Home JSON", "我的生成记录", "登录后次数翻倍", "PRO ACTIVATION", 'id="aiPrompt"'],
+    contains: ["AI QUALITY WORKSPACE", "product-nav.js?v=5", "lingtest-account.js?v=5", "app-shell-fix.css?v=5", "lingtest-pipeline.css?v=4", "pipeline-skills-2", "快速生成", "文档驱动", "分步调试", "运行当前技能", "一键运行完整流程", "sddSpecFile", "Case Home JSON", "我的生成记录", "登录后次数翻倍", "PRO ACTIVATION", 'id="aiPrompt"'],
   },
   {
     name: "领测定价",

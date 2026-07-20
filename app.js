@@ -68,6 +68,7 @@ const PIPELINE_SKILLS = [
   {key:"cases",name:"详细用例",method:"从覆盖维度展开可直接执行的结构化用例",input:"覆盖维度与测试数据",output:"P0/P1/P2 用例与自动化断言"},
   {key:"delivery",name:"交付闭环",method:"追溯矩阵、差异标记与 Case Home 格式转换",input:"结构化测试用例",output:"追溯矩阵与平台 JSON"},
 ];
+let pipelineProgressTimer = null;
 
 function quotaToday() {
   const now = new Date();
@@ -166,6 +167,29 @@ function setBusy(busy) {
     }
   });
   el("aiGo").textContent = busy ? "正在运行完整流程..." : "一键运行完整流程 →";
+}
+
+function startPipelineProgress() {
+  let index = 0;
+  state.selectedPipelineStage = PIPELINE_SKILLS[index].key;
+  updatePipelineStepState(PIPELINE_SKILLS[index].key);
+  renderSelectedPipelineSkill();
+  setStatus(`正在执行 1/6：${PIPELINE_SKILLS[index].name}…`, "");
+  clearInterval(pipelineProgressTimer);
+  pipelineProgressTimer = setInterval(() => {
+    if (index >= PIPELINE_SKILLS.length - 1) return;
+    index += 1;
+    state.selectedPipelineStage = PIPELINE_SKILLS[index].key;
+    updatePipelineStepState(PIPELINE_SKILLS[index].key);
+    renderSelectedPipelineSkill();
+    setStatus(`正在执行 ${index + 1}/6：${PIPELINE_SKILLS[index].name}…`, "");
+  }, 4000);
+}
+
+function stopPipelineProgress() {
+  clearInterval(pipelineProgressTimer);
+  pipelineProgressTimer = null;
+  updatePipelineStepState();
 }
 
 function baseProviderName(name) {
@@ -545,6 +569,39 @@ function syncPipelineSkillOutputs(pipeline) {
   updatePipelineStepState();
 }
 
+function skillEmpty(message) {
+  return `<div class="skill-empty">${escapeHtml(message)}</div>`;
+}
+
+function renderSkillArtifact(skill, artifact) {
+  if (!artifact) return skillEmpty("点击“运行当前技能”查看该节点的中间产物。");
+  if (skill.key === "spec") {
+    const issues = Array.isArray(artifact.issues) ? artifact.issues : [];
+    return `<div class="skill-score"><strong>${escapeHtml(String(artifact.score ?? "--"))}</strong><span>需求质量分</span><em class="${issues.length ? "attention" : "passed"}">${issues.length ? `${issues.length} 项待澄清` : "可进入下一步"}</em></div>
+      <div class="skill-list">${issues.length ? issues.map((item, index) => `<article><span class="skill-index">${String(index + 1).padStart(2, "0")}</span><div><small>${escapeHtml(item.category || "待澄清")} · ${item.severity === "high" ? "高优先级" : "中优先级"}</small><b>${escapeHtml(item.detail || "")}</b><p>${escapeHtml(item.suggestion || "")}</p></div></article>`).join("") : `<article class="passed"><div><b>未发现阻断项</b><p>需求具备继续分析的基本条件。</p></div></article>`}</div>
+      <details class="skill-source"><summary>查看已审查需求</summary><pre>${escapeHtml(artifact.clarified_requirement || "")}</pre></details>`;
+  }
+  if (skill.key === "risk") {
+    const risks = Array.isArray(artifact.risks) ? artifact.risks : [];
+    return `<div class="skill-summary-row"><span><small>测试策略</small><b>${escapeHtml(artifact.strategy || "风险驱动")}</b></span><span><small>影响端</small><b>${escapeHtml((artifact.scope || []).join(" · ") || "待识别")}</b></span><span><small>代码 Diff</small><b>${artifact.code_diff_included ? "已纳入" : "未提供"}</b></span></div><div class="skill-list">${risks.map((item, index) => `<article><span class="risk-level ${escapeHtml(item.level || "medium")}">${item.level === "high" ? "高" : "中"}</span><div><b>${escapeHtml(item.risk || "")}</b><p>${escapeHtml(item.impact || "")} · ${escapeHtml(item.strategy || "")}</p></div></article>`).join("") || skillEmpty("暂未识别到明确风险。")}</div>`;
+  }
+  if (skill.key === "split") {
+    const units = Array.isArray(artifact.units) ? artifact.units : [];
+    return `<div class="skill-card-grid">${units.map((item) => `<article><small>${escapeHtml(item.id || "")} · ${escapeHtml(item.end || "")}</small><b>${escapeHtml(item.title || "")}</b><p>${escapeHtml(item.scope || item.methodology || "")}</p><em>${escapeHtml(item.methodology || "")}</em></article>`).join("") || skillEmpty("暂无可拆分需求单元。")}</div>`;
+  }
+  if (skill.key === "dimensions") {
+    const rows = Array.isArray(artifact.dimensions) ? artifact.dimensions : [];
+    return `<div class="skill-list coverage-list">${rows.map((item, index) => `<article><span class="skill-index">${String(index + 1).padStart(2, "0")}</span><div><small>${escapeHtml(item.method || "测试设计")}</small><b>${escapeHtml(item.module || "覆盖维度")}</b><p>${escapeHtml((item.checks || []).join(" · "))}</p></div></article>`).join("") || skillEmpty("请先完成需求分析以生成覆盖维度。")}</div>`;
+  }
+  if (skill.key === "cases") {
+    const records = Array.isArray(artifact.records) ? artifact.records : [];
+    return `<div class="skill-score compact"><strong>${escapeHtml(String(artifact.total ?? records.length))}</strong><span>条可执行用例</span><em class="passed">已同步到下方用例表</em></div><div class="skill-case-preview">${records.slice(0, 5).map((item) => `<span><b>${escapeHtml(item.case_id || "")}</b>${escapeHtml(item.title || "")}</span>`).join("")}</div>`;
+  }
+  const traceability = Array.isArray(artifact.traceability) ? artifact.traceability : [];
+  const caseHome = artifact.case_home || {};
+  return `<div class="skill-summary-row"><span><small>追溯关系</small><b>${traceability.length} 组</b></span><span><small>交付格式</small><b>${escapeHtml(caseHome.format || "Case Home JSON")}</b></span><span><small>可交付用例</small><b>${escapeHtml(String(caseHome.total || 0))} 条</b></span></div><p class="skill-delivery-note">交付数据已就绪，可在结果区导出 Case Home JSON 或 Excel。</p>`;
+}
+
 function renderSelectedPipelineSkill() {
   const index = PIPELINE_SKILLS.findIndex((item) => item.key === state.selectedPipelineStage);
   const skill = PIPELINE_SKILLS[index] || PIPELINE_SKILLS[0];
@@ -553,7 +610,8 @@ function renderSelectedPipelineSkill() {
   el("currentSkillMethod").textContent = skill.method;
   const panel = el("pipelineSkillPanel");
   panel.hidden = false;
-  panel.innerHTML = `<div class="pipeline-skill-head"><b>${escapeHtml(skill.name)} Skill</b><span>${artifact ? "已完成，可继续调试" : "等待运行"}</span></div><div class="pipeline-skill-contract"><div><small>方法</small><strong>${escapeHtml(skill.method)}</strong></div><div><small>输入</small><strong>${escapeHtml(skill.input)}</strong></div><div><small>输出</small><strong>${escapeHtml(skill.output)}</strong></div></div><pre class="pipeline-skill-output">${artifact ? escapeHtml(JSON.stringify(artifact, null, 2)) : "点击“运行当前技能”查看该节点的中间产物。"}</pre>`;
+  const nextSkill = PIPELINE_SKILLS[index + 1];
+  panel.innerHTML = `<div class="pipeline-skill-head"><b>${escapeHtml(skill.name)} Skill</b><span>${artifact ? "已完成，可继续调试" : "等待运行"}</span></div><div class="pipeline-skill-contract"><div><small>方法</small><strong>${escapeHtml(skill.method)}</strong></div><div><small>输入</small><strong>${escapeHtml(skill.input)}</strong></div><div><small>输出</small><strong>${escapeHtml(skill.output)}</strong></div></div><div class="pipeline-skill-output">${renderSkillArtifact(skill, artifact)}</div>${artifact && nextSkill ? `<div class="skill-next"><span>当前产物会作为下一节点的输入</span><button type="button" data-next-pipeline="${escapeHtml(nextSkill.key)}">继续：${escapeHtml(nextSkill.name)} →</button></div>` : ""}`;
 }
 
 function updatePipelineStepState(runningKey = "") {
@@ -804,7 +862,7 @@ async function generate() {
   if (!hasQuota("generation")) return;
 
   setBusy(true);
-  setStatus("正在调用 AI 生成...", "");
+  startPipelineProgress();
   const t0 = typeof performance !== "undefined" ? performance.now() : Date.now();
   try {
     const out = await api("/api/ai/generate_cases", {
@@ -841,6 +899,7 @@ async function generate() {
     setStatus("生成失败：" + String(e && e.message ? e.message : e), "err");
     return null;
   } finally {
+    stopPipelineProgress();
     setBusy(false);
   }
 }
@@ -913,6 +972,14 @@ function bindEvents() {
     state.selectedPipelineStage = button.dataset.pipelineStage;
     updatePipelineStepState();
     renderSelectedPipelineSkill();
+  });
+  el("pipelineSkillPanel").addEventListener("click", (event) => {
+    const button = event.target.closest("[data-next-pipeline]");
+    if (!button) return;
+    state.selectedPipelineStage = button.dataset.nextPipeline;
+    updatePipelineStepState();
+    renderSelectedPipelineSkill();
+    el("pipelineSkillPanel").scrollIntoView({ behavior: "smooth", block: "nearest" });
   });
   document.querySelectorAll('input[name="generationMode"]').forEach((radio) => radio.addEventListener("change", syncGenerationMode));
   document.querySelectorAll("[data-demo]").forEach((button) => button.addEventListener("click", () => loadDemo(button.dataset.demo)));
