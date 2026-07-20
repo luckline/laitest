@@ -1,12 +1,14 @@
 const baseUrl = String(process.env.SMOKE_BASE_URL || "https://laitest.tech").replace(/\/$/, "");
 const timeoutMs = Number(process.env.SMOKE_TIMEOUT_MS || 15000);
 const routeId = "seed-trip-2026-north-xinjiang-0925";
+const isLocal = /^https?:\/\/(?:127\.0\.0\.1|localhost)(?::\d+)?$/.test(baseUrl);
+const localHtmlRoutes = new Set(["/app", "/lingtest", "/lingtest-pricing", "/lingtest-login", "/lingtest-admin", "/lingtest-guides", "/lingtest-tools", "/timelens", "/timelens-route"]);
 
 const checks = [
   {
     name: "个人主页",
     path: "/",
-    contains: ["Luckline", 'href="/lingtest"', 'href="/timelens"', "product-nav.js?v=5", "5 类 · 22 项出发清单", "home-growth-p0.css?v=2", "product-visuals.css?v=1", "lingtest-workspace-preview.png", "timelens-workspace-preview.png"],
+    contains: ["Luckline", 'href="/lingtest"', 'href="/timelens"', "product-nav.js?v=5", "5 类 · 22 项出发清单", "home-growth-p0.css?v=2", "product-visuals.css?v=1", "lingtest-workspace-preview.png", "timelens-workspace-preview.png", "img/og-cover.png"],
   },
   {
     name: "领测产品页",
@@ -51,7 +53,7 @@ const checks = [
   {
     name: "领测版本入口",
     path: "/lingtest-account.js?v=5",
-    contains: ["当前版本", "专业版 PRO", "contactMasked", "/licenses/status"],
+    contains: ["当前版本", "专业版 PRO", "contactMasked", "LICENSE_API", "/status?browserId="],
   },
   {
     name: "领测方法库",
@@ -110,6 +112,11 @@ const checks = [
     path: "/baidu_verify_codeva-XOPq3AJQbN.html",
     contains: ["4c28ae6da214724cdcbc953178f166ac"],
   },
+  {
+    name: "搜索站点地图",
+    path: "/sitemap.xml",
+    contains: ["https://laitest.tech/lingtest-tools", "https://laitest.tech/timelens", "2026-07-18"],
+  },
 ];
 
 async function request(path) {
@@ -117,11 +124,15 @@ async function request(path) {
   const timer = setTimeout(() => controller.abort(), timeoutMs);
   const startedAt = Date.now();
   try {
-    const response = await fetch(`${baseUrl}${path}`, {
+    let response = await fetch(`${baseUrl}${path}`, {
       redirect: "follow",
       headers: { "user-agent": "laitest-production-smoke/1.0" },
       signal: controller.signal,
     });
+    if (isLocal && response.status === 404) {
+      const url = new URL(path, baseUrl);
+      if (localHtmlRoutes.has(url.pathname)) response = await fetch(`${baseUrl}${url.pathname}.html${url.search}`, { signal: controller.signal });
+    }
     const body = await response.text();
     return { response, body, elapsed: Date.now() - startedAt };
   } finally {
@@ -151,6 +162,20 @@ async function runHealthCheck() {
   return elapsed;
 }
 
+async function runSecurityHeaderCheck() {
+  const { response, elapsed } = await request("/");
+  const expected = {
+    "x-content-type-options": "nosniff",
+    "referrer-policy": "strict-origin-when-cross-origin",
+    "x-frame-options": "DENY",
+    "permissions-policy": "camera=()",
+    "content-security-policy": "frame-ancestors 'none'",
+  };
+  const missing = Object.entries(expected).filter(([name, value]) => !String(response.headers.get(name) || "").includes(value));
+  if (missing.length) throw new Error(`缺少安全响应头：${missing.map(([name]) => name).join("、")}`);
+  return elapsed;
+}
+
 console.log(`\n生产冒烟检查：${baseUrl}\n`);
 let failures = 0;
 for (const check of checks) {
@@ -163,17 +188,29 @@ for (const check of checks) {
   }
 }
 
-try {
-  const elapsed = await runHealthCheck();
-  console.log(`✓ ${"健康接口".padEnd(12)} ${String(elapsed).padStart(5)}ms  /api/health`);
-} catch (error) {
-  failures += 1;
-  console.error(`✗ ${"健康接口".padEnd(12)} /api/health\n  ${error.message}`);
+if (!isLocal) {
+  try {
+    const elapsed = await runHealthCheck();
+    console.log(`✓ ${"健康接口".padEnd(12)} ${String(elapsed).padStart(5)}ms  /api/health`);
+  } catch (error) {
+    failures += 1;
+    console.error(`✗ ${"健康接口".padEnd(12)} /api/health\n  ${error.message}`);
+  }
+}
+
+if (/^https:\/\//.test(baseUrl)) {
+  try {
+    const elapsed = await runSecurityHeaderCheck();
+    console.log(`✓ ${"安全响应头".padEnd(12)} ${String(elapsed).padStart(5)}ms  /`);
+  } catch (error) {
+    failures += 1;
+    console.error(`✗ ${"安全响应头".padEnd(12)} /\n  ${error.message}`);
+  }
 }
 
 if (failures) {
   console.error(`\n冒烟检查失败：${failures} 项\n`);
   process.exitCode = 1;
 } else {
-  console.log(`\n冒烟检查通过：${checks.length + 1} 项\n`);
+  console.log(`\n冒烟检查通过：${checks.length + (isLocal ? 0 : 1) + (/^https:\/\//.test(baseUrl) ? 1 : 0)} 项\n`);
 }

@@ -12,7 +12,7 @@ app = Flask(__name__)
 
 API_BASE = "https://timelens.cc"
 SITE_BASE = "https://laitest.tech"
-FALLBACK_IMAGE = f"{SITE_BASE}/img/timelens-miniapp.jpg"
+FALLBACK_IMAGE = f"{SITE_BASE}/img/timelens-route-fallback.jpg"
 BUILTINS = {
     "hangzhou": {"title": "西湖城市漫游周末线", "destination": "杭州", "notes": "把湖滨散步、宋韵街区和咖啡慢游串成一条节奏舒服的两天一夜路线。", "coverImage": "https://timelens.cc/images/official-changping.jpg"},
     "xiamen": {"title": "海风疗愈三日轻旅行", "destination": "厦门", "notes": "把鼓浪屿、海岸线和夜晚海风都装进一趟轻盈旅行。", "coverImage": "https://timelens.cc/images/official-city-night.jpg"},
@@ -59,7 +59,7 @@ def share_page() -> Response:
     page = page.replace('<meta name="description" content="查看并分享时光智行旅行路线合集。">', _meta("description", summary))
     page = page.replace('<meta property="og:title" content="路线详情 · 时光智行">', _meta("og:title", page_title, prop=True))
     page = page.replace('<meta property="og:description" content="查看完整逐日路线，扫码收藏并继续规划旅程。">', _meta("og:description", summary, prop=True))
-    page = page.replace('<meta property="og:image" content="https://laitest.tech/img/timelens-miniapp.jpg">', _meta("og:image", image, prop=True))
+    page = page.replace('<meta property="og:image" content="https://laitest.tech/img/timelens-route-fallback.jpg">', _meta("og:image", image, prop=True))
     extras = "".join([
         _meta("og:type", "article", prop=True), _meta("og:url", url, prop=True),
         _meta("og:site_name", "时光智行 TimeLens", prop=True), _meta("twitter:title", page_title),
