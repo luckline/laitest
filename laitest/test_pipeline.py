@@ -5,6 +5,14 @@ from typing import Any, Iterable
 
 
 PIPELINE_METHODS = ["等价类", "边界值", "判定表", "状态迁移", "场景法", "因果图", "错误推测"]
+PIPELINE_SKILLS = [
+    {"key": "spec", "name": "需求验证", "method": "完整性、一致性、歧义性与可测试性审查", "input": "需求文档 / SDD", "output": "问题清单与需求质量评分"},
+    {"key": "risk", "name": "风险计划", "method": "测试左移、风险分级与 Diff 影响面分析", "input": "已验证需求与代码变更", "output": "范围、风险分布与测试深度"},
+    {"key": "split", "name": "需求拆分", "method": "按 server / UI-B / UI-C / 实验灰度分类", "input": "需求与风险计划", "output": "独立可测需求单元"},
+    {"key": "dimensions", "name": "覆盖设计", "method": "等价类、边界值、判定表、状态迁移、场景、因果图、错误推测", "input": "需求单元与风险等级", "output": "模块化测试覆盖维度"},
+    {"key": "cases", "name": "详细用例", "method": "从覆盖维度展开可直接执行的结构化用例", "input": "覆盖维度与测试数据", "output": "P0/P1/P2 用例与可自动化断言"},
+    {"key": "delivery", "name": "交付闭环", "method": "追溯矩阵、差异标记与 Case Home 格式转换", "input": "结构化测试用例", "output": "追溯矩阵与平台 JSON"},
+]
 
 
 def normalize_generation_mode(value: Any) -> str:
@@ -125,7 +133,8 @@ def build_pipeline_delivery(
     return {
         "version": "2.0",
         "mode": mode,
-        "mode_label": "Standard · SDD 驱动" if mode == "standard" else "Sketch · 轻量需求驱动",
+        "mode_label": "文档驱动" if mode == "standard" else "快速生成",
+        "skills": PIPELINE_SKILLS,
         "stages": [
             {"key": "spec", "name": "需求分析与 Spec 验证", "status": "attention" if issues else "passed", "summary": f"发现 {len(issues)} 项待澄清问题" if issues else "需求具备生成条件"},
             {"key": "risk", "name": "风险驱动测试计划", "status": "passed", "summary": f"P0 {high} · P1 {medium} · P2 {low}"},
@@ -141,3 +150,28 @@ def build_pipeline_delivery(
         "traceability": traceability,
         "case_home": {"format": "Case Home JSON", "mode": "incremental", "total": len(case_home_records), "records": case_home_records},
     }
+
+
+def run_pipeline_skill(
+    stage_key: str,
+    requirement: str,
+    cases: list[dict[str, Any]] | None = None,
+    mode: str = "sketch",
+    sdd_spec: str = "",
+    code_diff: str = "",
+) -> dict[str, Any]:
+    """Run one deterministic pipeline skill and return its inspectable artifact."""
+    delivery = build_pipeline_delivery(requirement, cases or [], mode, sdd_spec, code_diff)
+    skill = next((item for item in PIPELINE_SKILLS if item["key"] == stage_key), None)
+    if not skill:
+        raise ValueError(f"unsupported pipeline stage: {stage_key}")
+    artifacts = {
+        "spec": delivery["spec_review"],
+        "risk": delivery["risk_plan"],
+        "split": {"units": delivery["requirement_units"]},
+        "dimensions": delivery["coverage"],
+        "cases": {"total": len(cases or []), "records": cases or []},
+        "delivery": {"traceability": delivery["traceability"], "case_home": delivery["case_home"]},
+    }
+    stage = next(item for item in delivery["stages"] if item["key"] == stage_key)
+    return {"skill": skill, "stage": stage, "artifact": artifacts[stage_key], "pipeline": delivery}

@@ -16,7 +16,7 @@
     <link rel="stylesheet" href="/css/system-density.css?v=1" />
     <link rel="stylesheet" href="/css/product-nav.css?v=3" />
     <link rel="stylesheet" href="/css/lingtest-account.css?v=2" />
-    <link rel="stylesheet" href="/css/lingtest-pipeline.css?v=2" />
+    <link rel="stylesheet" href="/css/lingtest-pipeline.css?v=3" />
   </head>
   <body class="app-page">
     <div class="app-shell">
@@ -63,7 +63,9 @@
             <label><input type="radio" name="generationMode" value="sketch" checked><span><b>快速生成</b><small>直接输入需求，适合快速分析与补测</small></span></label>
             <label><input type="radio" name="generationMode" value="standard"><span><b>文档驱动</b><small>上传需求文档，适合完整评审与正式交付</small></span></label>
           </div>
-          <div class="pipeline-steps" aria-label="六步生成流水线"><span><b>01</b>Spec 验证</span><i>→</i><span><b>02</b>风险计划</span><i>→</i><span><b>03</b>需求拆分</span><i>→</i><span><b>04</b>覆盖维度</span><i>→</i><span><b>05</b>详细用例</span><i>→</i><span><b>06</b>交付闭环</span></div>
+          <div id="pipelineSteps" class="pipeline-steps" aria-label="六步技能流水线"><button type="button" data-pipeline-stage="spec" class="active"><b>01</b>需求验证</button><i>→</i><button type="button" data-pipeline-stage="risk"><b>02</b>风险计划</button><i>→</i><button type="button" data-pipeline-stage="split"><b>03</b>需求拆分</button><i>→</i><button type="button" data-pipeline-stage="dimensions"><b>04</b>覆盖设计</button><i>→</i><button type="button" data-pipeline-stage="cases"><b>05</b>详细用例</button><i>→</i><button type="button" data-pipeline-stage="delivery"><b>06</b>交付闭环</button></div>
+          <div class="pipeline-debug-bar"><div><small>分步调试</small><b id="currentSkillName">01 · 需求验证</b><span id="currentSkillMethod">检查完整性、一致性、歧义性与可测试性</span></div><button id="runCurrentSkill" type="button">运行当前技能 →</button></div>
+          <section id="pipelineSkillPanel" class="pipeline-skill-panel" hidden></section>
           <div class="demo-scenarios"><span>可运行示例</span><button type="button" data-demo="content">页面内容验证</button><button type="button" data-demo="search">站内搜索</button><button type="button" data-demo="login">登录流程</button><small>选择后会自动填入测试地址和用例</small></div>
           <textarea
             id="aiPrompt"
@@ -83,7 +85,7 @@
           <details class="diff-context"><summary>可选：加入代码 Diff 影响面</summary><textarea id="codeDiff" placeholder="粘贴关键代码 diff、改动文件或影响模块；领测会将其纳入风险评估。"></textarea></details>
           <div class="ai-toolbar">
             <div><button id="fillSample" class="btn ghost" type="button">使用示例</button><button id="clearPrompt" class="btn text" type="button">清空输入</button></div>
-            <button id="aiGo" class="btn solid generate" type="button"><span>生成测试用例</span><i>→</i></button>
+            <button id="aiGo" class="btn solid generate" type="button"><span>一键运行完整流程</span><i>→</i></button>
           </div>
           <p id="aiStatus" class="ai-status"><span class="status-dot"></span>准备就绪</p>
         </section>
@@ -126,7 +128,7 @@
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <script src="/product-nav.js?v=5"></script>
     <script src="/lingtest-account.js?v=5"></script>
-    <script src="/app.js?v=document-mode-1"></script>
+    <script src="/app.js?v=pipeline-skills-1"></script>
   <script defer src="/site-analytics.js"></script><script defer src="/_vercel/insights/script.js"></script>
 </body>
 </html>

@@ -12,7 +12,7 @@ from pathlib import Path
 from urllib.parse import parse_qs, urlparse
 
 from .ai import ai_runtime_status, generate_cases, generate_cases_local, generate_travel_plan, professional_case_from_suggested
-from .test_pipeline import build_pipeline_delivery, compose_pipeline_prompt, normalize_generation_mode
+from .test_pipeline import build_pipeline_delivery, compose_pipeline_prompt, normalize_generation_mode, run_pipeline_skill
 from .db import db_conn, json_loads, row_to_dict, utc_now_iso
 from .ids import new_id
 from .runner import analyze_failures, run_case, summarize_run
@@ -471,6 +471,25 @@ class Handler(BaseHTTPRequestHandler):
                 con.commit()
                 _RUN_WORKER.enqueue(rid)
                 _send_json(self, 201, {"run": {"id": rid, "status": "queued"}})
+                return
+
+            if path == "/api/ai/pipeline_stage":
+                prompt = str(body.get("prompt") or "").strip()
+                stage = str(body.get("stage") or "").strip().lower()
+                generation_mode = normalize_generation_mode(body.get("generation_mode"))
+                sdd_spec = str(body.get("sdd_spec") or "")
+                code_diff = str(body.get("code_diff") or "")
+                cases = body.get("cases") if isinstance(body.get("cases"), list) else []
+                if not prompt:
+                    self._err(400, "missing prompt")
+                    return
+                if stage not in {"spec", "risk", "split", "dimensions", "delivery"}:
+                    self._err(400, "unsupported pipeline stage")
+                    return
+                try:
+                    _send_json(self, 200, run_pipeline_skill(stage, prompt, cases, generation_mode, sdd_spec, code_diff))
+                except ValueError as exc:
+                    self._err(400, str(exc))
                 return
 
             if path == "/api/ai/generate_cases":

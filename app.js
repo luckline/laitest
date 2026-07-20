@@ -34,6 +34,8 @@ const state = {
   entitlement: { plan: "free", active: false },
   accountLoggedIn: false,
   remoteUsage: null,
+  selectedPipelineStage: "spec",
+  pipelineSkillOutputs: {},
 };
 
 const STORAGE_CASES = "lingtest:last-cases:v1";
@@ -58,6 +60,14 @@ const SAMPLE_PROMPT = [
   "- 登录失败：验证码错误超过 5 次触发账户锁定",
   "- 忘记密码：短信验证码校验成功后可重置密码",
 ].join("\n");
+const PIPELINE_SKILLS = [
+  {key:"spec",name:"需求验证",method:"完整性、一致性、歧义性与可测试性审查",input:"需求文档 / SDD",output:"问题清单与需求质量评分"},
+  {key:"risk",name:"风险计划",method:"测试左移、风险分级与 Diff 影响面分析",input:"已验证需求与代码变更",output:"范围、风险分布与测试深度"},
+  {key:"split",name:"需求拆分",method:"按 server / UI-B / UI-C / 实验灰度分类",input:"需求与风险计划",output:"独立可测需求单元"},
+  {key:"dimensions",name:"覆盖设计",method:"等价类、边界值、判定表、状态迁移、场景、因果图、错误推测",input:"需求单元与风险等级",output:"模块化测试覆盖维度"},
+  {key:"cases",name:"详细用例",method:"从覆盖维度展开可直接执行的结构化用例",input:"覆盖维度与测试数据",output:"P0/P1/P2 用例与自动化断言"},
+  {key:"delivery",name:"交付闭环",method:"追溯矩阵、差异标记与 Case Home 格式转换",input:"结构化测试用例",output:"追溯矩阵与平台 JSON"},
+];
 
 function quotaToday() {
   const now = new Date();
@@ -149,13 +159,13 @@ function setStatus(text, kind) {
 
 function setBusy(busy) {
   state.busy = busy;
-  ["aiGo", "fillSample", "clearPrompt", "copyJson", "toggleRaw", "downloadExcel", "downloadCaseHome", "aiModel"].forEach((id) => {
+  ["aiGo", "runCurrentSkill", "fillSample", "clearPrompt", "copyJson", "toggleRaw", "downloadExcel", "downloadCaseHome", "aiModel"].forEach((id) => {
     const node = el(id);
     if (node) {
       node.disabled = busy;
     }
   });
-  el("aiGo").textContent = busy ? "正在生成测试资产..." : "生成测试用例 →";
+  el("aiGo").textContent = busy ? "正在运行完整流程..." : "一键运行完整流程 →";
 }
 
 function baseProviderName(name) {
@@ -513,6 +523,80 @@ function downloadCaseHome() {
   setStatus(`已导出 ${delivery.total} 条 Case Home JSON。`, "ok");
 }
 
+function pipelineArtifact(pipeline, key) {
+  if (!pipeline) return null;
+  const artifacts = {
+    spec: pipeline.spec_review,
+    risk: pipeline.risk_plan,
+    split: { units: pipeline.requirement_units || [] },
+    dimensions: pipeline.coverage,
+    cases: { total: state.lastCases.length, records: state.lastCases },
+    delivery: { traceability: pipeline.traceability || [], case_home: pipeline.case_home || {} },
+  };
+  return artifacts[key] || null;
+}
+
+function syncPipelineSkillOutputs(pipeline) {
+  if (!pipeline) return;
+  for (const skill of PIPELINE_SKILLS) {
+    const artifact = pipelineArtifact(pipeline, skill.key);
+    if (artifact) state.pipelineSkillOutputs[skill.key] = artifact;
+  }
+  updatePipelineStepState();
+}
+
+function renderSelectedPipelineSkill() {
+  const index = PIPELINE_SKILLS.findIndex((item) => item.key === state.selectedPipelineStage);
+  const skill = PIPELINE_SKILLS[index] || PIPELINE_SKILLS[0];
+  const artifact = state.pipelineSkillOutputs[skill.key];
+  el("currentSkillName").textContent = `${String(index + 1).padStart(2, "0")} · ${skill.name}`;
+  el("currentSkillMethod").textContent = skill.method;
+  const panel = el("pipelineSkillPanel");
+  panel.hidden = false;
+  panel.innerHTML = `<div class="pipeline-skill-head"><b>${escapeHtml(skill.name)} Skill</b><span>${artifact ? "已完成，可继续调试" : "等待运行"}</span></div><div class="pipeline-skill-contract"><div><small>方法</small><strong>${escapeHtml(skill.method)}</strong></div><div><small>输入</small><strong>${escapeHtml(skill.input)}</strong></div><div><small>输出</small><strong>${escapeHtml(skill.output)}</strong></div></div><pre class="pipeline-skill-output">${artifact ? escapeHtml(JSON.stringify(artifact, null, 2)) : "点击“运行当前技能”查看该节点的中间产物。"}</pre>`;
+}
+
+function updatePipelineStepState(runningKey = "") {
+  document.querySelectorAll("[data-pipeline-stage]").forEach((button) => {
+    const key = button.dataset.pipelineStage;
+    button.classList.toggle("active", key === state.selectedPipelineStage);
+    button.classList.toggle("completed", Boolean(state.pipelineSkillOutputs[key]));
+    button.classList.toggle("running", key === runningKey);
+  });
+}
+
+function generationContext() {
+  const generationMode = document.querySelector('input[name="generationMode"]:checked')?.value || "sketch";
+  const sddSpec = el("sddSpec").value.trim();
+  const prompt = generationMode === "standard"
+    ? `请基于上传的需求文档“${el("sddSpec").dataset.fileName || "需求文档"}”完成完整测试分析并生成可执行用例。`
+    : el("aiPrompt").value.trim();
+  return { prompt, generationMode, sddSpec, codeDiff: el("codeDiff").value.trim() };
+}
+
+async function runCurrentPipelineSkill() {
+  const skill = PIPELINE_SKILLS.find((item) => item.key === state.selectedPipelineStage) || PIPELINE_SKILLS[0];
+  const context = generationContext();
+  if (context.generationMode === "sketch" && !context.prompt) return setStatus("请先输入需求文本。", "err");
+  if (context.generationMode === "standard" && !context.sddSpec) return setStatus("请先上传需求或 SDD 文档。", "err");
+  if (skill.key === "cases") {
+    const out = await generate();
+    if (out) { state.selectedPipelineStage = "cases"; renderSelectedPipelineSkill(); }
+    return;
+  }
+  if (skill.key === "delivery" && !state.lastCases.length) return setStatus("交付闭环需要先运行“详细用例”节点。", "err");
+  updatePipelineStepState(skill.key);
+  el("runCurrentSkill").disabled = true;
+  setStatus(`正在运行 ${skill.name} Skill…`, "");
+  try {
+    const result = await api("/api/ai/pipeline_stage", {method:"POST", body:JSON.stringify({stage:skill.key,prompt:context.prompt,generation_mode:context.generationMode,sdd_spec:context.sddSpec,code_diff:context.codeDiff,cases:state.lastCases})});
+    state.pipelineSkillOutputs[skill.key] = result.artifact || {};
+    setStatus(`${skill.name}已完成，可检查输出后继续下一步。`, "ok");
+    renderSelectedPipelineSkill();
+  } catch (error) { setStatus(`${skill.name}运行失败：${error.message || error}`, "err"); }
+  finally { el("runCurrentSkill").disabled = false; updatePipelineStepState(); }
+}
+
 function renderPipeline(pipeline) {
   const box = el("pipelineResult");
   if (!box) return;
@@ -542,6 +626,8 @@ function renderOutput(out) {
   renderSummary(out);
   renderPipeline(out.pipeline);
   renderSuggestions(out.suggestions || []);
+  syncPipelineSkillOutputs(out.pipeline);
+  renderSelectedPipelineSkill();
   el("aiOut").textContent = JSON.stringify(out, null, 2);
   persistCases();
 }
@@ -706,11 +792,7 @@ function restoreWorkspace() {
 
 async function generate() {
   const selectedProvider = (el("aiModel") && el("aiModel").value ? el("aiModel").value : "deepseek").trim();
-  const generationMode = document.querySelector('input[name="generationMode"]:checked')?.value || "sketch";
-  const documentContent = el("sddSpec").value.trim();
-  const prompt = generationMode === "standard"
-    ? `请基于上传的需求文档“${el("sddSpec").dataset.fileName || "需求文档"}”完成完整测试分析并生成可执行用例。`
-    : el("aiPrompt").value.trim();
+  const {prompt, generationMode, sddSpec: documentContent, codeDiff} = generationContext();
   if (generationMode === "sketch" && !prompt) {
     setStatus("请输入需求文本后再生成。", "err");
     return;
@@ -732,7 +814,7 @@ async function generate() {
         model_provider: selectedProvider,
         generation_mode: generationMode,
         sdd_spec: generationMode === "standard" ? el("sddSpec").value.trim() : "",
-        code_diff: el("codeDiff").value.trim(),
+        code_diff: codeDiff,
         create: false,
       }),
     });
@@ -746,7 +828,7 @@ async function generate() {
       prompt,
       generationMode,
       sddSpec: generationMode === "standard" ? el("sddSpec").value.trim() : "",
-      codeDiff: el("codeDiff").value.trim(),
+      codeDiff,
     });
     const count = Array.isArray(out.suggestions) ? out.suggestions.length : 0;
     const elapsedLabel = formatElapsed(out.elapsed_ms || out.client_elapsed_ms || 0);
@@ -754,8 +836,10 @@ async function generate() {
       `${elapsedLabel ? `生成完成：${count} 条用例，耗时 ${elapsedLabel}` : `生成完成：${count} 条用例`}${cloudState === "saved" ? "，已保存到账号" : cloudState === "failed" ? "，云端保存失败" : "，登录后可云端保存"}。`,
       out.warning || cloudState === "failed" ? "warn" : "ok"
     );
+    return out;
   } catch (e) {
     setStatus("生成失败：" + String(e && e.message ? e.message : e), "err");
+    return null;
   } finally {
     setBusy(false);
   }
@@ -796,6 +880,10 @@ function clearPrompt() {
   if (el("sddSpecFile")) el("sddSpecFile").value = "";
   setSddDocument();
   if (el("codeDiff")) el("codeDiff").value = "";
+  state.pipelineSkillOutputs = {};
+  state.selectedPipelineStage = "spec";
+  updatePipelineStepState();
+  renderSelectedPipelineSkill();
   setStatus("已清空输入。", "");
 }
 
@@ -818,6 +906,14 @@ function bindEvents() {
   el("clearPrompt").addEventListener("click", clearPrompt);
   el("sddSpecFile").addEventListener("change", (event) => loadSddDocument(event.target.files?.[0]));
   el("removeSddFile").addEventListener("click", () => { el("sddSpecFile").value = ""; setSddDocument(); setStatus("需求文档已移除。", ""); });
+  el("runCurrentSkill").addEventListener("click", runCurrentPipelineSkill);
+  el("pipelineSteps").addEventListener("click", (event) => {
+    const button = event.target.closest("[data-pipeline-stage]");
+    if (!button) return;
+    state.selectedPipelineStage = button.dataset.pipelineStage;
+    updatePipelineStepState();
+    renderSelectedPipelineSkill();
+  });
   document.querySelectorAll('input[name="generationMode"]').forEach((radio) => radio.addEventListener("change", syncGenerationMode));
   document.querySelectorAll("[data-demo]").forEach((button) => button.addEventListener("click", () => loadDemo(button.dataset.demo)));
   el("clearHistory").addEventListener("click", () => { localStorage.removeItem(STORAGE_HISTORY); renderHistory(); setStatus("本地执行记录已清空。", ""); });
@@ -854,6 +950,7 @@ function bindEvents() {
 function main() {
   bindEvents();
   syncGenerationMode();
+  renderSelectedPipelineSkill();
   restoreWorkspace();
   renderHistory();
   renderQuota();

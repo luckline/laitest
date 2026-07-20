@@ -4,7 +4,7 @@ Luckline 的个人站与产品中心，统一承载个人介绍、产品发布�
 
 当前包含两个持续迭代的产品：
 
-- **领测 LingTest**：AI 测试设计与质量工作台，以“快速生成 / 文档驱动”双模式完成需求验证、风险计划、覆盖设计、结构化用例与 Playwright 验证；文档驱动模式支持上传 TXT、Markdown、JSON、YAML、CSV 等需求文件。
+- **领测 LingTest**：AI 测试设计与质量工作台，以“快速生成 / 文档驱动”双模式完成需求验证、风险计划、覆盖设计、结构化用例与 Playwright 验证；六个测试设计 Skill 支持分步调试或一键运行，文档驱动模式支持上传 TXT、Markdown、JSON、YAML、CSV 等需求文件。
 - **时光智行 TimeLens**（原时光透卡）：AI 旅行规划、公开路线、出发清单、逐日记录与城市足迹工具。
 
 生产地址：[https://laitest.tech](https://laitest.tech)
@@ -200,6 +200,7 @@ PC 版当前支持：
 | GET/POST | `/api/cases` | 测试用例 |
 | GET/POST | `/api/runs` | 测试运行 |
 | POST | `/api/ai/generate_cases` | 生成测试用例 |
+| POST | `/api/ai/pipeline_stage` | 分步运行需求验证、风险计划、需求拆分、覆盖设计或交付闭环 Skill |
 | POST | `https://timelens.cc/api/lingtest/generations` | 登录用户保存需求、六步分析与完整用例 |
 | GET | `https://timelens.cc/api/lingtest/generations` | 获取当前账号生成历史 |
 | GET/DELETE | `https://timelens.cc/api/lingtest/generations/:id` | 恢复或删除当前账号生成记录 |

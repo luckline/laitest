@@ -10,7 +10,8 @@ from typing import Any
 
 from flask import Flask, jsonify, request
 
-from laitest.ai import ai_runtime_status, generate_cases, generate_travel_plan, professional_case_from_suggested
+from laitest.ai import ai_runtime_status, generate_cases, generate_cases_local, generate_travel_plan, professional_case_from_suggested
+from laitest.test_pipeline import build_pipeline_delivery, compose_pipeline_prompt, normalize_generation_mode, run_pipeline_skill
 from laitest.db import db_conn, json_loads, row_to_dict, utc_now_iso
 from laitest.ids import new_id
 from laitest.runner import analyze_failures, run_case, summarize_run
@@ -415,6 +416,9 @@ def post_runs() -> tuple[Any, int] | Any:
 def post_ai_generate_cases() -> Any:
     body = _body()
     prompt = str(body.get("prompt") or "")
+    generation_mode = normalize_generation_mode(body.get("generation_mode"))
+    sdd_spec = str(body.get("sdd_spec") or "")
+    code_diff = str(body.get("code_diff") or "")
     model_provider = str(body.get("model_provider") or "").strip().lower() or None
     project_id = str(body.get("project_id") or "").strip()
     suite_id = str(body.get("suite_id") or "").strip() or None
@@ -426,7 +430,10 @@ def post_ai_generate_cases() -> Any:
         return quota_error
 
     t0 = time.monotonic()
-    suggestions, provider, warning = generate_cases(prompt, model_provider=model_provider)
+    effective_prompt = compose_pipeline_prompt(prompt, generation_mode, sdd_spec, code_diff)
+    suggestions, provider, warning = generate_cases(effective_prompt, model_provider=model_provider)
+    if provider.startswith("local"):
+        suggestions = generate_cases_local(prompt)
     elapsed_ms = int((time.monotonic() - t0) * 1000)
     created_ids: list[str] = []
     if create and project_id:
@@ -461,19 +468,18 @@ def post_ai_generate_cases() -> Any:
     runtime["mode"] = provider if model_provider else default_mode
     runtime["active_provider"] = provider
 
+    serialized_suggestions = [
+        {"title": s.title, "description": s.description, "tags": s.tags, "kind": s.kind, "spec": s.spec, "test_case": professional_case_from_suggested(s)}
+        for s in suggestions
+    ]
+    normalized_cases = [row["test_case"] for row in serialized_suggestions]
+    pipeline = build_pipeline_delivery(prompt, normalized_cases, generation_mode, sdd_spec, code_diff)
+
     return jsonify(
         {
-            "suggestions": [
-                {
-                    "title": s.title,
-                    "description": s.description,
-                    "tags": s.tags,
-                    "kind": s.kind,
-                    "spec": s.spec,
-                    "test_case": professional_case_from_suggested(s),
-                }
-                for s in suggestions
-            ],
+            "suggestions": serialized_suggestions,
+            "pipeline": pipeline,
+            "generation_mode": generation_mode,
             "provider": provider,
             "requested_provider": model_provider,
             "warning": warning,
@@ -483,6 +489,25 @@ def post_ai_generate_cases() -> Any:
             "quota": quota_data,
         }
     )
+
+
+@app.post("/api/ai/pipeline_stage")
+def post_ai_pipeline_stage() -> Any:
+    body = _body()
+    prompt = str(body.get("prompt") or "").strip()
+    stage = str(body.get("stage") or "").strip().lower()
+    generation_mode = normalize_generation_mode(body.get("generation_mode"))
+    sdd_spec = str(body.get("sdd_spec") or "")
+    code_diff = str(body.get("code_diff") or "")
+    cases = body.get("cases") if isinstance(body.get("cases"), list) else []
+    if not prompt:
+        return jsonify({"error": "missing prompt"}), 400
+    if stage not in {"spec", "risk", "split", "dimensions", "delivery"}:
+        return jsonify({"error": "unsupported pipeline stage"}), 400
+    try:
+        return jsonify(run_pipeline_skill(stage, prompt, cases, generation_mode, sdd_spec, code_diff))
+    except ValueError as exc:
+        return jsonify({"error": str(exc)}), 400
 
 
 @app.post("/api/ai/execute_case")
