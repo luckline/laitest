@@ -582,9 +582,45 @@ function renderGenerationHistory(records) {
   }
   box.innerHTML = records.map((row) => `
     <article data-generation-id="${escapeHtml(row.id)}">
-      <div><b>${escapeHtml(row.title || "未命名测试需求")}</b><small>${escapeHtml(formatHistoryTime(row.createdAt))}</small><span class="generation-history-meta"><span>${escapeHtml(String(row.generationMode || "sketch").toUpperCase())}</span><span>${escapeHtml(row.modelProvider || "unknown")}</span><span>${escapeHtml(String(row.caseCount || 0))} 条用例</span><span>质量 ${escapeHtml(String(row.specScore ?? "--"))}</span></span></div>
+      <div><b>${escapeHtml(row.title || "未命名测试需求")}</b><small>${escapeHtml(formatHistoryTime(row.createdAt))}</small><span class="generation-history-meta"><span>${row.generationMode === "standard" ? "文档驱动" : "快速生成"}</span><span>${escapeHtml(row.modelProvider || "unknown")}</span><span>${escapeHtml(String(row.caseCount || 0))} 条用例</span><span>质量 ${escapeHtml(String(row.specScore ?? "--"))}</span></span></div>
       <span class="generation-history-actions"><button type="button" data-open-generation="${escapeHtml(row.id)}">恢复到工作台</button><button type="button" data-delete-generation="${escapeHtml(row.id)}">删除</button></span>
     </article>`).join("");
+}
+
+function setSddDocument(content = "", fileName = "", fileSize = 0) {
+  el("sddSpec").value = content;
+  el("sddSpec").dataset.fileName = fileName;
+  const hasContent = Boolean(content.trim());
+  el("sddFileMeta").textContent = hasContent
+    ? `${fileName || "已保存的需求文档"}${fileSize ? ` · ${Math.max(1, Math.round(fileSize / 1024))} KB` : ""} · 已读取 ${content.length.toLocaleString("zh-CN")} 字`
+    : "尚未选择文件";
+  el("removeSddFile").hidden = !hasContent;
+}
+
+async function loadSddDocument(file) {
+  const supported = /\.(txt|md|markdown|json|ya?ml|csv|log)$/i;
+  if (!file) return;
+  if (!supported.test(file.name)) {
+    el("sddSpecFile").value = "";
+    setStatus("暂不支持该文件格式，请上传 TXT、Markdown、JSON、YAML 或 CSV。", "err");
+    return;
+  }
+  if (file.size > 256 * 1024) {
+    el("sddSpecFile").value = "";
+    setStatus("需求文档不能超过 256 KB，请精简后重新上传。", "err");
+    return;
+  }
+  try {
+    const content = (await file.text()).replace(/^\uFEFF/, "").trim();
+    if (!content) throw new Error("文件内容为空");
+    if (content.length > 30000) throw new Error("文档内容超过 30,000 字，请精简后上传");
+    setSddDocument(content, file.name, file.size);
+    setStatus(`已读取需求文档：${file.name}`, "ok");
+  } catch (error) {
+    el("sddSpecFile").value = "";
+    setSddDocument();
+    setStatus(`文档读取失败：${error.message || error}`, "err");
+  }
 }
 
 async function loadGenerationHistory() {
@@ -641,7 +677,7 @@ async function restoreGeneration(id) {
     if (!response.ok || payload.code !== 0) throw new Error(payload.message || "生成详情加载失败");
     const data = payload.data || {};
     el("aiPrompt").value = data.requirement || "";
-    el("sddSpec").value = data.sddSpec || "";
+    setSddDocument(data.sddSpec || "", data.sddSpec ? "历史记录中的需求文档" : "");
     el("codeDiff").value = data.codeDiff || "";
     const mode = data.generationMode === "standard" ? "standard" : "sketch";
     const radio = document.querySelector(`input[name="generationMode"][value="${mode}"]`);
@@ -669,11 +705,18 @@ function restoreWorkspace() {
 }
 
 async function generate() {
-  const prompt = el("aiPrompt").value.trim();
   const selectedProvider = (el("aiModel") && el("aiModel").value ? el("aiModel").value : "deepseek").trim();
   const generationMode = document.querySelector('input[name="generationMode"]:checked')?.value || "sketch";
-  if (!prompt) {
+  const documentContent = el("sddSpec").value.trim();
+  const prompt = generationMode === "standard"
+    ? `请基于上传的需求文档“${el("sddSpec").dataset.fileName || "需求文档"}”完成完整测试分析并生成可执行用例。`
+    : el("aiPrompt").value.trim();
+  if (generationMode === "sketch" && !prompt) {
     setStatus("请输入需求文本后再生成。", "err");
+    return;
+  }
+  if (generationMode === "standard" && !documentContent) {
+    setStatus("文档驱动模式需要先上传需求或 SDD 文档。", "err");
     return;
   }
   if (!hasQuota("generation")) return;
@@ -741,13 +784,17 @@ function toggleRaw() {
 }
 
 function fillSample() {
+  const quickMode = document.querySelector('input[name="generationMode"][value="sketch"]');
+  if (quickMode) quickMode.checked = true;
+  syncGenerationMode();
   el("aiPrompt").value = SAMPLE_PROMPT;
   setStatus("已填充示例需求。", "");
 }
 
 function clearPrompt() {
   el("aiPrompt").value = "";
-  if (el("sddSpec")) el("sddSpec").value = "";
+  if (el("sddSpecFile")) el("sddSpecFile").value = "";
+  setSddDocument();
   if (el("codeDiff")) el("codeDiff").value = "";
   setStatus("已清空输入。", "");
 }
@@ -755,8 +802,9 @@ function clearPrompt() {
 function syncGenerationMode() {
   const mode = document.querySelector('input[name="generationMode"]:checked')?.value || "sketch";
   el("standardFields").hidden = mode !== "standard";
+  el("aiPrompt").hidden = mode === "standard";
   el("aiPrompt").placeholder = mode === "standard"
-    ? "粘贴原始需求、用户故事与验收标准；SDD Spec 请填写在下方。"
+    ? "补充本次测试目标、范围和特别关注的风险；完整需求请通过下方上传文档。"
     : "描述功能目标、业务规则、成功条件、异常限制和关键测试数据。";
 }
 
@@ -768,6 +816,8 @@ function bindEvents() {
   el("toggleRaw").addEventListener("click", toggleRaw);
   el("fillSample").addEventListener("click", fillSample);
   el("clearPrompt").addEventListener("click", clearPrompt);
+  el("sddSpecFile").addEventListener("change", (event) => loadSddDocument(event.target.files?.[0]));
+  el("removeSddFile").addEventListener("click", () => { el("sddSpecFile").value = ""; setSddDocument(); setStatus("需求文档已移除。", ""); });
   document.querySelectorAll('input[name="generationMode"]').forEach((radio) => radio.addEventListener("change", syncGenerationMode));
   document.querySelectorAll("[data-demo]").forEach((button) => button.addEventListener("click", () => loadDemo(button.dataset.demo)));
   el("clearHistory").addEventListener("click", () => { localStorage.removeItem(STORAGE_HISTORY); renderHistory(); setStatus("本地执行记录已清空。", ""); });

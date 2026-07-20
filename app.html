@@ -16,7 +16,7 @@
     <link rel="stylesheet" href="/css/system-density.css?v=1" />
     <link rel="stylesheet" href="/css/product-nav.css?v=3" />
     <link rel="stylesheet" href="/css/lingtest-account.css?v=2" />
-    <link rel="stylesheet" href="/css/lingtest-pipeline.css?v=1" />
+    <link rel="stylesheet" href="/css/lingtest-pipeline.css?v=2" />
   </head>
   <body class="app-page">
     <div class="app-shell">
@@ -60,8 +60,8 @@
             <div class="model-field"><label for="aiModel">生成模型</label><select id="aiModel" class="ai-select"><option value="deepseek" selected>DeepSeek</option><option value="qianwen">Qianwen</option><option value="gemini">Gemini</option></select></div>
           </div>
           <div class="generation-mode" role="radiogroup" aria-label="用例生成模式">
-            <label><input type="radio" name="generationMode" value="standard"><span><b>Standard</b><small>SDD Spec + 原始需求，适合正式交付</small></span></label>
-            <label><input type="radio" name="generationMode" value="sketch" checked><span><b>Sketch</b><small>轻量需求快速生成，适合探索与补测</small></span></label>
+            <label><input type="radio" name="generationMode" value="sketch" checked><span><b>快速生成</b><small>直接输入需求，适合快速分析与补测</small></span></label>
+            <label><input type="radio" name="generationMode" value="standard"><span><b>文档驱动</b><small>上传需求文档，适合完整评审与正式交付</small></span></label>
           </div>
           <div class="pipeline-steps" aria-label="六步生成流水线"><span><b>01</b>Spec 验证</span><i>→</i><span><b>02</b>风险计划</span><i>→</i><span><b>03</b>需求拆分</span><i>→</i><span><b>04</b>覆盖维度</span><i>→</i><span><b>05</b>详细用例</span><i>→</i><span><b>06</b>交付闭环</span></div>
           <div class="demo-scenarios"><span>可运行示例</span><button type="button" data-demo="content">页面内容验证</button><button type="button" data-demo="search">站内搜索</button><button type="button" data-demo="login">登录流程</button><small>选择后会自动填入测试地址和用例</small></div>
@@ -71,8 +71,14 @@
             placeholder="- 登录成功：手机号+密码+验证码正确&#10;- 登录失败：密码错误&#10;- 登录失败：验证码错误超过5次被锁定"
           ></textarea>
           <div id="standardFields" class="standard-fields" hidden>
-            <label for="sddSpec"><span>SDD Spec</span><small>粘贴技术方案、接口契约、状态设计与验收标准</small></label>
-            <textarea id="sddSpec" placeholder="例如：接口契约、数据结构、状态流转、权限边界、灰度策略……"></textarea>
+            <div class="document-field-head"><span>需求 / SDD 文档</span><small>文档仅用于本次分析；登录后随生成记录保存</small></div>
+            <div class="document-upload">
+              <input id="sddSpecFile" type="file" accept=".txt,.md,.markdown,.json,.yaml,.yml,.csv,.log,text/plain,text/markdown,application/json" />
+              <label for="sddSpecFile"><b>上传需求文档</b><small>支持 TXT、Markdown、JSON、YAML、CSV，最大 256 KB</small></label>
+              <div id="sddFileMeta" class="document-file-meta">尚未选择文件</div>
+              <button id="removeSddFile" type="button" hidden>移除</button>
+              <textarea id="sddSpec" hidden aria-hidden="true"></textarea>
+            </div>
           </div>
           <details class="diff-context"><summary>可选：加入代码 Diff 影响面</summary><textarea id="codeDiff" placeholder="粘贴关键代码 diff、改动文件或影响模块；领测会将其纳入风险评估。"></textarea></details>
           <div class="ai-toolbar">
@@ -120,7 +126,7 @@
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <script src="/product-nav.js?v=5"></script>
     <script src="/lingtest-account.js?v=5"></script>
-    <script src="/app.js?v=generation-history-1"></script>
+    <script src="/app.js?v=document-mode-1"></script>
   <script defer src="/site-analytics.js"></script><script defer src="/_vercel/insights/script.js"></script>
 </body>
 </html>

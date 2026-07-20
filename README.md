@@ -4,7 +4,7 @@ Luckline 的个人站与产品中心，统一承载个人介绍、产品发布�
 
 当前包含两个持续迭代的产品：
 
-- **领测 LingTest**：AI 测试设计与质量工作台，以 Standard / Sketch 双模式完成 Spec 验证、风险计划、覆盖设计、结构化用例与 Playwright 验证。
+- **领测 LingTest**：AI 测试设计与质量工作台，以“快速生成 / 文档驱动”双模式完成需求验证、风险计划、覆盖设计、结构化用例与 Playwright 验证；文档驱动模式支持上传 TXT、Markdown、JSON、YAML、CSV 等需求文件。
 - **时光智行 TimeLens**（原时光透卡）：AI 旅行规划、公开路线、出发清单、逐日记录与城市足迹工具。
 
 生产地址：[https://laitest.tech](https://laitest.tech)
