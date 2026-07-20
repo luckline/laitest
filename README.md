@@ -270,6 +270,9 @@ Node.js 示例见 `examples/shiguang_touka_travel_plan_client.js`。
 | `LAITEST_DEFAULT_LANG` | 默认生成语言，默认 `zh-CN` |
 | `DEEPSEEK_API_KEY` | DeepSeek API Key |
 | `DEEPSEEK_MODEL` | 默认 `deepseek-v4-flash`；旧值 `deepseek-chat` 会自动迁移 |
+| `DEEPSEEK_MAX_TOKENS` | 用例生成输出预算，默认 `4096`；系统会按每条约 400 tokens 自动托底，详细用例较多时可上调至 `8192` |
+| `DEEPSEEK_PARSE_RETRIES` | 非法 JSON 的重新生成次数，默认 `2` |
+| `DEEPSEEK_FORCE_JSON_OBJECT` | 默认 `1`，要求模型使用 JSON Object 模式；兼容代理不支持时可设为 `0` |
 | `QIANWEN_API_KEY` | 通义千问 API Key |
 | `QIANWEN_MODEL` | 默认 `qwen-plus` |
 | `GEMINI_API_KEY` | Gemini API Key |

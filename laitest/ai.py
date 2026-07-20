@@ -737,6 +737,15 @@ def _json_loads_loose(text: str) -> Any:
     candidates.append(re.sub(r",\s*([}\]])", r"\1", base))
     # Remove accidental control chars that sometimes appear in streaming responses.
     candidates.append(re.sub(r"[\x00-\x08\x0b\x0c\x0e-\x1f]", "", base))
+    # Repair a conservative, common LLM mistake: a missing comma between
+    # newline-separated object members. Do not touch same-line content.
+    candidates.append(
+        re.sub(
+            r'([}\]"0-9]|true|false|null)\s*\n\s*(?="[^"\n]+"\s*:)',
+            r"\1,\n",
+            base,
+        )
+    )
 
     last_err: Exception | None = None
     dedup: list[str] = []
@@ -1727,13 +1736,16 @@ def _deepseek_generate_cases(prompt: str) -> list[SuggestedCase]:
     model = _deepseek_model()
     _timeout_config, timeout_s = _deepseek_timeout_effective()
     _retries_config, retries = _deepseek_retries_effective()
-    max_tokens = _safe_int_env("DEEPSEEK_MAX_TOKENS", 1400, 256, 8192)
+    max_tokens = _safe_int_env("DEEPSEEK_MAX_TOKENS", 4096, 512, 8192)
     max_cases = _safe_int_env("DEEPSEEK_MAX_CASES", 10, 1, 30)
     prompt_max_chars = _safe_int_env("DEEPSEEK_PROMPT_MAX_CHARS", 4500, 500, 20000)
     target_cases = _requested_case_count(prompt, max_cases)
+    # Protect deployments that still carry the old 1400-token environment
+    # value. Detailed cases need roughly 400 output tokens per requested case.
+    max_tokens = max(max_tokens, min(8192, target_cases * 400))
     parse_retries = _safe_int_env("DEEPSEEK_PARSE_RETRIES", 2, 0, 5)
     total_deadline_s = _deepseek_total_deadline_effective(timeout_s, retries)
-    force_json_object = str(os.environ.get("DEEPSEEK_FORCE_JSON_OBJECT", "0")).strip().lower() in (
+    force_json_object = str(os.environ.get("DEEPSEEK_FORCE_JSON_OBJECT", "1")).strip().lower() in (
         "1",
         "true",
         "yes",
@@ -1747,11 +1759,10 @@ def _deepseek_generate_cases(prompt: str) -> list[SuggestedCase]:
     last_parse_error: Exception | None = None
     t0 = time.monotonic()
     for parse_attempt in range(1, parse_attempts + 1):
-        # If prior parse failed, reduce output size to lower truncation risk.
-        scale = 0.7 ** (parse_attempt - 1)
-        attempt_max_tokens = max(256, int(max_tokens * scale))
-        attempt_max_cases = max(target_cases, int(max_cases * scale))
-        attempt_max_cases = min(max_cases, max(1, attempt_max_cases))
+        # Detailed executable cases are output-heavy. A parse failure is often
+        # caused by truncation, so retries must increase—not shrink—the budget.
+        attempt_max_tokens = min(8192, int(max_tokens * (1.35 ** (parse_attempt - 1))))
+        attempt_max_cases = max_cases
         req_body = {
             "model": model,
             "messages": [
@@ -2240,9 +2251,9 @@ def ai_runtime_status() -> dict[str, Any]:
         "deepseek_retries_configured": deepseek_retries_configured,
         "deepseek_parse_retries": _safe_int_env("DEEPSEEK_PARSE_RETRIES", 2, 0, 5),
         "deepseek_total_deadline_s": deepseek_total_deadline_s,
-        "deepseek_force_json_object": str(os.environ.get("DEEPSEEK_FORCE_JSON_OBJECT", "0")).strip().lower()
+        "deepseek_force_json_object": str(os.environ.get("DEEPSEEK_FORCE_JSON_OBJECT", "1")).strip().lower()
         in ("1", "true", "yes", "on"),
-        "deepseek_max_tokens": _safe_int_env("DEEPSEEK_MAX_TOKENS", 1400, 256, 8192),
+        "deepseek_max_tokens": _safe_int_env("DEEPSEEK_MAX_TOKENS", 4096, 512, 8192),
         "deepseek_max_cases": _safe_int_env("DEEPSEEK_MAX_CASES", 10, 1, 30),
         "deepseek_prompt_max_chars": _safe_int_env("DEEPSEEK_PROMPT_MAX_CHARS", 4500, 500, 20000),
         "deepseek_travel_max_tokens": _safe_int_env("DEEPSEEK_TRAVEL_MAX_TOKENS", 2200, 512, 8192),
