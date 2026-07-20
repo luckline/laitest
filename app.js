@@ -44,6 +44,7 @@ const FREE_LIMITS = { generation: 5, execution: 3 };
 const LOGGED_LIMITS = { generation: 10, execution: 6 };
 const PRO_LIMITS = { generation: { daily: 50, monthly: 1000 }, execution: { daily: 80, monthly: 1500 } };
 const ENTITLEMENT_API = "https://timelens.cc/api/lingtest/licenses";
+const GENERATION_API = "https://timelens.cc/api/lingtest/generations";
 const ACCOUNT_TOKEN_KEY = "timelens.pc.token";
 const DEMOS = {
   content: { target:"https://example.com/", case:{case_id:"DEMO-CONTENT-001",module:"页面内容",title:"验证示例页面核心内容",priority:"P1",preconditions:["示例页面可访问"],steps:[{step_no:1,action:"打开页面并读取主要内容",test_data:"",expected_result:"页面显示 Example Domain"}],expected_result:"页面显示 Example Domain",assertions:[{type:"text",value:"Example Domain"}]}},
@@ -566,6 +567,102 @@ function renderHistory() {
   const labels={passed:"通过",failed:"失败",blocked:"被拦截",needs_review:"需确认"};
   box.innerHTML=rows.map(row=>`<article><span class="run-status ${escapeHtml(row.status)}">${escapeHtml(labels[row.status]||row.status)}</span><div><b>${escapeHtml(row.title)}</b><small>${escapeHtml(row.target)} · ${new Date(row.createdAt).toLocaleString()}</small></div><em>${escapeHtml(formatElapsed(row.durationMs))}</em></article>`).join("");
 }
+
+function formatHistoryTime(value) {
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? "" : date.toLocaleString("zh-CN", { hour12: false });
+}
+
+function renderGenerationHistory(records) {
+  const box = el("generationHistoryList");
+  if (!box) return;
+  if (!Array.isArray(records) || !records.length) {
+    box.innerHTML = "<p>还没有云端生成记录，完成下一次生成后会自动保存。</p>";
+    return;
+  }
+  box.innerHTML = records.map((row) => `
+    <article data-generation-id="${escapeHtml(row.id)}">
+      <div><b>${escapeHtml(row.title || "未命名测试需求")}</b><small>${escapeHtml(formatHistoryTime(row.createdAt))}</small><span class="generation-history-meta"><span>${escapeHtml(String(row.generationMode || "sketch").toUpperCase())}</span><span>${escapeHtml(row.modelProvider || "unknown")}</span><span>${escapeHtml(String(row.caseCount || 0))} 条用例</span><span>质量 ${escapeHtml(String(row.specScore ?? "--"))}</span></span></div>
+      <span class="generation-history-actions"><button type="button" data-open-generation="${escapeHtml(row.id)}">恢复到工作台</button><button type="button" data-delete-generation="${escapeHtml(row.id)}">删除</button></span>
+    </article>`).join("");
+}
+
+async function loadGenerationHistory() {
+  const section = el("generationHistorySection");
+  if (!section) return;
+  const token = accountToken();
+  section.hidden = !token;
+  if (!token) return;
+  el("generationHistoryList").innerHTML = "<p>正在加载生成记录…</p>";
+  try {
+    const response = await fetch(`${GENERATION_API}?limit=20`, { headers: accountHeaders() });
+    const payload = await response.json().catch(() => ({}));
+    if (response.status === 401) { section.hidden = true; return; }
+    if (!response.ok || payload.code !== 0) throw new Error(payload.message || "生成记录加载失败");
+    renderGenerationHistory(payload.data?.records || []);
+    el("generationHistoryNote").textContent = `已保存 ${Number(payload.data?.total || 0)} 次生成，点击记录可恢复需求、分析和完整用例。`;
+  } catch (error) {
+    el("generationHistoryList").innerHTML = `<p class="history-error">${escapeHtml(error.message || "生成记录加载失败")}</p>`;
+  }
+}
+
+async function saveGeneratedAsset({ out, prompt, generationMode, sddSpec, codeDiff }) {
+  if (!accountToken()) return "local";
+  try {
+    const response = await fetch(GENERATION_API, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...accountHeaders() },
+      body: JSON.stringify({
+        title: prompt.split(/\r?\n/).find((line) => line.trim())?.trim().slice(0, 200) || "未命名测试需求",
+        requirement: prompt,
+        generationMode,
+        modelProvider: out.provider || "unknown",
+        sddSpec,
+        codeDiff,
+        pipeline: out.pipeline || {},
+        cases: out.suggestions || [],
+      }),
+    });
+    const payload = await response.json().catch(() => ({}));
+    if (!response.ok || payload.code !== 0) throw new Error(payload.message || "云端保存失败");
+    await loadGenerationHistory();
+    return "saved";
+  } catch (error) {
+    el("generationHistoryNote").textContent = `本次生成成功，但云端保存失败：${error.message || "请稍后重试"}`;
+    return "failed";
+  }
+}
+
+async function restoreGeneration(id) {
+  try {
+    setStatus("正在恢复云端生成记录…", "");
+    const response = await fetch(`${GENERATION_API}/${encodeURIComponent(id)}`, { headers: accountHeaders() });
+    const payload = await response.json().catch(() => ({}));
+    if (!response.ok || payload.code !== 0) throw new Error(payload.message || "生成详情加载失败");
+    const data = payload.data || {};
+    el("aiPrompt").value = data.requirement || "";
+    el("sddSpec").value = data.sddSpec || "";
+    el("codeDiff").value = data.codeDiff || "";
+    const mode = data.generationMode === "standard" ? "standard" : "sketch";
+    const radio = document.querySelector(`input[name="generationMode"][value="${mode}"]`);
+    if (radio) radio.checked = true;
+    syncGenerationMode();
+    renderOutput({ suggestions: data.cases || [], pipeline: data.pipeline || {}, provider: data.modelProvider || "cloud-history", runtime: { mode: "cloud-history" } });
+    setStatus(`已恢复“${data.title || "生成记录"}”的 ${Number(data.caseCount || 0)} 条用例。`, "ok");
+    el("pipelineResult").scrollIntoView({ behavior: "smooth", block: "start" });
+  } catch (error) { setStatus(`恢复失败：${error.message || error}`, "err"); }
+}
+
+async function deleteGeneration(id) {
+  if (!window.confirm("确认删除这条生成记录？删除后无法恢复。")) return;
+  try {
+    const response = await fetch(`${GENERATION_API}/${encodeURIComponent(id)}`, { method: "DELETE", headers: accountHeaders() });
+    const payload = await response.json().catch(() => ({}));
+    if (!response.ok || payload.code !== 0) throw new Error(payload.message || "删除失败");
+    await loadGenerationHistory();
+    setStatus("生成记录已删除。", "ok");
+  } catch (error) { setStatus(`删除失败：${error.message || error}`, "err"); }
+}
 function restoreWorkspace() {
   const saved=safeRead(STORAGE_CASES,null); if(!saved||!Array.isArray(saved.cases)||!saved.cases.length)return;
   state.lastCases=saved.cases; el("executionTarget").value=saved.target||""; renderSuggestions(saved.cases); renderSummary({suggestions:saved.cases,provider:"local",runtime:{mode:"local-history"}}); setStatus("已恢复上次的测试用例。","");
@@ -601,11 +698,18 @@ async function generate() {
     const t1 = typeof performance !== "undefined" ? performance.now() : Date.now();
     out.client_elapsed_ms = Math.max(0, Math.round(t1 - t0));
     renderOutput(out);
+    const cloudState = await saveGeneratedAsset({
+      out,
+      prompt,
+      generationMode,
+      sddSpec: generationMode === "standard" ? el("sddSpec").value.trim() : "",
+      codeDiff: el("codeDiff").value.trim(),
+    });
     const count = Array.isArray(out.suggestions) ? out.suggestions.length : 0;
     const elapsedLabel = formatElapsed(out.elapsed_ms || out.client_elapsed_ms || 0);
     setStatus(
-      elapsedLabel ? `生成完成：${count} 条用例，耗时 ${elapsedLabel}。` : `生成完成：${count} 条用例。`,
-      out.warning ? "warn" : "ok"
+      `${elapsedLabel ? `生成完成：${count} 条用例，耗时 ${elapsedLabel}` : `生成完成：${count} 条用例`}${cloudState === "saved" ? "，已保存到账号" : cloudState === "failed" ? "，云端保存失败" : "，登录后可云端保存"}。`,
+      out.warning || cloudState === "failed" ? "warn" : "ok"
     );
   } catch (e) {
     setStatus("生成失败：" + String(e && e.message ? e.message : e), "err");
@@ -667,6 +771,13 @@ function bindEvents() {
   document.querySelectorAll('input[name="generationMode"]').forEach((radio) => radio.addEventListener("change", syncGenerationMode));
   document.querySelectorAll("[data-demo]").forEach((button) => button.addEventListener("click", () => loadDemo(button.dataset.demo)));
   el("clearHistory").addEventListener("click", () => { localStorage.removeItem(STORAGE_HISTORY); renderHistory(); setStatus("本地执行记录已清空。", ""); });
+  el("refreshGenerationHistory").addEventListener("click", loadGenerationHistory);
+  el("generationHistoryList").addEventListener("click", (event) => {
+    const open = event.target.closest("[data-open-generation]");
+    const remove = event.target.closest("[data-delete-generation]");
+    if (open) restoreGeneration(open.dataset.openGeneration);
+    if (remove) deleteGeneration(remove.dataset.deleteGeneration);
+  });
   el("executionTarget").addEventListener("change", persistCases);
   el("runAllCases").addEventListener("click", executeAllCases);
   el("closeExecutionDialog").addEventListener("click", () => el("executionDialog").close());
@@ -698,6 +809,7 @@ function main() {
   renderQuota();
   refreshEntitlement();
   refreshUsage();
+  loadGenerationHistory();
   if (!state.lastCases.length) setStatus("就绪。按 Ctrl/Cmd + Enter 可快速生成。", "");
 }
 
@@ -705,6 +817,8 @@ function syncAccountState(detail) {
   state.accountLoggedIn=Boolean(detail?.user?.id);
   if(detail?.entitlement)state.entitlement=detail.entitlement;
   renderQuota();
+  if (state.accountLoggedIn) loadGenerationHistory();
+  else if (el("generationHistorySection")) el("generationHistorySection").hidden = true;
 }
 
 window.addEventListener("lingtest:account-loaded",event=>syncAccountState(event.detail));

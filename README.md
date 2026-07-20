@@ -200,6 +200,9 @@ PC 版当前支持：
 | GET/POST | `/api/cases` | 测试用例 |
 | GET/POST | `/api/runs` | 测试运行 |
 | POST | `/api/ai/generate_cases` | 生成测试用例 |
+| POST | `https://timelens.cc/api/lingtest/generations` | 登录用户保存需求、六步分析与完整用例 |
+| GET | `https://timelens.cc/api/lingtest/generations` | 获取当前账号生成历史 |
+| GET/DELETE | `https://timelens.cc/api/lingtest/generations/:id` | 恢复或删除当前账号生成记录 |
 | POST | `/api/ai/execute_case` | 执行页面用例 |
 | POST | `/api/ai/travel_plan` | 生成旅行计划 |
 

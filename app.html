@@ -102,7 +102,8 @@
           <pre id="aiOut" class="ai-pre" hidden></pre>
         </section>
         <a class="guide-entry" href="/lingtest-tools"><span><small>LINGTEST QA TOOLBOX</small><b>常用测试工具</b><p>时间戳转换、Base64 编解码，数据仅在本地浏览器处理。</p></span><strong>打开工具箱 →</strong></a>
-        <section class="local-history"><div><span class="step-number">LOCAL HISTORY</span><h2>最近执行</h2><p>记录仅保存在当前浏览器，不会上传账号。</p></div><button id="clearHistory" class="btn text" type="button">清空记录</button><div id="historyList" class="history-list"><p>还没有执行记录</p></div></section>
+        <section id="generationHistorySection" class="cloud-history" hidden><div><span class="step-number">CLOUD TEST ASSETS</span><h2>我的生成记录</h2><p id="generationHistoryNote">登录后的需求、分析与完整用例会安全保存到当前账号。</p></div><button id="refreshGenerationHistory" class="btn text" type="button">刷新记录</button><div id="generationHistoryList" class="generation-history-list"><p>正在加载生成记录…</p></div></section>
+        <section class="local-history"><div><span class="step-number">LOCAL EXECUTION</span><h2>最近执行</h2><p>页面执行记录仅保存在当前浏览器，不会上传账号。</p></div><button id="clearHistory" class="btn text" type="button">清空记录</button><div id="historyList" class="history-list"><p>还没有执行记录</p></div></section>
       </main>
 
       <footer class="app-foot"><span>领测 LingTest · AI 测试设计与质量工作台</span><span>结构化 JSON · Excel 导出 · 多模型支持</span><a href="mailto:lanceqa@agent.qq.com">lanceqa@agent.qq.com</a></footer>
@@ -119,7 +120,7 @@
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <script src="/product-nav.js?v=5"></script>
     <script src="/lingtest-account.js?v=5"></script>
-    <script src="/app.js?v=test-pipeline-1"></script>
+    <script src="/app.js?v=generation-history-1"></script>
   <script defer src="/site-analytics.js"></script><script defer src="/_vercel/insights/script.js"></script>
 </body>
 </html>
