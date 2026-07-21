@@ -26,10 +26,18 @@ CATEGORIES={
 PRIVATE=("iqiyi","qiyi.domain","qiyi.virtual","jenkins","pms.","gitlab.","测试环境","线上质量-","月报","订单比例","璞玉爱奇艺")
 SENSITIVE=("公积金","个税","办税","征信","信用信息","学信档案","学籍查询","成绩查询","预约挂号","积分落户","卖家工作台","个人申请","账户","archive.action","manage.do","localhost","chrome://","file://","招聘","内推","影院","就业管理系统","wiki.n.miui.com","广告位出售")
 PREFERRED=("github.com","python.org","developer.mozilla.org","w3.org","ibm.com","runoob.com","ruanyifeng.com","testerhome.com","segmentfault.com","zhihu.com","cnblogs.com","csdn.net")
+DEAD=(
+ "cnblogs.com/feixuelove1009/p/5823135.html","segmentfault.com/a/1190000010140660",
+ "ibm.com/developerworks/","github.com/n1k0/casperjs/issues/248",
+ "github.com/snailclimb/springboot-integration-examples/tree/master/springboot-mybatis/springboot-mybatis-xml/src/main",
+ "segmentfault.com/a/1190000017211657","github.com/pivotal/jasmine/tree/master/dist",
+ "cnblogs.com/lwme/archive/2012/08/18/jquery-flot-plugin.html","cnblogs.com/maxupeng/archive/2010/12/28/1918480.html",
+ "ourob.cn/","yinyuetai.com/","lvmama.com/","blog.sina.com.cn/s/blog_4cdd083e0100mxrz.html",
+ "cifnews.com/article/17261","iresearch.cn/")
 
 def unsafe(folder,title,url):
     text=f"{folder} {title} {url}".lower(); host=(urlsplit(url).hostname or "").lower()
-    return any(x in text for x in PRIVATE+SENSITIVE) or host in {"localhost","127.0.0.1"} or host.startswith(("10.","192.168.","172.16.")) or urlsplit(url).scheme not in {"http","https"}
+    return any(x in text for x in PRIVATE+SENSITIVE+DEAD) or host in {"localhost","127.0.0.1"} or host.startswith(("10.","192.168.","172.16.")) or urlsplit(url).scheme not in {"http","https"}
 def clean_url(url):
     p=urlsplit(url); query=""
     if p.hostname in {"youtube.com","www.youtube.com","youtu.be"}: query=urlencode([(k,v) for k,v in parse_qsl(p.query) if k=="v"])
