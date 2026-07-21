@@ -10,7 +10,7 @@
     />
     <link rel="stylesheet" href="/css/styles.css?v=app-layout-2" />
     <link rel="stylesheet" href="/css/app-modern.css?v=1" />
-    <link rel="stylesheet" href="/css/lingtest-execution.css?v=1" />
+    <link rel="stylesheet" href="/css/lingtest-execution.css?v=2" />
     <link rel="stylesheet" href="/css/lingtest-workspace-v2.css?v=2" />
     <link rel="stylesheet" href="/css/app-shell-fix.css?v=5" />
     <link rel="stylesheet" href="/css/system-density.css?v=1" />
@@ -54,7 +54,12 @@
         </section>
         <section class="usage-strip" aria-label="使用额度"><div><span id="planLabel">FREE PLAN</span><b id="quotaSummary">今日免费额度加载中…</b><small id="quotaNote">游客每天可生成 5 次、执行 3 次</small></div><div class="usage-actions"><span id="generationQuota">生成 0/5</span><span id="executionQuota">执行 0/3</span><a id="accountLoginPrompt" href="/lingtest-login?return=%2Fapp">登录后次数翻倍</a><button id="openActivation" type="button">输入激活码</button><a href="/lingtest-pricing">查看专业版 →</a></div></section>
 
-        <section class="composer-card">
+        <nav class="workspace-mode-tabs" aria-label="工作台功能切换">
+          <button type="button" data-workspace-mode="design" class="active"><span>01</span><b>AI 用例设计</b><small>分析需求、生成并评审用例</small></button>
+          <button type="button" data-workspace-mode="execution"><span>02</span><b>自动化执行</b><small>配置环境、运行用例并查看证据</small><em id="executionCaseBadge">0</em></button>
+        </nav>
+
+        <section class="composer-card" data-workspace-panel="design">
           <div class="composer-head">
             <div><span class="step-number">AI TEST PIPELINE</span><h2>从需求到可交付测试资产</h2><p>选择输入模式，领测会先审查需求与风险，再生成用例。</p></div>
             <div class="model-field"><label for="aiModel">生成模型</label><select id="aiModel" class="ai-select"><option value="deepseek" selected>DeepSeek</option><option value="qianwen">Qianwen</option><option value="gemini">Gemini</option></select></div>
@@ -90,28 +95,36 @@
           <p id="aiStatus" class="ai-status"><span class="status-dot"></span>准备就绪</p>
         </section>
 
-        <section class="result-card">
+        <section class="result-card" data-workspace-panel="design">
           <div class="ai-out-head">
-            <div><span class="step-number">TEST ASSETS</span><h2>用例与执行结果</h2><p>统一评审测试设计，并在真实页面验证关键路径。</p></div>
+            <div><span class="step-number">TEST ASSETS</span><h2>用例评审与交付</h2><p>检查测试覆盖、步骤与预期结果，确认后再进入自动化执行。</p></div>
             <div class="ai-toolbar right">
               <button id="downloadExcel" class="btn ghost" type="button">导出 Excel</button>
               <button id="downloadCaseHome" class="btn ghost" type="button">导出 Case Home JSON</button>
               <button id="copyJson" class="btn ghost" type="button">复制 JSON</button>
               <button id="toggleRaw" class="btn text" type="button">查看原始数据</button>
+              <button id="openExecutionWorkspace" class="btn solid" type="button">进入自动化执行 →</button>
             </div>
           </div>
           <div id="pipelineResult" class="pipeline-result" hidden></div>
-          <div class="execution-bar">
-            <label for="executionTarget"><span>测试环境地址</span><input id="executionTarget" type="url" inputmode="url" placeholder="https://example.com/login" autocomplete="url" /></label>
-            <div><span class="execution-hint">填写目标页面后，可执行右侧单条用例</span><button id="runAllCases" class="btn solid" type="button">执行全部</button></div>
-          </div>
           <div id="aiSummary" class="ai-summary">等待生成测试资产</div>
-          <div id="aiCards" class="ai-cards"><div class="workspace-empty"><span>◎</span><b>还没有测试用例</b><p>在上方输入业务需求，AI 将生成可评审、可导出、可自动执行的结构化用例。</p><small>支持正常流 · 边界场景 · 异常处理 · 安全风险</small></div></div>
+          <div id="aiCards" class="ai-cards"><div class="workspace-empty"><span>◎</span><b>还没有测试用例</b><p>在上方输入业务需求，AI 将生成可评审、可导出的结构化用例。</p><small>支持正常流 · 边界场景 · 异常处理 · 安全风险</small></div></div>
           <pre id="aiOut" class="ai-pre" hidden></pre>
         </section>
-        <a class="guide-entry" href="/lingtest-tools"><span><small>LINGTEST QA TOOLBOX</small><b>常用测试工具</b><p>时间戳转换、Base64 编解码，数据仅在本地浏览器处理。</p></span><strong>打开工具箱 →</strong></a>
-        <section id="generationHistorySection" class="cloud-history" hidden><div><span class="step-number">CLOUD TEST ASSETS</span><h2>我的生成记录</h2><p id="generationHistoryNote">登录后的需求、分析与完整用例会安全保存到当前账号。</p></div><button id="refreshGenerationHistory" class="btn text" type="button">刷新记录</button><div id="generationHistoryList" class="generation-history-list"><p>正在加载生成记录…</p></div></section>
-        <section class="local-history"><div><span class="step-number">LOCAL EXECUTION</span><h2>最近执行</h2><p>页面执行记录仅保存在当前浏览器，不会上传账号。</p></div><button id="clearHistory" class="btn text" type="button">清空记录</button><div id="historyList" class="history-list"><p>还没有执行记录</p></div></section>
+        <a class="guide-entry" data-workspace-panel="design" href="/lingtest-tools"><span><small>LINGTEST QA TOOLBOX</small><b>常用测试工具</b><p>时间戳转换、Base64 编解码，数据仅在本地浏览器处理。</p></span><strong>打开工具箱 →</strong></a>
+        <section id="generationHistorySection" data-workspace-panel="design" class="cloud-history" hidden><div><span class="step-number">CLOUD TEST ASSETS</span><h2>我的生成记录</h2><p id="generationHistoryNote">登录后的需求、分析与完整用例会安全保存到当前账号。</p></div><button id="refreshGenerationHistory" class="btn text" type="button">刷新记录</button><div id="generationHistoryList" class="generation-history-list"><p>正在加载生成记录…</p></div></section>
+
+        <section id="executionWorkspace" class="execution-workspace" data-workspace-panel="execution" hidden>
+          <div class="execution-workspace-head"><div><span class="step-number">PLAYWRIGHT EXECUTION</span><h2>页面自动化执行</h2><p>使用已生成的用例验证真实页面，集中查看状态、日志和失败截图。</p></div><button id="backToDesign" class="btn ghost" type="button">← 返回用例设计</button></div>
+          <div class="execution-bar">
+            <label for="executionTarget"><span>测试环境地址</span><input id="executionTarget" type="url" inputmode="url" placeholder="https://example.com/login" autocomplete="url" /></label>
+            <div><span class="execution-hint">确认环境与测试数据安全后再执行</span><button id="runAllCases" class="btn solid" type="button">执行全部可自动化用例</button></div>
+          </div>
+          <div id="executionSummary" class="execution-summary">尚未载入用例，请先在“AI 用例设计”中生成或恢复用例。</div>
+          <p id="executionStatus" class="ai-status"><span class="status-dot"></span>准备执行</p>
+          <div id="executionCases" class="execution-cases"><div class="workspace-empty"><span>▷</span><b>等待测试用例</b><p>生成用例后会自动同步到这里，无需重复导入。</p></div></div>
+          <section class="local-history"><div><span class="step-number">LOCAL EXECUTION</span><h2>最近执行</h2><p>页面执行记录仅保存在当前浏览器，不会上传账号。</p></div><button id="clearHistory" class="btn text" type="button">清空记录</button><div id="historyList" class="history-list"><p>还没有执行记录</p></div></section>
+        </section>
       </main>
 
       <footer class="app-foot"><span>领测 LingTest · AI 测试设计与质量工作台</span><span>结构化 JSON · Excel 导出 · 多模型支持</span><a href="mailto:lanceqa@agent.qq.com">lanceqa@agent.qq.com</a></footer>
@@ -128,7 +141,7 @@
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <script src="/product-nav.js?v=5"></script>
     <script src="/lingtest-account.js?v=5"></script>
-    <script src="/app.js?v=pipeline-skills-2"></script>
+    <script src="/app.js?v=workspace-split-1"></script>
   <script defer src="/site-analytics.js"></script><script defer src="/_vercel/insights/script.js"></script>
 </body>
 </html>

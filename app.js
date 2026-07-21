@@ -34,6 +34,7 @@ const state = {
   entitlement: { plan: "free", active: false },
   accountLoggedIn: false,
   remoteUsage: null,
+  workspaceMode: "design",
   selectedPipelineStage: "spec",
   pipelineSkillOutputs: {},
 };
@@ -156,6 +157,11 @@ function setStatus(text, kind) {
   const node = el("aiStatus");
   node.textContent = text;
   node.className = "ai-status" + (kind ? " " + kind : "");
+  const executionNode = el("executionStatus");
+  if (executionNode) {
+    executionNode.textContent = text;
+    executionNode.className = "ai-status" + (kind ? " " + kind : "");
+  }
 }
 
 function setBusy(busy) {
@@ -335,19 +341,19 @@ function renderStepLines(steps) {
 
 function renderSuggestions(list) {
   const box = el("aiCards");
+  const executionBox = el("executionCases");
   if (!Array.isArray(list) || list.length === 0) {
+    state.lastCases = [];
     state.lastRows = [];
     box.innerHTML = '<div class="ai-empty">未生成到可展示用例，请调整需求描述后重试。</div>';
+    if (executionBox) executionBox.innerHTML = '<div class="workspace-empty"><span>▷</span><b>等待测试用例</b><p>生成用例后会自动同步到这里，无需重复导入。</p></div>';
+    renderExecutionSummary();
     return;
   }
 
   state.lastCases = list.map((item, idx) => item && item.case_id ? item : normalizeTestCase(item, idx));
   const rows = state.lastCases
     .map((tc) => {
-      const result = state.executionResults[tc.case_id];
-      const running = state.runningCases.has(tc.case_id);
-      const status = running ? "running" : result ? result.status : "idle";
-      const statusText = {running:"执行中",passed:"通过",failed:"失败",blocked:"被拦截",needs_review:"需确认",idle:"未执行"}[status] || status;
       return `
       <tr data-case-id="${escapeHtml(tc.case_id)}">
         <td><div class="ai-cell-lines">${escapeHtml(tc.case_id)}</div></td>
@@ -357,7 +363,6 @@ function renderSuggestions(list) {
         <td><div class="ai-cell-lines">${escapeHtml(renderLines(tc.preconditions)).replaceAll("\n", "<br />")}</div></td>
         <td><div class="ai-cell-lines">${escapeHtml(renderStepLines(tc.steps)).replaceAll("\n", "<br />")}</div></td>
         <td><div class="ai-cell-lines">${escapeHtml(tc.expected_result || "无")}</div></td>
-        <td class="execution-cell"><span class="run-status ${escapeHtml(status)}">${escapeHtml(statusText)}</span><button class="case-run-btn" data-run-case="${escapeHtml(tc.case_id)}" type="button" ${running ? "disabled" : ""}>${running ? "执行中…" : "执行"}</button>${result ? `<button class="case-detail-btn" data-show-result="${escapeHtml(tc.case_id)}" type="button">查看详情</button>` : ""}</td>
       </tr>`;
     })
     .join("");
@@ -386,12 +391,60 @@ function renderSuggestions(list) {
             <th>前置条件</th>
             <th>执行步骤</th>
             <th>预期结果</th>
-            <th class="execution-head">自动执行</th>
           </tr>
         </thead>
         <tbody>${rows}</tbody>
       </table>
     </div>`;
+  renderExecutionCases();
+}
+
+function automationCandidate(testCase) {
+  return testCase.automation_candidate !== false;
+}
+
+function renderExecutionSummary() {
+  const total = state.lastCases.length;
+  const runnable = state.lastCases.filter(automationCandidate).length;
+  const results = Object.values(state.executionResults);
+  const passed = results.filter((item) => item?.status === "passed").length;
+  const failed = results.filter((item) => item && item.status !== "passed").length;
+  if (el("executionCaseBadge")) el("executionCaseBadge").textContent = String(total);
+  if (!el("executionSummary")) return;
+  el("executionSummary").innerHTML = total
+    ? `<span><b>${total}</b> 条已同步</span><span><b>${runnable}</b> 条可自动化</span><span class="passed"><b>${passed}</b> 条通过</span><span class="failed"><b>${failed}</b> 条需处理</span>`
+    : "尚未载入用例，请先在“AI 用例设计”中生成或恢复用例。";
+}
+
+function renderExecutionCases() {
+  const box = el("executionCases");
+  if (!box) return;
+  renderExecutionSummary();
+  if (!state.lastCases.length) {
+    box.innerHTML = '<div class="workspace-empty"><span>▷</span><b>等待测试用例</b><p>生成用例后会自动同步到这里，无需重复导入。</p></div>';
+    return;
+  }
+  box.innerHTML = `<div class="execution-case-list">${state.lastCases.map((tc) => {
+    const result = state.executionResults[tc.case_id];
+    const running = state.runningCases.has(tc.case_id);
+    const candidate = automationCandidate(tc);
+    const status = running ? "running" : result ? result.status : candidate ? "idle" : "manual";
+    const statusText = {running:"执行中",passed:"通过",failed:"失败",blocked:"被拦截",needs_review:"需确认",idle:"待执行",manual:"人工验证"}[status] || status;
+    return `<article data-case-id="${escapeHtml(tc.case_id)}"><div class="execution-case-main"><span>${escapeHtml(tc.case_id)} · ${escapeHtml(tc.priority)}</span><b>${escapeHtml(tc.title)}</b><small>${escapeHtml(tc.module)} · ${candidate ? "可自动化" : "建议人工验证"}</small></div><div class="execution-case-actions"><span class="run-status ${escapeHtml(status)}">${escapeHtml(statusText)}</span>${candidate ? `<button class="case-run-btn" data-run-case="${escapeHtml(tc.case_id)}" type="button" ${running ? "disabled" : ""}>${running ? "执行中…" : result ? "重新执行" : "执行"}</button>` : ""}${result ? `<button class="case-detail-btn" data-show-result="${escapeHtml(tc.case_id)}" type="button">日志与截图</button>` : ""}</div></article>`;
+  }).join("")}</div>`;
+}
+
+function switchWorkspace(mode, options = {}) {
+  const next = mode === "execution" ? "execution" : "design";
+  state.workspaceMode = next;
+  el("executionWorkspace").hidden = false;
+  document.querySelectorAll("[data-workspace-panel]").forEach((panel) => panel.classList.toggle("workspace-panel-hidden", panel.dataset.workspacePanel !== next));
+  document.querySelectorAll("[data-workspace-mode]").forEach((button) => {
+    const active = button.dataset.workspaceMode === next;
+    button.classList.toggle("active", active);
+    button.setAttribute("aria-selected", active ? "true" : "false");
+  });
+  if (options.scroll !== false) document.querySelector(".workspace-mode-tabs")?.scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
 function getExecutionTarget() {
@@ -438,9 +491,11 @@ async function executeCase(caseId) {
 async function executeAllCases() {
   try { getExecutionTarget(); } catch (e) { setStatus(e.message, "err"); return; }
   if (!state.lastCases.length) { setStatus("请先生成测试用例。", "err"); return; }
+  const runnableCases = state.lastCases.filter(automationCandidate);
+  if (!runnableCases.length) { setStatus("当前用例均建议人工验证，暂无可自动执行项。", "warn"); return; }
   const btn = el("runAllCases"); btn.disabled = true; btn.textContent = "执行中…";
-  for (const item of state.lastCases) { if (!(await executeCase(item.case_id))) break; }
-  btn.disabled = false; btn.textContent = "执行全部";
+  try { for (const item of runnableCases) { if (!(await executeCase(item.case_id))) break; } }
+  finally { btn.disabled = false; btn.textContent = "执行全部可自动化用例"; }
 }
 
 function showExecutionResult(caseId) {
@@ -700,7 +755,7 @@ function loadDemo(name) {
   el("executionTarget").value=demo.target; el("aiPrompt").value=`已载入可运行示例：${demo.case.title}`;
   state.executionResults={}; state.lastOutput={suggestions:[demo.case],provider:"demo"};
   renderSuggestions([demo.case]); renderSummary({suggestions:[demo.case],provider:"demo",runtime:{mode:"demo"}}); persistCases();
-  setStatus(`已载入“${demo.case.title}”，可直接点击执行。`,"ok"); el("aiCards").scrollIntoView({behavior:"smooth",block:"start"});
+  setStatus(`已载入“${demo.case.title}”，已同步到自动化执行模块。`,"ok"); switchWorkspace("execution");
 }
 function addHistory(testCase,result,target) {
   const rows=safeRead(STORAGE_HISTORY,[]); rows.unshift({id:`${Date.now()}-${testCase.case_id}`,caseId:testCase.case_id,title:testCase.title,target,status:result.status,summary:result.summary||"",durationMs:result.duration_ms||0,createdAt:new Date().toISOString()});
@@ -981,6 +1036,12 @@ function bindEvents() {
     renderSelectedPipelineSkill();
     el("pipelineSkillPanel").scrollIntoView({ behavior: "smooth", block: "nearest" });
   });
+  document.querySelectorAll("[data-workspace-mode]").forEach((button) => button.addEventListener("click", () => switchWorkspace(button.dataset.workspaceMode)));
+  el("openExecutionWorkspace").addEventListener("click", () => {
+    if (!state.lastCases.length) { setStatus("请先生成或恢复测试用例，再进入自动化执行。", "warn"); return; }
+    switchWorkspace("execution");
+  });
+  el("backToDesign").addEventListener("click", () => switchWorkspace("design"));
   document.querySelectorAll('input[name="generationMode"]').forEach((radio) => radio.addEventListener("change", syncGenerationMode));
   document.querySelectorAll("[data-demo]").forEach((button) => button.addEventListener("click", () => loadDemo(button.dataset.demo)));
   el("clearHistory").addEventListener("click", () => { localStorage.removeItem(STORAGE_HISTORY); renderHistory(); setStatus("本地执行记录已清空。", ""); });
@@ -997,7 +1058,7 @@ function bindEvents() {
   el("openActivation").addEventListener("click",()=>{el("activationMessage").textContent="";el("activationDialog").showModal()});
   el("closeActivation").addEventListener("click",()=>el("activationDialog").close());
   el("activationForm").addEventListener("submit",async event=>{event.preventDefault();const button=event.submitter,label=button.textContent,message=el("activationMessage");button.disabled=true;button.textContent="正在激活…";message.textContent="";message.className="";try{const response=await fetch(`${ENTITLEMENT_API}/activate`,{method:"POST",headers:{"Content-Type":"application/json",...accountHeaders()},body:JSON.stringify({activationCode:el("activationCodeInput").value,browserId:browserId()})});const data=await response.json().catch(()=>({}));if(!response.ok||data.code!==0)throw new Error(data.message||"激活失败");state.entitlement=data.data;message.textContent="专业版已激活";message.className="success";renderQuota();setTimeout(()=>el("activationDialog").close(),1200)}catch(error){message.textContent=error.message||"激活失败"}finally{button.disabled=false;button.textContent=label}});
-  el("aiCards").addEventListener("click", (event) => {
+  el("executionCases").addEventListener("click", (event) => {
     const runButton = event.target.closest("[data-run-case]");
     const detailButton = event.target.closest("[data-show-result]");
     if (runButton) executeCase(runButton.dataset.runCase);
@@ -1024,7 +1085,11 @@ function main() {
   refreshEntitlement();
   refreshUsage();
   loadGenerationHistory();
-  if (!state.lastCases.length) setStatus("就绪。按 Ctrl/Cmd + Enter 可快速生成。", "");
+  switchWorkspace(location.hash === "#execution" ? "execution" : "design", { scroll: false });
+  if (!state.lastCases.length) {
+    setStatus("就绪。按 Ctrl/Cmd + Enter 可快速生成。", "");
+    el("executionStatus").textContent = "准备执行：请先生成或恢复测试用例。";
+  }
 }
 
 function syncAccountState(detail) {
