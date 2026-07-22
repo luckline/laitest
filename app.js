@@ -435,10 +435,12 @@ function renderExecutionCases() {
 }
 
 function switchWorkspace(mode, options = {}) {
-  const next = mode === "execution" ? "execution" : "design";
+  const next = ["design", "execution", "api"].includes(mode) ? mode : "design";
   state.workspaceMode = next;
-  el("executionWorkspace").hidden = false;
-  document.querySelectorAll("[data-workspace-panel]").forEach((panel) => panel.classList.toggle("workspace-panel-hidden", panel.dataset.workspacePanel !== next));
+  document.querySelectorAll("[data-workspace-panel]").forEach((panel) => {
+    panel.hidden = false;
+    panel.classList.toggle("workspace-panel-hidden", panel.dataset.workspacePanel !== next);
+  });
   document.querySelectorAll("[data-workspace-mode]").forEach((button) => {
     const active = button.dataset.workspaceMode === next;
     button.classList.toggle("active", active);
@@ -1085,7 +1087,7 @@ function main() {
   refreshEntitlement();
   refreshUsage();
   loadGenerationHistory();
-  switchWorkspace(location.hash === "#execution" ? "execution" : "design", { scroll: false });
+  switchWorkspace(location.hash === "#execution" ? "execution" : location.hash === "#api" ? "api" : "design", { scroll: false });
   if (!state.lastCases.length) {
     setStatus("就绪。按 Ctrl/Cmd + Enter 可快速生成。", "");
     el("executionStatus").textContent = "准备执行：请先生成或恢复测试用例。";
