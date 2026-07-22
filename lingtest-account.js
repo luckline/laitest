@@ -67,7 +67,7 @@
     chip.querySelector("strong").textContent = pro ? "PRO" : approved ? "待激活" : pending ? "审核中" : "免费版";
     document.querySelectorAll("[data-plan-cta]").forEach((link) => {
       link.textContent = pro ? "进入工作台" : approved ? "前往激活" : pending ? "申请审核中" : link.dataset.freeLabel || "开始使用";
-      link.setAttribute("href", pro || approved ? "/app" : pending ? "/lingtest-pricing" : link.dataset.freeHref || "/app");
+      link.setAttribute("href", pro || approved ? "/app" : pending ? "/mingtest-pricing" : link.dataset.freeHref || "/app");
     });
     card.classList.toggle("pro", pro);
     card.querySelector("h2").textContent = pro ? "铭测专业版" : approved ? "专业版待激活" : pending ? "专业版申请审核中" : "铭测免费版";
@@ -88,8 +88,8 @@
       : approved
         ? '<a class="primary" href="/app">前往激活</a>'
         : loggedIn
-          ? '<a class="primary" href="/lingtest-pricing">查看专业版</a>'
-        : `<a href="/lingtest-login?return=${encodeURIComponent(location.pathname)}">登录</a><a class="primary" href="/lingtest-pricing">查看专业版</a>`;
+          ? '<a class="primary" href="/mingtest-pricing">查看专业版</a>'
+        : `<a href="/mingtest-login?return=${encodeURIComponent(location.pathname)}">登录</a><a class="primary" href="/mingtest-pricing">查看专业版</a>`;
   }
 
   async function loadAccount() {

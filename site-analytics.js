@@ -3,12 +3,12 @@ window.va=window.va||function(){(window.vaq=window.vaq||[]).push(arguments)};
 (()=>{
   const routeEvents=[
     [/^\/$/,'open_home'],
-    [/^\/lingtest$/,'open_lingtest'],
+    [/^\/mingtest$/,'open_lingtest'],
     [/^\/timelens(?:\?|$)/,'open_timelens'],
     [/^\/app(?:\?|$)/,'open_workspace'],
-    [/^\/lingtest-pricing(?:\?|$)/,'view_pricing'],
-    [/^\/lingtest-login(?:\?|$)/,'start_login'],
-    [/^\/lingtest-tools(?:\?|$)/,'open_toolbox'],
+    [/^\/mingtest-pricing(?:\?|$)/,'view_pricing'],
+    [/^\/mingtest-login(?:\?|$)/,'start_login'],
+    [/^\/mingtest-tools(?:\?|$)/,'open_toolbox'],
     [/^\/timelens-route(?:\?|$)/,'open_public_route'],
   ];
   const formEvents={leadForm:'submit_pro_application',loginForm:'submit_login',activationForm:'submit_activation',commentForm:'submit_route_comment'};

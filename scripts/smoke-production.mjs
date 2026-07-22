@@ -2,18 +2,24 @@ const baseUrl = String(process.env.SMOKE_BASE_URL || "https://laitest.tech").rep
 const timeoutMs = Number(process.env.SMOKE_TIMEOUT_MS || 15000);
 const routeId = "seed-trip-2026-north-xinjiang-0925";
 const isLocal = /^https?:\/\/(?:127\.0\.0\.1|localhost)(?::\d+)?$/.test(baseUrl);
-const localHtmlRoutes = new Set(["/app", "/lingtest", "/lingtest-pricing", "/lingtest-login", "/lingtest-admin", "/lingtest-guides", "/lingtest-tools", "/timelens", "/timelens-route"]);
+const localHtmlRoutes = new Map([
+  ["/app", "/app.html"], ["/mingtest", "/app.html"],
+  ["/mingtest-pricing", "/lingtest-pricing.html"], ["/mingtest-login", "/lingtest-login.html"],
+  ["/mingtest-admin", "/lingtest-admin.html"], ["/mingtest-guides", "/lingtest-guides.html"],
+  ["/mingtest-tools", "/lingtest-tools.html"], ["/timelens", "/timelens.html"],
+  ["/timelens-route", "/timelens-route.html"],
+]);
 
 const checks = [
   {
     name: "个人主页",
     path: "/",
-    contains: ["Luckline", 'href="/lingtest"', 'href="/timelens"', "product-nav.js?v=5", "home-v6.css?v=1", "直接进入产品", "AI QUALITY WORKSPACE", "AI TRAVEL WORKSPACE", "lingtest-workspace-preview.png", "timelens-workspace-preview.png", "img/og-cover.png"],
+    contains: ["Luckline", 'href="/mingtest"', 'href="/timelens"', "product-nav.js?v=5", "home-v6.css?v=1", "直接进入产品", "AI QUALITY WORKSPACE", "AI TRAVEL WORKSPACE", "lingtest-workspace-preview.png", "timelens-workspace-preview.png", "img/og-cover.png"],
   },
   {
     name: "铭测产品页",
-    path: "/lingtest",
-    contains: ["铭测 MingTest", 'href="/app"', "product-nav.js?v=5", "lingtest-account.js?v=5", "一张图看懂：需求如何变成测试证据", "evidence-board", "product-visuals.css?v=1"],
+    path: "/mingtest",
+    contains: ["铭测 MingTest", "从需求分析到测试资产交付", "product-nav.js?v=5", "lingtest-account.js?v=5", "AI 用例设计", "自动化执行", "API 自动化"],
   },
   {
     name: "铭测工作台",
@@ -22,7 +28,7 @@ const checks = [
   },
   {
     name: "铭测定价",
-    path: "/lingtest-pricing",
+    path: "/mingtest-pricing",
     contains: ["免费版", "专业版", "测试落地服务", "leadDialog", "lingtest-pricing.js?v=3"],
   },
   {
@@ -32,7 +38,7 @@ const checks = [
   },
   {
     name: "铭测登录注册",
-    path: "/lingtest-login",
+    path: "/mingtest-login",
     contains: ["登录后继续", "注册新账户", "lingtest-login.js?v=1"],
   },
   {
@@ -42,7 +48,7 @@ const checks = [
   },
   {
     name: "铭测管理后台",
-    path: "/lingtest-admin",
+    path: "/mingtest-admin",
     contains: ["noindex,nofollow", "管理员登录", "专业版申请", "lingtest-admin.js?v=1"],
   },
   {
@@ -57,12 +63,12 @@ const checks = [
   },
   {
     name: "铭测方法库",
-    path: "/lingtest-guides",
-    contains: ["方法与实践", 'href="/lingtest"', "product-nav.js?v=5"],
+    path: "/mingtest-guides",
+    contains: ["方法与实践", 'href="/mingtest"', "product-nav.js?v=5"],
   },
   {
     name: "铭测工具箱",
-    path: "/lingtest-tools",
+    path: "/mingtest-tools",
     contains: ["JSON 格式化与校验", "Diff 文本对比", "正则表达式测试器", "Unix 时间戳转换", "Base64 编解码", "lingtest-tools.js?v=2", "lingtest-tools.css?v=3", "仅浏览器本地运行"],
   },
   {
@@ -115,7 +121,7 @@ const checks = [
   {
     name: "搜索站点地图",
     path: "/sitemap.xml",
-    contains: ["https://laitest.tech/lingtest-tools", "https://laitest.tech/timelens", "2026-07-18"],
+    contains: ["https://laitest.tech/mingtest-tools", "https://laitest.tech/timelens", "2026-07-22"],
   },
 ];
 
@@ -131,7 +137,8 @@ async function request(path) {
     });
     if (isLocal && response.status === 404) {
       const url = new URL(path, baseUrl);
-      if (localHtmlRoutes.has(url.pathname)) response = await fetch(`${baseUrl}${url.pathname}.html${url.search}`, { signal: controller.signal });
+      const localFile = localHtmlRoutes.get(url.pathname);
+      if (localFile) response = await fetch(`${baseUrl}${localFile}${url.search}`, { signal: controller.signal });
     }
     const body = await response.text();
     return { response, body, elapsed: Date.now() - startedAt };

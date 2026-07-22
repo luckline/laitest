@@ -24,7 +24,7 @@
   }
 
   function loginForPro() {
-    location.href = "/lingtest-login?return=%2Flingtest-pricing&intent=pro";
+    location.href = "/mingtest-login?return=%2Fmingtest-pricing&intent=pro";
   }
 
   function renderAccountState() {
@@ -60,7 +60,7 @@
     renderAccountState();
     const params = new URLSearchParams(location.search);
     if (params.get("intent") === "pro" && account.user && !account.entitlement.active && !account.entitlement.applicationStatus) {
-      history.replaceState({}, "", "/lingtest-pricing");
+      history.replaceState({}, "", "/mingtest-pricing");
       openForm("pro");
     }
   }

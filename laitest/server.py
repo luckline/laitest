@@ -186,6 +186,12 @@ class Handler(BaseHTTPRequestHandler):
             return
         page_routes = {
             "/app": "app.html",
+            "/mingtest": "app.html",
+            "/mingtest-guides": "lingtest-guides.html",
+            "/mingtest-tools": "lingtest-tools.html",
+            "/mingtest-pricing": "lingtest-pricing.html",
+            "/mingtest-login": "lingtest-login.html",
+            "/mingtest-admin": "lingtest-admin.html",
             "/lingtest": "lingtest.html",
             "/lingtest-guides": "lingtest-guides.html",
             "/lingtest-pricing": "lingtest-pricing.html",

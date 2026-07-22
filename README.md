@@ -14,13 +14,13 @@ Luckline 的个人站与产品中心，统一承载个人介绍、产品发布�
 | 路径 | 页面 |
 | --- | --- |
 | `/` | Luckline 个人主页、作品与联系方式 |
-| `/lingtest` | 铭测产品介绍与完整案例 |
+| `/mingtest` | 铭测工作台（旧 `/lingtest` 永久跳转至此） |
 | `/app` | 铭测工作台 |
-| `/lingtest-pricing` | 铭测版本、服务与专业版申请 |
-| `/lingtest-login` | 铭测登录与注册（专业版申请前置） |
-| `/lingtest-admin` | 铭测申请审核与激活码管理（管理员 Token） |
-| `/lingtest-guides` | 测试方法与质量工程实践 |
-| `/lingtest-tools` | JSON、Diff、正则、时间戳和 Base64 等纯前端测试工具 |
+| `/mingtest-pricing` | 铭测版本、服务与专业版申请 |
+| `/mingtest-login` | 铭测登录与注册（专业版申请前置） |
+| `/mingtest-admin` | 铭测申请审核与激活码管理（管理员 Token） |
+| `/mingtest-guides` | 测试方法与质量工程实践 |
+| `/mingtest-tools` | JSON、Diff、正则、时间戳和 Base64 等纯前端测试工具 |
 | `/timelens` | 时光智行 PC 版 |
 | `/timelens-route?id=<route-id>` | 可独立分享的公开路线详情 |
 | `/privacy.html` | 隐私政策 |
@@ -48,9 +48,9 @@ python3 -m laitest
 默认地址：
 
 - 个人主页：<http://127.0.0.1:8080/>
-- 铭测产品页：<http://127.0.0.1:8080/lingtest>
+- 铭测产品页：<http://127.0.0.1:8080/mingtest>
 - 铭测工作台：<http://127.0.0.1:8080/app>
-- 铭测定价页：<http://127.0.0.1:8080/lingtest-pricing>
+- 铭测定价页：<http://127.0.0.1:8080/mingtest-pricing>
 - 时光智行：<http://127.0.0.1:8080/timelens>
 
 ### 可选：安装页面自动化环境
@@ -121,10 +121,10 @@ python3 -m laitest cli projects
 ### 版本与商业化
 
 - 游客按浏览器提供 5 次生成/日、15 次生成/月和 3 次执行/日、10 次执行/月；登录免费用户提升为 10/30 次生成和 6/20 次执行（日/月）
-- `/lingtest-pricing` 展示免费版、专业版内测和测试落地服务
+- `/mingtest-pricing` 展示免费版、专业版内测和测试落地服务
 - 专业版申请写入 `timelens-server` 的 `lingtest_leads` 表
 - 生产部署后端前需执行 `sql/023_lingtest_leads.sql`
-- 管理员通过 `/lingtest-admin` 审核申请并生成 24 小时有效的一次性激活码
+- 管理员通过 `/mingtest-admin` 审核申请并生成 24 小时有效的一次性激活码
 - 用户在工作台输入一次性激活码后开通专业版；登录用户的权益按已验证手机号关联
 - 浏览器 ID 仅作为未登录场景和历史激活记录的兼容兜底
 - 铭测产品页、工作台和定价页右上角统一展示当前版本；专业版使用紫金色标识
@@ -138,9 +138,9 @@ python3 -m laitest cli projects
 
 专业版运营流程：
 
-1. 游客在 `/lingtest-pricing` 点击申请后，先完成手机号注册或登录。
+1. 游客在 `/mingtest-pricing` 点击申请后，先完成手机号注册或登录。
 2. 登录成功后自动返回定价页，申请表自动填写已验证手机号。
-3. 管理员在 `/lingtest-admin` 查看申请并完成审核。
+3. 管理员在 `/mingtest-admin` 查看申请并完成审核。
 4. 审核通过后生成 24 小时有效的一次性激活码。
 5. 用户在 `/app` 输入激活码，专业版立即生效。
 6. 登录用户后续通过已验证手机号识别权益，无需在每台设备重复申请。

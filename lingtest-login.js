@@ -2,8 +2,8 @@
   const API = "https://timelens.cc/api";
   const TOKEN_KEY = "timelens.pc.token";
   const params = new URLSearchParams(location.search);
-  const requestedReturn = params.get("return") || "/lingtest-pricing";
-  const safeReturn = requestedReturn.startsWith("/") && !requestedReturn.startsWith("//") ? requestedReturn : "/lingtest-pricing";
+  const requestedReturn = params.get("return") || "/mingtest-pricing";
+  const safeReturn = requestedReturn.startsWith("/") && !requestedReturn.startsWith("//") ? requestedReturn : "/mingtest-pricing";
   const intent = params.get("intent") === "pro" ? "pro" : "";
   const destination = intent ? `${safeReturn}${safeReturn.includes("?") ? "&" : "?"}intent=${intent}` : safeReturn;
   const form = document.getElementById("loginForm");

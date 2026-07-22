@@ -13,7 +13,13 @@
     }
   ],
   "redirects": [
-    { "source": "/lingtest.html", "destination": "/lingtest", "permanent": true }
+    { "source": "/lingtest.html", "destination": "/mingtest", "permanent": true },
+    { "source": "/lingtest", "destination": "/mingtest", "permanent": true },
+    { "source": "/lingtest-guides", "destination": "/mingtest-guides", "permanent": true },
+    { "source": "/lingtest-tools", "destination": "/mingtest-tools", "permanent": true },
+    { "source": "/lingtest-pricing", "destination": "/mingtest-pricing", "permanent": true },
+    { "source": "/lingtest-login", "destination": "/mingtest-login", "permanent": true },
+    { "source": "/lingtest-admin", "destination": "/mingtest-admin", "permanent": true }
   ],
   "builds": [
     { "src": "api/index.py", "use": "@vercel/python" },
@@ -65,15 +71,15 @@
     { "source": "/baidu_verify_codeva-XOPq3AJQbN.html", "destination": "/baidu_verify_codeva-XOPq3AJQbN.html" },
     { "source": "/app", "destination": "/app.html"},
     { "source": "/library", "destination": "/library.html" },
-    { "source": "/lingtest-guides", "destination": "/lingtest-guides.html" },
-    { "source": "/lingtest-tools", "destination": "/lingtest-tools.html" },
+    { "source": "/mingtest-guides", "destination": "/lingtest-guides.html" },
+    { "source": "/mingtest-tools", "destination": "/lingtest-tools.html" },
     { "source": "/lingtest-tools.js", "destination": "/lingtest-tools.js" },
-    { "source": "/lingtest", "destination": "/app.html" },
-    { "source": "/lingtest-pricing", "destination": "/lingtest-pricing.html" },
+    { "source": "/mingtest", "destination": "/app.html" },
+    { "source": "/mingtest-pricing", "destination": "/lingtest-pricing.html" },
     { "source": "/lingtest-pricing.js", "destination": "/lingtest-pricing.js" },
-    { "source": "/lingtest-login", "destination": "/lingtest-login.html" },
+    { "source": "/mingtest-login", "destination": "/lingtest-login.html" },
     { "source": "/lingtest-login.js", "destination": "/lingtest-login.js" },
-    { "source": "/lingtest-admin", "destination": "/lingtest-admin.html" },
+    { "source": "/mingtest-admin", "destination": "/lingtest-admin.html" },
     { "source": "/lingtest-admin.js", "destination": "/lingtest-admin.js" },
     { "source": "/lingtest-account.js", "destination": "/lingtest-account.js" },
     { "source": "/timelens", "destination": "/timelens.html" },
