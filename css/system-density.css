@@ -25,17 +25,21 @@
 .lingtest-landing .lt-workflow article{min-height:250px;padding:24px}
 .lingtest-landing .lt-workflow h3{margin-top:26px}
 .lingtest-landing .lt-final{padding:78px 20px}
-/* LingTest workspace */
-.app-page:not(.guides-page) .ai-main{padding-top:26px}
+/* MingTest workspace: keep the first task surface close to the persistent nav. */
+.app-page:not(.guides-page) .ai-main{padding-top:22px;padding-bottom:52px;gap:12px}
+.app-page:not(.guides-page) .ai-main.account-compact{padding-top:12px}
 .app-page:not(.guides-page) .ai-hero{padding:14px 4px 26px;gap:48px}
 .app-page:not(.guides-page) .ai-hero h1{font-size:clamp(40px,4.2vw,48px);line-height:1.12;letter-spacing:-1px}
 .app-page:not(.guides-page) .ai-hero .sub{font-size:15px;line-height:1.65}
 .app-page:not(.guides-page) .hero-proof{padding:12px 16px}
-.app-page:not(.guides-page) .composer-card,.app-page:not(.guides-page) .result-card{padding:24px 26px}
+.app-page:not(.guides-page) .composer-card,.app-page:not(.guides-page) .result-card{padding:22px 24px}
+.app-page:not(.guides-page) .composer-card{margin-top:0}
+.app-page:not(.guides-page) .result-card{margin-top:4px}
 .app-page:not(.guides-page) .composer-card #aiPrompt{min-height:160px}
 .app-page:not(.guides-page) .workspace-overview{padding:16px 20px}
+.app-page:not(.guides-page) .usage-strip{margin-bottom:0}
 /* Methods library */
-.guides-page .guides-main{padding-top:38px}
+.guides-page .guides-main{padding-top:26px}
 .guides-page .guides-hero{padding-top:8px;padding-bottom:34px}
 .guides-page .guides-hero h1{font-size:clamp(44px,4.6vw,56px);line-height:1.12;letter-spacing:-1px}
 .guides-page .guides-hero>p:last-child{font-size:16px;line-height:1.7}
@@ -46,4 +50,4 @@
 .guides-page .guide-grid h3{font-size:21px}
 .guides-page .guides-cta{margin-bottom:54px;padding:28px 32px}
 @media(max-width:900px){:root{--ds-section:54px}.personal-home .hero{padding-top:32px}.personal-home .section{padding:56px 0}.lingtest-landing .lt-section{padding-top:60px;padding-bottom:60px}}
-@media(max-width:620px){.personal-home .hero{padding:28px 0 44px}.personal-home .hero h1{font-size:36px}.personal-home .section h2{font-size:32px}.personal-home .hero-products{grid-template-columns:1fr}.personal-home .hero-product{min-height:190px}.personal-home .section{padding:48px 0}.personal-home #projects{padding-top:46px}.personal-home .home-case-study{padding:20px}.lingtest-landing .lt-section{padding-top:52px;padding-bottom:52px}.lingtest-landing .lt-section h2,.lingtest-landing .lt-final h2{font-size:34px}.guides-page .guides-main{padding-top:28px}.guides-page .guides-hero h1{font-size:42px}}
+@media(max-width:620px){.personal-home .hero{padding:28px 0 44px}.personal-home .hero h1{font-size:36px}.personal-home .section h2{font-size:32px}.personal-home .hero-products{grid-template-columns:1fr}.personal-home .hero-product{min-height:190px}.personal-home .section{padding:48px 0}.personal-home #projects{padding-top:46px}.personal-home .home-case-study{padding:20px}.lingtest-landing .lt-section{padding-top:52px;padding-bottom:52px}.lingtest-landing .lt-section h2,.lingtest-landing .lt-final h2{font-size:34px}.app-page:not(.guides-page) .ai-main{padding-top:14px}.app-page:not(.guides-page) .ai-main.account-compact{padding-top:8px}.app-page:not(.guides-page) .composer-card,.app-page:not(.guides-page) .result-card{padding:18px 15px}.guides-page .guides-main{padding-top:20px}.guides-page .guides-hero h1{font-size:42px}}

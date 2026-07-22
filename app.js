@@ -130,6 +130,7 @@ function renderQuota() {
   const pro=state.entitlement.active&&state.entitlement.plan==="pro",strip=document.querySelector(".usage-strip");
   strip?.classList.toggle("pro",pro);
   strip?.classList.toggle("account-managed",pro);
+  strip?.closest(".ai-main")?.classList.toggle("account-compact",pro);
   el("planLabel").textContent=pro?"PRO PLAN":"FREE PLAN";
   if(pro){el("generationQuota").textContent=`生成 今日 ${generationLeft} · 本月 ${generationMonthLeft}`;el("executionQuota").textContent=`执行 今日 ${executionLeft} · 本月 ${executionMonthLeft}`;el("quotaSummary").textContent="专业版权益已生效";el("quotaNote").textContent=state.entitlement.expiresAt?`有效期至 ${new Date(state.entitlement.expiresAt).toLocaleDateString()} · 用量按账户统计`:"用量按当前账户统计";el("openActivation").hidden=true;el("accountLoginPrompt").hidden=true;window.dispatchEvent(new CustomEvent("mingtest:usage-updated",{detail:{generationLeft,generationMonthLeft,executionLeft,executionMonthLeft}}));return}
   el("openActivation").hidden=false;el("accountLoginPrompt").hidden=state.accountLoggedIn;
