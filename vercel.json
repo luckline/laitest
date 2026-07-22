@@ -12,6 +12,9 @@
       ]
     }
   ],
+  "redirects": [
+    { "source": "/lingtest.html", "destination": "/lingtest", "permanent": true }
+  ],
   "builds": [
     { "src": "api/index.py", "use": "@vercel/python" },
     { "src": "api/timelens_share.py", "use": "@vercel/python" },
@@ -65,7 +68,7 @@
     { "source": "/lingtest-guides", "destination": "/lingtest-guides.html" },
     { "source": "/lingtest-tools", "destination": "/lingtest-tools.html" },
     { "source": "/lingtest-tools.js", "destination": "/lingtest-tools.js" },
-    { "source": "/lingtest", "destination": "/lingtest.html" },
+    { "source": "/lingtest", "destination": "/app.html" },
     { "source": "/lingtest-pricing", "destination": "/lingtest-pricing.html" },
     { "source": "/lingtest-pricing.js", "destination": "/lingtest-pricing.js" },
     { "source": "/lingtest-login", "destination": "/lingtest-login.html" },
