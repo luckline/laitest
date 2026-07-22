@@ -59,7 +59,7 @@ const checks = [
   {
     name: "铭测版本入口",
     path: "/lingtest-account.js?v=5",
-    contains: ["当前版本", "专业版 PRO", "contactMasked", "LICENSE_API", "/status?browserId="],
+    contains: ["当前版本", "专业版 PRO", "生成额度", "执行额度", "mingtest:usage-updated", "contactMasked", "LICENSE_API", "/status?browserId="],
   },
   {
     name: "铭测方法库",

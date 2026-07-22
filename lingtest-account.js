@@ -49,6 +49,7 @@
 
   let user = null;
   let entitlement = { plan: "free", active: false };
+  let usageSummary = null;
   const userName = () => user?.nickname || (user?.mobile ? `用户 ${maskMobile(user.mobile)}` : "铭测用户");
 
   function render() {
@@ -76,7 +77,7 @@
       ? `<div><span>账户</span><b>${escapeHtml(name)}</b></div><div><span>绑定信息</span><b>${escapeHtml(maskMobile(user.mobile) || maskEmail(user.email) || "微信账户")}</b></div>`
       : '<div><span>账户状态</span><b>未登录</b></div>';
     const plan = pro
-      ? `<div><span>当前版本</span><b>专业版 PRO</b></div><div><span>有效期至</span><b>${entitlement.expiresAt ? new Date(entitlement.expiresAt).toLocaleDateString("zh-CN") : "长期有效"}</b></div><div><span>权益绑定</span><b>${escapeHtml(maskMobile(user?.mobile) || entitlement.contactMasked || "登录账户")}</b></div>`
+      ? `<div><span>当前版本</span><b>专业版 PRO</b></div><div><span>有效期至</span><b>${entitlement.expiresAt ? new Date(entitlement.expiresAt).toLocaleDateString("zh-CN") : "长期有效"}</b></div>${usageSummary ? `<div><span>生成额度</span><b>今日 ${usageSummary.generationLeft} · 本月 ${usageSummary.generationMonthLeft}</b></div><div><span>执行额度</span><b>今日 ${usageSummary.executionLeft} · 本月 ${usageSummary.executionMonthLeft}</b></div>` : ""}<div><span>权益绑定</span><b>${escapeHtml(maskMobile(user?.mobile) || entitlement.contactMasked || "登录账户")}</b></div>`
       : approved
         ? '<div><span>申请状态</span><b>已通过，等待激活</b></div><div><span>当前权益</span><b>免费版</b></div><div><span>下一步</span><b>在工作台输入激活码</b></div>'
         : pending
@@ -109,6 +110,7 @@
   dialog.querySelector(".lingtest-account-close").addEventListener("click", () => dialog.close());
   dialog.addEventListener("click", (event) => { if (event.target === dialog) dialog.close(); });
   window.addEventListener("storage", (event) => { if (event.key === TOKEN_KEY) loadAccount(); });
+  window.addEventListener("mingtest:usage-updated", (event) => { usageSummary = event.detail || null; render(); });
   render();
   loadAccount();
 })();

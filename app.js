@@ -129,8 +129,9 @@ function renderQuota() {
   const generationMonthLeft=Math.max(0,Number(limits.generation.monthly)-Number(usage.monthly.generation||0)),executionMonthLeft=Math.max(0,Number(limits.execution.monthly)-Number(usage.monthly.execution||0));
   const pro=state.entitlement.active&&state.entitlement.plan==="pro",strip=document.querySelector(".usage-strip");
   strip?.classList.toggle("pro",pro);
+  strip?.classList.toggle("account-managed",pro);
   el("planLabel").textContent=pro?"PRO PLAN":"FREE PLAN";
-  if(pro){el("generationQuota").textContent=`生成 今日 ${generationLeft} · 本月 ${generationMonthLeft}`;el("executionQuota").textContent=`执行 今日 ${executionLeft} · 本月 ${executionMonthLeft}`;el("quotaSummary").textContent="专业版权益已生效";el("quotaNote").textContent=state.entitlement.expiresAt?`有效期至 ${new Date(state.entitlement.expiresAt).toLocaleDateString()} · 用量按账户统计`:"用量按当前账户统计";el("openActivation").hidden=true;el("accountLoginPrompt").hidden=true;return}
+  if(pro){el("generationQuota").textContent=`生成 今日 ${generationLeft} · 本月 ${generationMonthLeft}`;el("executionQuota").textContent=`执行 今日 ${executionLeft} · 本月 ${executionMonthLeft}`;el("quotaSummary").textContent="专业版权益已生效";el("quotaNote").textContent=state.entitlement.expiresAt?`有效期至 ${new Date(state.entitlement.expiresAt).toLocaleDateString()} · 用量按账户统计`:"用量按当前账户统计";el("openActivation").hidden=true;el("accountLoginPrompt").hidden=true;window.dispatchEvent(new CustomEvent("mingtest:usage-updated",{detail:{generationLeft,generationMonthLeft,executionLeft,executionMonthLeft}}));return}
   el("openActivation").hidden=false;el("accountLoginPrompt").hidden=state.accountLoggedIn;
   el("quotaNote").textContent=state.accountLoggedIn?"已登录，免费体验次数已翻倍":"游客每天可生成 5 次、执行 3 次；登录后次数翻倍";
   el("generationQuota").textContent = `生成 今日 ${generationLeft} · 本月 ${generationMonthLeft}`;
