@@ -49,20 +49,25 @@
       </header>
 
       <main class="ai-main">
-        <section class="usage-strip" aria-label="使用额度"><div><span id="planLabel">FREE PLAN</span><b id="quotaSummary">今日免费额度加载中…</b><small id="quotaNote">游客每天可生成 5 次、执行 3 次</small></div><div class="usage-actions"><span id="generationQuota">生成 0/5</span><span id="executionQuota">执行 0/3</span><a id="accountLoginPrompt" href="/lingtest-login?return=%2Fapp">登录后次数翻倍</a><button id="openActivation" type="button">输入激活码</button><a href="/lingtest-pricing">查看专业版 →</a></div></section>
+        <section class="usage-strip" aria-label="使用额度"><div><span id="planLabel">FREE PLAN</span><b id="quotaSummary">今日免费额度加载中…</b><small id="quotaNote">游客每天可生成 5 次、执行 3 次</small></div><div class="usage-actions"><span id="generationQuota">生成 0/5</span><span id="executionQuota">执行 0/3</span><a id="accountLoginPrompt" href="/lingtest-login?return=%2Flingtest">登录后次数翻倍</a><button id="openActivation" type="button">输入激活码</button><a href="/lingtest-pricing">查看专业版 →</a></div></section>
 
         <section class="composer-card" data-workspace-panel="design">
           <div class="composer-head">
-            <div><span class="step-number">TEST ANALYSIS &amp; DESIGN</span><h2>从需求分析到测试资产交付</h2><p>先识别需求缺口与业务风险，再设计覆盖模型和可执行用例，避免直接生成低质量用例。</p></div>
+            <div><span class="step-number">TEST ANALYSIS &amp; DESIGN</span><h1>从需求分析到测试资产交付</h1><p>先识别需求缺口与业务风险，再设计覆盖模型和可执行用例，避免直接生成低质量用例。</p></div>
             <div class="model-field"><label for="aiModel">生成模型</label><select id="aiModel" class="ai-select"><option value="deepseek" selected>DeepSeek</option><option value="qianwen">Qianwen</option><option value="gemini">Gemini</option></select></div>
           </div>
           <div class="generation-mode" role="radiogroup" aria-label="用例生成模式">
             <label><input type="radio" name="generationMode" value="sketch" checked><span><b>快速生成</b><small>直接输入需求，适合快速分析与补测</small></span></label>
             <label><input type="radio" name="generationMode" value="standard"><span><b>文档驱动</b><small>上传需求文档，适合完整评审与正式交付</small></span></label>
           </div>
-          <div id="pipelineSteps" class="pipeline-steps" aria-label="六步技能流水线"><button type="button" data-pipeline-stage="spec" class="active"><b>01</b>需求验证</button><i>→</i><button type="button" data-pipeline-stage="risk"><b>02</b>风险计划</button><i>→</i><button type="button" data-pipeline-stage="split"><b>03</b>需求拆分</button><i>→</i><button type="button" data-pipeline-stage="dimensions"><b>04</b>覆盖设计</button><i>→</i><button type="button" data-pipeline-stage="cases"><b>05</b>详细用例</button><i>→</i><button type="button" data-pipeline-stage="delivery"><b>06</b>交付闭环</button></div>
-          <div class="pipeline-debug-bar"><div><small>分步调试</small><b id="currentSkillName">01 · 需求验证</b><span id="currentSkillMethod">检查完整性、一致性、歧义性与可测试性</span></div><button id="runCurrentSkill" type="button">运行当前技能 →</button></div>
-          <section id="pipelineSkillPanel" class="pipeline-skill-panel" hidden></section>
+          <details class="pipeline-advanced" id="pipelineAdvanced">
+            <summary><span><b>高级模式</b><small>分步运行六项测试技能，适合精细调试与正式评审</small></span><i aria-hidden="true">⌄</i></summary>
+            <div class="pipeline-advanced-body">
+              <div id="pipelineSteps" class="pipeline-steps" aria-label="六步技能流水线"><button type="button" data-pipeline-stage="spec" class="active"><b>01</b>需求验证</button><i>→</i><button type="button" data-pipeline-stage="risk"><b>02</b>风险计划</button><i>→</i><button type="button" data-pipeline-stage="split"><b>03</b>需求拆分</button><i>→</i><button type="button" data-pipeline-stage="dimensions"><b>04</b>覆盖设计</button><i>→</i><button type="button" data-pipeline-stage="cases"><b>05</b>详细用例</button><i>→</i><button type="button" data-pipeline-stage="delivery"><b>06</b>交付闭环</button></div>
+              <div class="pipeline-debug-bar"><div><small>分步调试</small><b id="currentSkillName">01 · 需求验证</b><span id="currentSkillMethod">检查完整性、一致性、歧义性与可测试性</span></div><button id="runCurrentSkill" type="button">运行当前技能 →</button></div>
+              <section id="pipelineSkillPanel" class="pipeline-skill-panel" hidden></section>
+            </div>
+          </details>
           <div class="demo-scenarios"><span>可运行示例</span><button type="button" data-demo="content">页面内容验证</button><button type="button" data-demo="search">站内搜索</button><button type="button" data-demo="login">登录流程</button><small>选择后会自动填入测试地址和用例</small></div>
           <textarea
             id="aiPrompt"

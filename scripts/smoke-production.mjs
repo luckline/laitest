@@ -18,7 +18,7 @@ const checks = [
   {
     name: "领测工作台",
     path: "/app",
-    contains: ["AI QUALITY WORKSPACE", "product-nav.js?v=5", "lingtest-account.js?v=5", "app-shell-fix.css?v=5", "lingtest-execution.css?v=2", "lingtest-pipeline.css?v=4", "workspace-split-1", "AI 用例设计", "自动化执行", "executionWorkspace", "快速生成", "文档驱动", "分步调试", "运行当前技能", "一键运行完整流程", "sddSpecFile", "Case Home JSON", "我的生成记录", "登录后次数翻倍", "PRO ACTIVATION", 'id="aiPrompt"'],
+    contains: ["AI QUALITY WORKSPACE", "product-nav.js?v=5", "lingtest-account.js?v=5", "app-shell-fix.css?v=5", "lingtest-execution.css?v=2", "lingtest-pipeline.css?v=4", "从需求分析到测试资产交付", "AI 用例设计", "自动化执行", "executionWorkspace", "快速生成", "文档驱动", "高级模式", "分步调试", "运行当前技能", "一键运行完整流程", "sddSpecFile", "Case Home JSON", "我的生成记录", "登录后次数翻倍", "PRO ACTIVATION", 'id="aiPrompt"'],
   },
   {
     name: "领测定价",
@@ -58,7 +58,7 @@ const checks = [
   {
     name: "领测方法库",
     path: "/lingtest-guides",
-    contains: ["方法与实践", 'href="/app"', "product-nav.js?v=5"],
+    contains: ["方法与实践", 'href="/lingtest"', "product-nav.js?v=5"],
   },
   {
     name: "领测工具箱",
