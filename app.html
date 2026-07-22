@@ -3,17 +3,17 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <title>领测 LingTest | AI 测试设计与质量工作台</title>
+    <title>铭测 MingTest | AI 测试设计与质量工作台</title>
     <meta
       name="description"
-      content="领测 LingTest 是面向测试与质量团队的 AI 工作台，提供需求分析、测试设计、Web 自动化、API 自动化和可追溯测试报告。"
+      content="铭测 MingTest 是面向测试与质量团队的 AI 工作台，提供需求分析、测试设计、Web 自动化、API 自动化和可追溯测试报告。"
     />
     <meta name="robots" content="index,follow,max-image-preview:large" />
     <link rel="canonical" href="https://laitest.tech/lingtest" />
     <meta property="og:type" content="website" />
     <meta property="og:url" content="https://laitest.tech/lingtest" />
-    <meta property="og:site_name" content="领测 LingTest" />
-    <meta property="og:title" content="领测 LingTest｜AI 测试设计与自动化工作台" />
+    <meta property="og:site_name" content="铭测 MingTest" />
+    <meta property="og:title" content="铭测 MingTest｜AI 测试设计与自动化工作台" />
     <meta property="og:description" content="需求分析、测试设计、Web 与 API 自动化、失败证据和运行报告，在一个工作台完成。" />
     <meta property="og:image" content="https://laitest.tech/img/og-cover.png" />
     <meta name="twitter:card" content="summary_large_image" />
@@ -32,10 +32,10 @@
     <div class="app-shell">
       <header class="workspace-nav unified-nav" data-product="lingtest">
         <a class="brand" href="/lingtest">
-          <span class="mark">领</span>
-          <span class="brand-copy"><b>领测 LingTest</b><small>AI QUALITY WORKSPACE</small></span>
+          <span class="mark">铭</span>
+          <span class="brand-copy"><b>铭测 MingTest</b><small>AI QUALITY WORKSPACE</small></span>
         </a>
-        <nav class="shared-links workspace-main-menu" aria-label="领测工作台主菜单">
+        <nav class="shared-links workspace-main-menu" aria-label="铭测工作台主菜单">
           <button type="button" data-workspace-mode="design" class="active">测试设计</button>
           <button type="button" data-workspace-mode="execution">Web 自动化<span id="executionCaseBadge">0</span></button>
           <button type="button" data-workspace-mode="api">API 自动化<span id="apiProjectBadge">0</span></button>
@@ -44,7 +44,7 @@
         </nav>
         <div class="nav-actions">
           <div class="workspace-state"><span></span>工作台在线</div>
-          <a class="nav-primary" href="mailto:lanceqa@agent.qq.com?subject=领测%20LingTest%20反馈">反馈</a>
+          <a class="nav-primary" href="mailto:lanceqa@agent.qq.com?subject=铭测%20MingTest%20反馈">反馈</a>
         </div>
       </header>
 
@@ -84,7 +84,7 @@
               <textarea id="sddSpec" hidden aria-hidden="true"></textarea>
             </div>
           </div>
-          <details class="diff-context"><summary>可选：加入代码 Diff 影响面</summary><textarea id="codeDiff" placeholder="粘贴关键代码 diff、改动文件或影响模块；领测会将其纳入风险评估。"></textarea></details>
+          <details class="diff-context"><summary>可选：加入代码 Diff 影响面</summary><textarea id="codeDiff" placeholder="粘贴关键代码 diff、改动文件或影响模块；铭测会将其纳入风险评估。"></textarea></details>
           <div class="ai-toolbar">
             <div><button id="fillSample" class="btn ghost" type="button">使用示例</button><button id="clearPrompt" class="btn text" type="button">清空输入</button></div>
             <button id="aiGo" class="btn solid generate" type="button"><span>一键运行完整流程</span><i>→</i></button>
@@ -108,7 +108,7 @@
           <div id="aiCards" class="ai-cards"><div class="workspace-empty"><span>◎</span><b>还没有测试用例</b><p>在上方输入业务需求，AI 将生成可评审、可导出的结构化用例。</p><small>支持正常流 · 边界场景 · 异常处理 · 安全风险</small></div></div>
           <pre id="aiOut" class="ai-pre" hidden></pre>
         </section>
-        <a class="guide-entry" data-workspace-panel="design" href="/lingtest-tools"><span><small>LINGTEST QA TOOLBOX</small><b>常用测试工具</b><p>时间戳转换、Base64 编解码，数据仅在本地浏览器处理。</p></span><strong>打开工具箱 →</strong></a>
+        <a class="guide-entry" data-workspace-panel="design" href="/lingtest-tools"><span><small>MINGTEST QA TOOLBOX</small><b>常用测试工具</b><p>时间戳转换、Base64 编解码，数据仅在本地浏览器处理。</p></span><strong>打开工具箱 →</strong></a>
         <section id="generationHistorySection" data-workspace-panel="design" class="cloud-history" hidden><div><span class="step-number">CLOUD TEST ASSETS</span><h2>我的生成记录</h2><p id="generationHistoryNote">登录后的需求、分析与完整用例会安全保存到当前账号。</p></div><button id="refreshGenerationHistory" class="btn text" type="button">刷新记录</button><div id="generationHistoryList" class="generation-history-list"><p>正在加载生成记录…</p></div></section>
 
         <section id="executionWorkspace" class="execution-workspace" data-workspace-panel="execution" hidden>
@@ -141,7 +141,7 @@
         </section>
       </main>
 
-      <footer class="app-foot"><span>领测 LingTest · AI 测试设计与质量工作台</span><span>结构化 JSON · Excel 导出 · 多模型支持</span><a href="mailto:lanceqa@agent.qq.com">lanceqa@agent.qq.com</a></footer>
+      <footer class="app-foot"><span>铭测 MingTest · AI 测试设计与质量工作台</span><span>结构化 JSON · Excel 导出 · 多模型支持</span><a href="mailto:lanceqa@agent.qq.com">lanceqa@agent.qq.com</a></footer>
     </div>
 
     <dialog id="executionDialog" class="execution-dialog">
@@ -150,7 +150,7 @@
       <section><h4>执行日志</h4><pre id="executionLog"></pre></section>
       <section id="executionShotWrap" hidden><h4>页面截图</h4><img id="executionScreenshot" alt="Playwright 执行页面截图" /></section>
     </dialog>
-    <dialog id="activationDialog" class="activation-dialog"><form id="activationForm"><button id="closeActivation" type="button" aria-label="关闭">×</button><span class="step-number">PRO ACTIVATION</span><h3>激活领测专业版</h3><p>输入管理员审核后发放的一次性激活码。登录用户激活后，权益将关联已验证手机号。</p><input id="activationCodeInput" name="activationCode" required placeholder="LT-XXXX-XXXX" autocomplete="one-time-code"><div id="activationMessage" role="alert"></div><button class="btn solid" type="submit">立即激活</button></form></dialog>
+    <dialog id="activationDialog" class="activation-dialog"><form id="activationForm"><button id="closeActivation" type="button" aria-label="关闭">×</button><span class="step-number">PRO ACTIVATION</span><h3>激活铭测专业版</h3><p>输入管理员审核后发放的一次性激活码。登录用户激活后，权益将关联已验证手机号。</p><input id="activationCodeInput" name="activationCode" required placeholder="LT-XXXX-XXXX" autocomplete="one-time-code"><div id="activationMessage" role="alert"></div><button class="btn solid" type="submit">立即激活</button></form></dialog>
     <dialog id="apiEditorDialog" class="api-editor-dialog"><form id="apiEditorForm"><div class="api-dialog-head"><div><span class="step-number" id="apiEditorEyebrow">API ASSET</span><h3 id="apiEditorTitle">新建</h3></div><button id="apiEditorClose" type="button" aria-label="关闭">×</button></div><div id="apiEditorFields" class="api-editor-fields"></div><div id="apiEditorMessage" role="alert"></div><div class="api-dialog-actions"><button id="apiEditorCancel" class="btn ghost" type="button">取消</button><button class="btn solid" type="submit">保存</button></div></form></dialog>
     <dialog id="apiRunDialog" class="api-editor-dialog api-run-dialog"><div class="api-dialog-head"><div><span class="step-number">RUN REPORT</span><h3 id="apiRunTitle">执行报告</h3></div><button id="apiRunClose" type="button" aria-label="关闭">×</button></div><div id="apiRunContent"></div></dialog>
 

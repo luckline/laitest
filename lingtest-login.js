@@ -18,7 +18,7 @@
     document.getElementById("registerNote").hidden = !registering;
     form.elements.password.autocomplete = registering ? "new-password" : "current-password";
     form.querySelector("button[type=submit]").textContent = registering ? "注册并继续" : "登录并继续";
-    document.getElementById("loginHeading").textContent = registering ? "创建领测账户" : "登录后继续";
+    document.getElementById("loginHeading").textContent = registering ? "创建铭测账户" : "登录后继续";
     message.textContent = "";
   }
 

@@ -27,7 +27,7 @@ def compose_pipeline_prompt(
 ) -> str:
     mode = normalize_generation_mode(mode)
     sections = [
-        f"[领测生成模式] {'Standard（SDD 驱动）' if mode == 'standard' else 'Sketch（轻量需求驱动）'}",
+        f"[铭测生成模式] {'Standard（SDD 驱动）' if mode == 'standard' else 'Sketch（轻量需求驱动）'}",
         "[原始需求]",
         requirement.strip(),
     ]

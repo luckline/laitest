@@ -38,18 +38,18 @@
   const chip = document.createElement("button");
   chip.type = "button";
   chip.className = "lingtest-account-chip";
-  chip.setAttribute("aria-label", "查看领测账户与版本");
+  chip.setAttribute("aria-label", "查看铭测账户与版本");
   chip.innerHTML = '<span class="account-avatar">游</span><span class="account-name">读取账户</span><strong>免费版</strong>';
   actions.appendChild(chip);
 
   const dialog = document.createElement("dialog");
   dialog.className = "lingtest-account-dialog";
-  dialog.innerHTML = '<div class="lingtest-account-card"><button class="lingtest-account-close" aria-label="关闭">×</button><p class="lingtest-account-plan">ACCOUNT &amp; PLAN</p><h2>领测免费版</h2><p class="lingtest-account-sub">账户身份与当前浏览器权益</p><div class="lingtest-account-details"></div><div class="lingtest-account-actions"></div></div>';
+  dialog.innerHTML = '<div class="lingtest-account-card"><button class="lingtest-account-close" aria-label="关闭">×</button><p class="lingtest-account-plan">ACCOUNT &amp; PLAN</p><h2>铭测免费版</h2><p class="lingtest-account-sub">账户身份与当前浏览器权益</p><div class="lingtest-account-details"></div><div class="lingtest-account-actions"></div></div>';
   document.body.appendChild(dialog);
 
   let user = null;
   let entitlement = { plan: "free", active: false };
-  const userName = () => user?.nickname || (user?.mobile ? `用户 ${maskMobile(user.mobile)}` : "领测用户");
+  const userName = () => user?.nickname || (user?.mobile ? `用户 ${maskMobile(user.mobile)}` : "铭测用户");
 
   function render() {
     const pro = entitlement.active && entitlement.plan === "pro";
@@ -70,7 +70,7 @@
       link.setAttribute("href", pro || approved ? "/app" : pending ? "/lingtest-pricing" : link.dataset.freeHref || "/app");
     });
     card.classList.toggle("pro", pro);
-    card.querySelector("h2").textContent = pro ? "领测专业版" : approved ? "专业版待激活" : pending ? "专业版申请审核中" : "领测免费版";
+    card.querySelector("h2").textContent = pro ? "铭测专业版" : approved ? "专业版待激活" : pending ? "专业版申请审核中" : "铭测免费版";
     card.querySelector(".lingtest-account-sub").textContent = loggedIn ? "账户已登录，登录状态可在本站产品间共享" : "登录后，可在本站产品间共享账户身份";
     const identity = loggedIn
       ? `<div><span>账户</span><b>${escapeHtml(name)}</b></div><div><span>绑定信息</span><b>${escapeHtml(maskMobile(user.mobile) || maskEmail(user.email) || "微信账户")}</b></div>`

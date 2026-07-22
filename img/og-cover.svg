@@ -25,9 +25,9 @@
   <text x="94" y="471" fill="#617A73" font-family="Avenir Next, PingFang SC, sans-serif" font-size="22" font-weight="500">产品、技术与生活的长期记录</text>
   <rect x="700" y="178" width="206" height="292" rx="24" fill="url(#ling)" stroke="#315FD1" stroke-opacity=".2"/>
   <rect x="728" y="207" width="54" height="54" rx="15" fill="#315FD1"/>
-  <text x="755" y="243" text-anchor="middle" fill="white" font-family="PingFang SC, sans-serif" font-size="24" font-weight="800">领</text>
-  <text x="728" y="321" fill="#173C35" font-family="PingFang SC, sans-serif" font-size="29" font-weight="800">领测</text>
-  <text x="728" y="353" fill="#45628A" font-family="Avenir Next, sans-serif" font-size="16" font-weight="700">LingTest</text>
+  <text x="755" y="243" text-anchor="middle" fill="white" font-family="PingFang SC, sans-serif" font-size="24" font-weight="800">铭</text>
+  <text x="728" y="321" fill="#173C35" font-family="PingFang SC, sans-serif" font-size="29" font-weight="800">铭测</text>
+  <text x="728" y="353" fill="#45628A" font-family="Avenir Next, sans-serif" font-size="16" font-weight="700">MingTest</text>
   <text x="728" y="394" fill="#5D738F" font-family="PingFang SC, sans-serif" font-size="16">AI 测试设计</text>
   <text x="728" y="422" fill="#5D738F" font-family="PingFang SC, sans-serif" font-size="16">与质量工作台</text>
   <rect x="928" y="178" width="206" height="292" rx="24" fill="url(#time)" stroke="#16816D" stroke-opacity=".2"/>

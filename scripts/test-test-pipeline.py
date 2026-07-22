@@ -54,4 +54,4 @@ assert any("验证码有效期" in detail for detail in issue_details)
 assert len(registration_delivery["requirement_units"]) >= 3
 assert len(registration_delivery["risk_plan"]["risks"]) >= 3
 assert len(registration_delivery["coverage"]["dimensions"]) >= 3
-print("LingTest six-stage pipeline: OK")
+print("MingTest six-stage pipeline: OK")

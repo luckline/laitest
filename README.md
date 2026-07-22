@@ -4,7 +4,7 @@ Luckline 的个人站与产品中心，统一承载个人介绍、产品发布�
 
 当前包含两个持续迭代的产品：
 
-- **领测 LingTest**：AI 测试设计与质量工作台，将“AI 用例设计”和“自动化执行”拆成两个独立工作区；以“快速生成 / 文档驱动”双模式完成需求验证、风险计划、覆盖设计与结构化用例，再将确认后的用例同步至 Playwright 执行区查看日志和失败截图。六个测试设计 Skill 支持分步调试或一键运行，文档驱动模式支持上传 TXT、Markdown、JSON、YAML、CSV 等需求文件。
+- **铭测 MingTest**：AI 测试设计与质量工作台，将“AI 用例设计”和“自动化执行”拆成两个独立工作区；以“快速生成 / 文档驱动”双模式完成需求验证、风险计划、覆盖设计与结构化用例，再将确认后的用例同步至 Playwright 执行区查看日志和失败截图。六个测试设计 Skill 支持分步调试或一键运行，文档驱动模式支持上传 TXT、Markdown、JSON、YAML、CSV 等需求文件。
 - **时光智行 TimeLens**（原时光透卡）：AI 旅行规划、公开路线、出发清单、逐日记录与城市足迹工具。
 
 生产地址：[https://laitest.tech](https://laitest.tech)
@@ -14,11 +14,11 @@ Luckline 的个人站与产品中心，统一承载个人介绍、产品发布�
 | 路径 | 页面 |
 | --- | --- |
 | `/` | Luckline 个人主页、作品与联系方式 |
-| `/lingtest` | 领测产品介绍与完整案例 |
-| `/app` | 领测工作台 |
-| `/lingtest-pricing` | 领测版本、服务与专业版申请 |
-| `/lingtest-login` | 领测登录与注册（专业版申请前置） |
-| `/lingtest-admin` | 领测申请审核与激活码管理（管理员 Token） |
+| `/lingtest` | 铭测产品介绍与完整案例 |
+| `/app` | 铭测工作台 |
+| `/lingtest-pricing` | 铭测版本、服务与专业版申请 |
+| `/lingtest-login` | 铭测登录与注册（专业版申请前置） |
+| `/lingtest-admin` | 铭测申请审核与激活码管理（管理员 Token） |
 | `/lingtest-guides` | 测试方法与质量工程实践 |
 | `/lingtest-tools` | JSON、Diff、正则、时间戳和 Base64 等纯前端测试工具 |
 | `/timelens` | 时光智行 PC 版 |
@@ -29,7 +29,7 @@ Luckline 的个人站与产品中心，统一承载个人介绍、产品发布�
 | `/api/health` | 服务健康检查 |
 | `/api/ai/status` | AI 服务状态 |
 
-顶部产品导航用于在个人主页、领测和时光智行之间切换。个人主页以作品卡承接产品发现，产品页面通过“全部产品”完成跨产品导航。
+顶部产品导航用于在个人主页、铭测和时光智行之间切换。个人主页以作品卡承接产品发现，产品页面通过“全部产品”完成跨产品导航。
 
 ## 快速开始
 
@@ -48,9 +48,9 @@ python3 -m laitest
 默认地址：
 
 - 个人主页：<http://127.0.0.1:8080/>
-- 领测产品页：<http://127.0.0.1:8080/lingtest>
-- 领测工作台：<http://127.0.0.1:8080/app>
-- 领测定价页：<http://127.0.0.1:8080/lingtest-pricing>
+- 铭测产品页：<http://127.0.0.1:8080/lingtest>
+- 铭测工作台：<http://127.0.0.1:8080/app>
+- 铭测定价页：<http://127.0.0.1:8080/lingtest-pricing>
 - 时光智行：<http://127.0.0.1:8080/timelens>
 
 ### 可选：安装页面自动化环境
@@ -84,14 +84,14 @@ python3 -m laitest cli projects
 ```text
 .
 ├── index.html                     # 个人主页
-├── lingtest.html                  # 领测产品介绍
-├── lingtest-guides.html           # 领测方法库
+├── lingtest.html                  # 铭测产品介绍
+├── lingtest-guides.html           # 铭测方法库
 ├── lingtest-tools.html / .js      # 本地运行的常用测试工具箱
 ├── lingtest-pricing.html / .js    # 定价、服务、专业版申请与状态联动
-├── lingtest-login.html / .js      # 领测登录、注册与申请回跳
+├── lingtest-login.html / .js      # 铭测登录、注册与申请回跳
 ├── lingtest-admin.html / .js      # 专业版申请审核与激活码管理
 ├── lingtest-account.js            # 跨页面账户身份与版本组件
-├── app.html / app.js              # 领测工作台
+├── app.html / app.js              # 铭测工作台
 ├── laitest/test_pipeline.py       # 六步用例生成流水线、追溯矩阵与 Case Home 交付
 ├── timelens.html / timelens.js    # 时光智行 PC 版
 ├── timelens-route.html            # 公开路线详情
@@ -108,7 +108,7 @@ python3 -m laitest cli projects
 └── vercel.json                    # 构建、静态资源和路由配置
 ```
 
-## 领测 LingTest
+## 铭测 MingTest
 
 核心流程：
 
@@ -127,8 +127,8 @@ python3 -m laitest cli projects
 - 管理员通过 `/lingtest-admin` 审核申请并生成 24 小时有效的一次性激活码
 - 用户在工作台输入一次性激活码后开通专业版；登录用户的权益按已验证手机号关联
 - 浏览器 ID 仅作为未登录场景和历史激活记录的兼容兜底
-- 领测产品页、工作台和定价页右上角统一展示当前版本；专业版使用紫金色标识
-- 领测复用同域登录态展示账户身份，并区分免费版、审核中、待激活和专业版状态
+- 铭测产品页、工作台和定价页右上角统一展示当前版本；专业版使用紫金色标识
+- 铭测复用同域登录态展示账户身份，并区分免费版、审核中、待激活和专业版状态
 - 专业版用户进入定价页后隐藏重复申请操作，页面直接展示当前版本与工作台入口
 - 点击版本入口可查看申请人称呼、脱敏联系方式、版本与有效期
 - 管理员 Token 通过后端环境变量 `LINGTEST_ADMIN_TOKEN` 配置
@@ -145,7 +145,7 @@ python3 -m laitest cli projects
 5. 用户在 `/app` 输入激活码，专业版立即生效。
 6. 登录用户后续通过已验证手机号识别权益，无需在每台设备重复申请。
 
-账户身份来自时光智行的同域登录令牌，但领测页面统一使用“登录”“账户”“当前版本”等产品中立文案，不向用户暴露跨产品实现细节。
+账户身份来自时光智行的同域登录令牌，但铭测页面统一使用“登录”“账户”“当前版本”等产品中立文案，不向用户暴露跨产品实现细节。
 
 执行器优先使用 `role`、`label`、`placeholder`、可见文本和表单语义定位元素，不绑定特定网站。验证码和网站风控不会被绕过。
 
@@ -207,7 +207,7 @@ PC 版当前支持：
 | POST | `/api/ai/execute_case` | 执行页面用例 |
 | POST | `/api/ai/travel_plan` | 生成旅行计划 |
 
-领测商业化相关接口由 `timelens-server` 提供：
+铭测商业化相关接口由 `timelens-server` 提供：
 
 | 方法 | 路径 | 用途 |
 | --- | --- | --- |
@@ -231,7 +231,7 @@ Authorization: Bearer <LAITEST_TOKEN>
 
 ### 生成测试用例
 
-领测用 6 步流水线替代一次性简单生成：需求与 Spec 验证 → 风险计划 → 端拆分 → 覆盖维度 → 详细用例 → Case Home JSON 交付。`sketch` 适合轻量需求，`standard` 适合原始需求与 SDD 联合驱动；旧客户端不传模式时默认使用 `sketch`。
+铭测用 6 步流水线替代一次性简单生成：需求与 Spec 验证 → 风险计划 → 端拆分 → 覆盖维度 → 详细用例 → Case Home JSON 交付。`sketch` 适合轻量需求，`standard` 适合原始需求与 SDD 联合驱动；旧客户端不传模式时默认使用 `sketch`。
 
 ```bash
 curl -X POST "http://127.0.0.1:8080/api/ai/generate_cases" \
@@ -267,7 +267,7 @@ Node.js 示例见 `examples/shiguang_touka_travel_plan_client.js`。
 | --- | --- |
 | `LAITEST_TOKEN` | 可选的 API Bearer Token |
 | `LAITEST_DATA_DIR` | SQLite 数据目录 |
-| `LINGTEST_QUOTA_API_URL` | 领测统一用量扣减接口，默认 `https://timelens.cc/api/lingtest/usage/consume` |
+| `LINGTEST_QUOTA_API_URL` | 铭测统一用量扣减接口，默认 `https://timelens.cc/api/lingtest/usage/consume` |
 | `LAITEST_DEFAULT_LANG` | 默认生成语言，默认 `zh-CN` |
 | `DEEPSEEK_API_KEY` | DeepSeek API Key |
 | `DEEPSEEK_MODEL` | 默认 `deepseek-v4-flash`；旧值 `deepseek-chat` 会自动迁移 |
@@ -299,10 +299,10 @@ Node.js 示例见 `examples/shiguang_touka_travel_plan_client.js`。
 | --- | --- |
 | 首页文案与产品指标 | `index.html` |
 | 首页布局与字号 | `css/marketing.css`、`css/system-density.css`、`css/home-v5.css` |
-| 领测产品介绍与案例 | `lingtest.html` |
-| 领测账户与版本状态 | `lingtest-account.js`、`css/lingtest-account.css` |
-| 领测定价与申请联动 | `lingtest-pricing.html`、`lingtest-pricing.js` |
-| 领测申请审核 | `lingtest-admin.html`、`lingtest-admin.js` |
+| 铭测产品介绍与案例 | `lingtest.html` |
+| 铭测账户与版本状态 | `lingtest-account.js`、`css/lingtest-account.css` |
+| 铭测定价与申请联动 | `lingtest-pricing.html`、`lingtest-pricing.js` |
+| 铭测申请审核 | `lingtest-admin.html`、`lingtest-admin.js` |
 | 测试方法文章 | `lingtest-guides.html` |
 | 跨产品导航 | `product-nav.js`、`css/product-nav.css` |
 | 公众号二维码 | `img/qrcode_laitest.jpg` |
@@ -342,9 +342,9 @@ git diff --check
 重点人工回归：
 
 1. 首页能进入两个产品。
-2. 领测产品页和工作台能返回个人主页。
-3. 领测可生成用例、执行用例并查看失败日志和截图。
-4. 登录后，领测右上角能显示账户和正确版本，专业版权益按手机号识别。
+2. 铭测产品页和工作台能返回个人主页。
+3. 铭测可生成用例、执行用例并查看失败日志和截图。
+4. 登录后，铭测右上角能显示账户和正确版本，专业版权益按手机号识别。
 5. 专业版用户访问定价页时不会再次看到申请入口。
 6. 时光智行可登录、同步计划、查看城市足迹和清单。
 7. 公开路线详情可加载、翻页和分享。
@@ -371,6 +371,6 @@ git push origin main
 
 - 补充账户登录、专业版识别和定价状态的自动化回归
 - 用真实访问、申请和激活数据替换静态产品指标
-- 完善领测云端项目、运行历史和失败聚类
+- 完善铭测云端项目、运行历史和失败聚类
 - 优化路线分享卡片与服务端动态 Open Graph
 - 建立内容更新节奏和产品更新日志
