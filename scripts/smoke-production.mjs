@@ -8,7 +8,7 @@ const checks = [
   {
     name: "个人主页",
     path: "/",
-    contains: ["Luckline", 'href="/lingtest"', 'href="/timelens"', "product-nav.js?v=5", "5 类 · 22 项出发清单", "home-growth-p0.css?v=2", "product-visuals.css?v=1", "lingtest-workspace-preview.png", "timelens-workspace-preview.png", "img/og-cover.png"],
+    contains: ["Luckline", 'href="/lingtest"', 'href="/timelens"', "product-nav.js?v=5", "home-v6.css?v=1", "直接进入产品", "AI QUALITY WORKSPACE", "AI TRAVEL WORKSPACE", "lingtest-workspace-preview.png", "timelens-workspace-preview.png", "img/og-cover.png"],
   },
   {
     name: "领测产品页",
