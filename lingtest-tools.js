@@ -1,4 +1,5 @@
 (()=>{
+  if(new URLSearchParams(location.search).get('embed')==='1')document.body.classList.add('tools-embedded');
   const $=id=>document.getElementById(id);
   const esc=value=>String(value).replace(/[&<>"']/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
   const setMessage=(id,text,ok=false)=>{const el=$(id);el.textContent=text;el.classList.toggle('success',ok)};

@@ -19,7 +19,7 @@ const checks = [
   {
     name: "铭测产品页",
     path: "/mingtest",
-    contains: ["铭测 MingTest", "从需求分析到测试资产交付", "product-nav.js?v=5", "lingtest-account.js?v=5", "AI 用例设计", "自动化执行", "API 自动化"],
+    contains: ["铭测 MingTest", "从需求分析到测试资产交付", "product-nav.js?v=5", "lingtest-account.js?v=5", "AI 用例设计", "自动化执行", "API 自动化", 'data-workspace-mode="tools"', 'id="toolsWorkspace"', "/mingtest-tools?embed=1"],
   },
   {
     name: "铭测工作台",
@@ -74,7 +74,7 @@ const checks = [
   {
     name: "铭测工具脚本",
     path: "/lingtest-tools.js?v=2",
-    contains: ["normalizeTimestamp", "TextEncoder", "TextDecoder", "jsonHighlight", "diffLines", "runRegex"],
+    contains: ["normalizeTimestamp", "TextEncoder", "TextDecoder", "jsonHighlight", "diffLines", "runRegex", "tools-embedded"],
   },
   {
     name: "时光智行",

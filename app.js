@@ -435,7 +435,7 @@ function renderExecutionCases() {
 }
 
 function switchWorkspace(mode, options = {}) {
-  const next = ["design", "execution", "api"].includes(mode) ? mode : "design";
+  const next = ["design", "execution", "api", "tools"].includes(mode) ? mode : "design";
   state.workspaceMode = next;
   document.querySelectorAll("[data-workspace-panel]").forEach((panel) => {
     panel.hidden = false;
@@ -446,7 +446,11 @@ function switchWorkspace(mode, options = {}) {
     button.classList.toggle("active", active);
     button.setAttribute("aria-selected", active ? "true" : "false");
   });
-  if (options.updateHash !== false) history.replaceState(null, "", next === "api" ? "#api" : next === "execution" ? "#web" : location.pathname + location.search);
+  if (next === "tools") {
+    const frame = el("toolsWorkspaceFrame");
+    if (frame && !frame.getAttribute("src")) frame.src = frame.dataset.src;
+  }
+  if (options.updateHash !== false) history.replaceState(null, "", next === "tools" ? "#tools" : next === "api" ? "#api" : next === "execution" ? "#web" : location.pathname + location.search);
   if (options.scroll !== false) document.querySelector(".usage-strip")?.scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
@@ -1088,7 +1092,7 @@ function main() {
   refreshEntitlement();
   refreshUsage();
   loadGenerationHistory();
-  switchWorkspace(["#execution", "#web"].includes(location.hash) ? "execution" : location.hash === "#api" ? "api" : "design", { scroll: false, updateHash: false });
+  switchWorkspace(["#execution", "#web"].includes(location.hash) ? "execution" : location.hash === "#api" ? "api" : location.hash === "#tools" ? "tools" : "design", { scroll: false, updateHash: false });
   if (!state.lastCases.length) {
     setStatus("就绪。按 Ctrl/Cmd + Enter 可快速生成。", "");
     el("executionStatus").textContent = "准备执行：请先生成或恢复测试用例。";
