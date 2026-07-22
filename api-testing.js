@@ -190,7 +190,7 @@
     });
     $("#apiEditorClose").addEventListener("click", () => $("#apiEditorDialog").close()); $("#apiEditorCancel").addEventListener("click", () => $("#apiEditorDialog").close());
     $("#apiEditorForm").addEventListener("submit", executeAction); $("#apiRunClose").addEventListener("click", () => $("#apiRunDialog").close());
-    document.querySelector('[data-workspace-mode="api"]').addEventListener("click", () => { history.replaceState(null, "", "#api"); if (!state.projects.length) loadProjects(); });
+    document.querySelector('[data-workspace-mode="api"]').addEventListener("click", () => { if (!state.projects.length) loadProjects(); });
     window.addEventListener("lingtest:account-loaded", () => loadProjects(state.projectId));
   }
 

@@ -17,7 +17,7 @@
     <link rel="stylesheet" href="/css/product-nav.css?v=3" />
     <link rel="stylesheet" href="/css/lingtest-account.css?v=2" />
     <link rel="stylesheet" href="/css/lingtest-pipeline.css?v=4" />
-    <link rel="stylesheet" href="/css/api-testing.css?v=2" />
+    <link rel="stylesheet" href="/css/api-testing.css?v=3" />
   </head>
   <body class="app-page">
     <div class="app-shell">
@@ -26,11 +26,12 @@
           <span class="mark">领</span>
           <span class="brand-copy"><b>领测 LingTest</b><small>AI QUALITY WORKSPACE</small></span>
         </a>
-        <nav class="shared-links" aria-label="领测导航">
-          <a href="/lingtest">产品介绍</a>
+        <nav class="shared-links workspace-main-menu" aria-label="领测工作台主菜单">
+          <button type="button" data-workspace-mode="design" class="active">测试设计</button>
+          <button type="button" data-workspace-mode="execution">Web 自动化<span id="executionCaseBadge">0</span></button>
+          <button type="button" data-workspace-mode="api">API 自动化<span id="apiProjectBadge">0</span></button>
           <a href="/lingtest-guides">方法库</a>
           <a href="/lingtest-tools">工具箱</a>
-          <a href="/lingtest-pricing">定价</a>
         </nav>
         <div class="nav-actions">
           <div class="workspace-state"><span></span>工作台在线</div>
@@ -39,28 +40,7 @@
       </header>
 
       <main class="ai-main">
-        <section class="ai-hero">
-          <div>
-            <p class="eyebrow">LINGTEST · AI QUALITY WORKSPACE</p>
-            <h1>从需求风险，<br>到可追溯的测试证据。</h1>
-            <p class="sub">面向测试与质量团队的一体化工作台：完成需求分析、测试设计、Web 与 API 自动化、结果分析和资产沉淀。</p>
-          </div>
-          <div class="hero-proof"><span><b>01</b><i>分析</i><small>需求与风险</small></span><span><b>02</b><i>设计</i><small>场景与用例</small></span><span><b>03</b><i>执行</i><small>Web 与 API</small></span><span><b>04</b><i>洞察</i><small>证据与报告</small></span></div>
-        </section>
-
-        <section class="workspace-overview" aria-label="领测工作流">
-          <div><span>01</span><b>需求分析</b><p>质量审查 · 风险识别 · 影响面</p></div>
-          <i>→</i><div><span>02</span><b>测试设计</b><p>覆盖建模 · 用例生成 · 评审</p></div>
-          <i>→</i><div><span>03</span><b>自动化验证</b><p>Web 场景 · API 链路 · 断言</p></div>
-          <i>→</i><div><span>04</span><b>结果闭环</b><p>证据留存 · 报告 · 资产复用</p></div>
-        </section>
         <section class="usage-strip" aria-label="使用额度"><div><span id="planLabel">FREE PLAN</span><b id="quotaSummary">今日免费额度加载中…</b><small id="quotaNote">游客每天可生成 5 次、执行 3 次</small></div><div class="usage-actions"><span id="generationQuota">生成 0/5</span><span id="executionQuota">执行 0/3</span><a id="accountLoginPrompt" href="/lingtest-login?return=%2Fapp">登录后次数翻倍</a><button id="openActivation" type="button">输入激活码</button><a href="/lingtest-pricing">查看专业版 →</a></div></section>
-
-        <nav class="workspace-mode-tabs" aria-label="工作台功能切换">
-          <button type="button" data-workspace-mode="design" class="active"><span>01</span><b>测试分析与设计</b><small>需求审查、风险规划、覆盖设计与用例交付</small></button>
-          <button type="button" data-workspace-mode="execution"><span>02</span><b>Web 自动化测试</b><small>浏览器场景执行、断言验证与失败现场</small><em id="executionCaseBadge">0</em></button>
-          <button type="button" data-workspace-mode="api"><span>03</span><b>API 自动化测试</b><small>环境、接口用例、测试套件与运行报告</small><em id="apiProjectBadge">0</em></button>
-        </nav>
 
         <section class="composer-card" data-workspace-panel="design">
           <div class="composer-head">
@@ -163,8 +143,8 @@
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <script src="/product-nav.js?v=5"></script>
     <script src="/lingtest-account.js?v=5"></script>
-    <script src="/app.js?v=workspace-split-1"></script>
-    <script src="/api-testing.js?v=2"></script>
+    <script src="/app.js?v=workspace-menu-1"></script>
+    <script src="/api-testing.js?v=3"></script>
   <script defer src="/site-analytics.js"></script><script defer src="/_vercel/insights/script.js"></script>
 </body>
 </html>
