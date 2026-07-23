@@ -24,7 +24,7 @@ const checks = [
   {
     name: "铭测工作台",
     path: "/app",
-    contains: ["AI QUALITY WORKSPACE", "product-nav.js?v=5", "lingtest-account.js?v=5", "app-shell-fix.css?v=5", "system-density.css?v=2", "lingtest-execution.css?v=2", "lingtest-pipeline.css?v=4", "从需求分析到测试资产交付", "AI 用例设计", "自动化执行", "executionWorkspace", "快速生成", "文档驱动", "高级模式", "分步调试", "运行当前技能", "一键运行完整流程", "sddSpecFile", "Case Home JSON", "我的生成记录", "登录后次数翻倍", "PRO ACTIVATION", 'id="aiPrompt"'],
+    contains: ["AI QUALITY WORKSPACE", "product-nav.js?v=5", "lingtest-account.js?v=5", "app-shell-fix.css?v=5", "system-density.css?v=2", "workspace-polish.css?v=1", "lingtest-execution.css?v=2", "lingtest-pipeline.css?v=4", "从需求分析到测试资产交付", "AI 用例设计", "自动化执行", "executionWorkspace", "快速生成", "文档驱动", "高级模式", "分步调试", "运行当前技能", "一键运行完整流程", "sddSpecFile", "Case Home JSON", "我的生成记录", "登录后次数翻倍", "PRO ACTIVATION", 'id="aiPrompt"'],
   },
   {
     name: "铭测定价",
