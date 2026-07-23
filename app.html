@@ -27,6 +27,7 @@
     <link rel="stylesheet" href="/css/lingtest-account.css?v=2" />
     <link rel="stylesheet" href="/css/lingtest-pipeline.css?v=4" />
     <link rel="stylesheet" href="/css/api-testing.css?v=3" />
+    <link rel="stylesheet" href="/css/api-testing-v2.css?v=1" />
     <link rel="stylesheet" href="/css/workspace-polish.css?v=1" />
   </head>
   <body class="app-page">
@@ -132,7 +133,7 @@
               <div id="apiProjectPanel" hidden>
                 <header class="api-project-head"><div><small>ACTIVE PROJECT</small><h3 id="apiProjectName">接口测试项目</h3><p id="apiProjectDescription"></p></div><button id="apiEditProject" class="btn text" type="button">编辑项目</button></header>
                 <nav class="api-tabs" aria-label="接口测试功能"><button class="active" data-api-tab="environments" type="button">环境</button><button data-api-tab="cases" type="button">用例</button><button data-api-tab="suites" type="button">套件</button><button data-api-tab="runs" type="button">报告</button></nav>
-                <div class="api-toolbar-row"><div><b id="apiTabTitle">测试环境</b><span id="apiTabHint">配置不同环境的基础地址、请求头和变量</span></div><button id="apiPrimaryAction" class="btn solid" type="button">＋ 新建环境</button></div>
+                <div class="api-toolbar-row"><div><b id="apiTabTitle">测试环境</b><span id="apiTabHint">配置不同环境的基础地址、请求头和变量</span></div><div class="api-toolbar-actions"><button id="apiImportAction" class="btn ghost" type="button">导入 OpenAPI / cURL</button><button id="apiPrimaryAction" class="btn solid" type="button">＋ 新建环境</button></div></div>
                 <div id="apiResourceList" class="api-resource-list"></div>
               </div>
             </div>
@@ -156,13 +157,14 @@
     </dialog>
     <dialog id="activationDialog" class="activation-dialog"><form id="activationForm"><button id="closeActivation" type="button" aria-label="关闭">×</button><span class="step-number">PRO ACTIVATION</span><h3>激活铭测专业版</h3><p>输入管理员审核后发放的一次性激活码。登录用户激活后，权益将关联已验证手机号。</p><input id="activationCodeInput" name="activationCode" required placeholder="LT-XXXX-XXXX" autocomplete="one-time-code"><div id="activationMessage" role="alert"></div><button class="btn solid" type="submit">立即激活</button></form></dialog>
     <dialog id="apiEditorDialog" class="api-editor-dialog"><form id="apiEditorForm"><div class="api-dialog-head"><div><span class="step-number" id="apiEditorEyebrow">API ASSET</span><h3 id="apiEditorTitle">新建</h3></div><button id="apiEditorClose" type="button" aria-label="关闭">×</button></div><div id="apiEditorFields" class="api-editor-fields"></div><div id="apiEditorMessage" role="alert"></div><div class="api-dialog-actions"><button id="apiEditorCancel" class="btn ghost" type="button">取消</button><button class="btn solid" type="submit">保存</button></div></form></dialog>
+    <dialog id="apiImportDialog" class="api-editor-dialog api-import-dialog"><form id="apiImportForm"><div class="api-dialog-head"><div><span class="step-number">API IMPORT</span><h3>导入接口资产</h3></div><button id="apiImportClose" type="button" aria-label="关闭">×</button></div><div class="api-import-body"><label><span>导入格式</span><select name="format"><option value="auto">自动识别</option><option value="openapi">OpenAPI 3 / Swagger JSON</option><option value="curl">cURL</option></select></label><label><span>粘贴内容</span><textarea name="source" required spellcheck="false" placeholder="粘贴 OpenAPI JSON 或 curl 命令"></textarea></label><p>OpenAPI 将批量创建接口用例，并根据 servers 自动创建环境；cURL 将创建一条可立即调试的用例。</p><div id="apiImportMessage" role="alert"></div></div><div class="api-dialog-actions"><button id="apiImportCancel" class="btn ghost" type="button">取消</button><button class="btn solid" type="submit">解析并导入</button></div></form></dialog>
     <dialog id="apiRunDialog" class="api-editor-dialog api-run-dialog"><div class="api-dialog-head"><div><span class="step-number">RUN REPORT</span><h3 id="apiRunTitle">执行报告</h3></div><button id="apiRunClose" type="button" aria-label="关闭">×</button></div><div id="apiRunContent"></div></dialog>
 
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <script src="/product-nav.js?v=5"></script>
     <script src="/lingtest-account.js?v=5"></script>
     <script src="/app.js?v=workspace-menu-1"></script>
-    <script src="/api-testing.js?v=3"></script>
+    <script src="/api-testing.js?v=4"></script>
   <script defer src="/site-analytics.js"></script><script defer src="/_vercel/insights/script.js"></script>
 </body>
 </html>
