@@ -32,13 +32,13 @@
 
   function renderProjects() {
     $("#apiProjectBadge").textContent = state.projects.length;
-    $("#apiLoginState").textContent = token() ? `已登录 · ${state.projects.length} 个项目` : "登录后可使用";
     $("#apiProjectList").innerHTML = state.projects.length ? state.projects.map(project => `
       <button type="button" data-project-id="${esc(project.id)}" class="${project.id === state.projectId ? "active" : ""}">
         <span>${esc(project.name.slice(0, 1).toUpperCase())}</span><div><b>${esc(project.name)}</b><small>${Number(project.caseCount || 0)} 用例 · ${Number(project.suiteCount || 0)} 套件</small></div>
       </button>`).join("") : `<div class="api-list-empty"><b>暂无项目</b><span>点击右上角 ＋ 创建</span></div>`;
     const project = selectedProject();
-    $("#apiProjectEmpty").hidden = Boolean(project); $("#apiProjectPanel").hidden = !project;
+    $("#apiProjectEmpty").hidden = Boolean(project); $("#apiProjectEmpty").classList.toggle("api-hidden", Boolean(project));
+    $("#apiProjectPanel").hidden = !project; $("#apiProjectPanel").classList.toggle("api-hidden", !project);
     if (project) { $("#apiProjectName").textContent = project.name; $("#apiProjectDescription").textContent = project.description || "暂无项目说明"; }
   }
 

@@ -24,7 +24,7 @@ const checks = [
   {
     name: "铭测工作台",
     path: "/app",
-    contains: ["AI QUALITY WORKSPACE", "product-nav.js?v=5", "lingtest-account.js?v=5", "app-shell-fix.css?v=5", "system-density.css?v=2", "workspace-polish.css?v=1", "api-testing-v2.css?v=1", "api-testing.js?v=4", "lingtest-execution.css?v=2", "lingtest-pipeline.css?v=4", "从需求分析到测试资产交付", "AI 用例设计", "自动化执行", "executionWorkspace", "快速生成", "文档驱动", "高级模式", "分步调试", "运行当前技能", "一键运行完整流程", "导入 OpenAPI / cURL", "apiImportDialog", "sddSpecFile", "Case Home JSON", "我的生成记录", "登录后次数翻倍", "PRO ACTIVATION", 'id="aiPrompt"'],
+    contains: ["AI QUALITY WORKSPACE", "product-nav.js?v=5", "lingtest-account.js?v=5", "app-shell-fix.css?v=5", "system-density.css?v=2", "workspace-polish.css?v=2", "api-testing-v2.css?v=2", "api-testing.js?v=5", "app.js?v=workspace-menu-2", "lingtest-execution.css?v=2", "lingtest-pipeline.css?v=4", "从需求分析到测试资产交付", "AI 用例设计", "自动化执行", "executionWorkspace", "快速生成", "文档驱动", "高级模式", "分步调试", "运行当前技能", "一键运行完整流程", "导入 OpenAPI / cURL", "apiImportDialog", "sddSpecFile", "Case Home JSON", "我的生成记录", "登录后次数翻倍", "PRO ACTIVATION", 'id="aiPrompt"'],
   },
   {
     name: "铭测定价",
@@ -75,6 +75,16 @@ const checks = [
     name: "铭测工具脚本",
     path: "/lingtest-tools.js?v=2",
     contains: ["normalizeTimestamp", "TextEncoder", "TextDecoder", "jsonHighlight", "diffLines", "runRegex", "tools-embedded"],
+  },
+  {
+    name: "接口自动化状态脚本",
+    path: "/api-testing.js?v=5",
+    contains: ["apiProjectEmpty", "api-hidden", "parseOpenApi", "parseCurl", "apiImportDialog"],
+  },
+  {
+    name: "接口自动化增强样式",
+    path: "/css/api-testing-v2.css?v=2",
+    contains: ["#apiProjectEmpty[hidden]", "#apiProjectPanel[hidden]", "api-request-builder", "api-rule-row"],
   },
   {
     name: "时光智行",

@@ -25,6 +25,8 @@
 
 .app-page:not(.guides-page) .ai-main { padding-top: 18px; }
 .app-page:not(.guides-page) .ai-main.account-compact { padding-top: 10px; }
+.app-page:not(.guides-page) .ai-main.workspace-core-active { padding-top: 6px; }
+.app-page:not(.guides-page) .ai-main.workspace-core-active .usage-strip { display: none; }
 
 .app-page .usage-strip {
   min-height: 58px;
@@ -124,6 +126,7 @@
   .app-page .workspace-main-menu button { min-height: 38px; padding: 0 10px; }
   .app-page:not(.guides-page) .ai-main { padding-top: 12px; }
   .app-page:not(.guides-page) .ai-main.account-compact { padding-top: 7px; }
+  .app-page:not(.guides-page) .ai-main.workspace-core-active { padding-top: 4px; }
   .app-page .composer-head h1 { font-size: 22px; }
   .app-page .generation-mode { grid-template-columns: 1fr; }
   .app-page .generation-mode span { min-height: 44px; }

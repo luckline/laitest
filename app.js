@@ -439,6 +439,7 @@ function renderExecutionCases() {
 function switchWorkspace(mode, options = {}) {
   const next = ["design", "execution", "api", "tools"].includes(mode) ? mode : "design";
   state.workspaceMode = next;
+  document.querySelector(".ai-main")?.classList.toggle("workspace-core-active", next !== "design");
   document.querySelectorAll("[data-workspace-panel]").forEach((panel) => {
     panel.hidden = false;
     panel.classList.toggle("workspace-panel-hidden", panel.dataset.workspacePanel !== next);
@@ -453,7 +454,7 @@ function switchWorkspace(mode, options = {}) {
     if (frame && !frame.getAttribute("src")) frame.src = frame.dataset.src;
   }
   if (options.updateHash !== false) history.replaceState(null, "", next === "tools" ? "#tools" : next === "api" ? "#api" : next === "execution" ? "#web" : location.pathname + location.search);
-  if (options.scroll !== false) document.querySelector(".usage-strip")?.scrollIntoView({ behavior: "smooth", block: "start" });
+  if (options.scroll !== false && next === "design") document.querySelector(".usage-strip:not(.account-managed)")?.scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
 function getExecutionTarget() {
