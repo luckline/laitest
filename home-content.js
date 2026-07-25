@@ -39,6 +39,6 @@
       root.innerHTML='<div class="home-content-loading-v6">内容正在整理中，欢迎先逛逛知识库。</div>';
     })
     .catch(()=>{
-      root.innerHTML='<div class="home-content-loading-v6"><a href="/articles">前往文章归档 →</a></div>';
+      root.innerHTML='<div class="home-content-loading-v6"><a href="/content">前往内容中心 →</a></div>';
     });
 })();

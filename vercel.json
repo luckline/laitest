@@ -19,7 +19,8 @@
     { "source": "/lingtest-tools", "destination": "/mingtest-tools", "permanent": true },
     { "source": "/lingtest-pricing", "destination": "/mingtest-pricing", "permanent": true },
     { "source": "/lingtest-login", "destination": "/mingtest-login", "permanent": true },
-    { "source": "/lingtest-admin", "destination": "/mingtest-admin", "permanent": true }
+    { "source": "/lingtest-admin", "destination": "/mingtest-admin", "permanent": true },
+    { "source": "/articles", "destination": "/content", "permanent": true }
   ],
   "builds": [
     { "src": "api/index.py", "use": "@vercel/python" },
@@ -93,6 +94,7 @@
     { "source": "/travel/(.*)", "destination": "/api/timelens_share.py" },
     { "source": "/timelens-routes-sitemap.xml", "destination": "/api/timelens_share.py" },
     { "source": "/articles", "destination": "/api/content_share.py" },
+    { "source": "/content", "destination": "/api/content_share.py" },
     { "source": "/articles/(.*)", "destination": "/api/content_share.py" },
     { "source": "/articles-sitemap.xml", "destination": "/api/content_share.py" },
     { "source": "/(.*)", "destination": "/$1" }

@@ -170,10 +170,11 @@ def _shell(*, title: str, description: str, canonical: str, body: str, image: st
 def _header() -> str:
     return """<header class="content-nav unified-nav" data-product="luckline">
     <a class="content-brand" href="/"><span>L</span><div><b>Luckline</b><small>CONTENT ARCHIVE</small></div></a>
-    <nav><a href="/articles">文章</a><a href="/travel/hangzhou">旅行路线</a><a href="/library">知识库</a></nav>
+    <nav><a href="/content">内容</a><a href="/mingtest-guides">测试方法</a><a href="/library">资源收藏</a></nav>
     </header>"""
 
 
+@app.get("/content")
 @app.get("/articles")
 def article_index() -> Response:
     try:
@@ -195,19 +196,23 @@ def article_index() -> Response:
         cards = '<div class="content-empty"><h2>内容正在整理中</h2><p>龙虾运营产物会陆续沉淀到这里。</p></div>'
     body = (
         _header()
-        + '<main class="content-index"><section class="content-hero"><div><span>LUCKLINE · JOURNAL</span>'
-        '<h1>写下正在发生的<br>产品与生活。</h1><p>旅行见闻、产品实践与数字生活。这里收录小梁游记和铭锦数智持续发布的原创内容。</p>'
-        '<div class="content-hero-actions"><a href="#latest">开始阅读 ↓</a><a href="/">返回个人站</a></div></div>'
-        f'<aside><small>CONTENT ARCHIVE</small><strong>{len(valid_posts):02d}</strong><p>篇公开文章</p><div><span>旅行</span><span>产品</span><span>技术</span></div></aside></section>'
+        + '<main class="content-index"><section class="content-hero"><div><span>LUCKLINE · CONTENT</span>'
+        '<h1>原创、方法与资源，<br>统一沉淀。</h1><p>从持续发布的原创文章，到可以直接复用的测试方法，再到长期收藏的专业资料。</p>'
+        '<div class="content-hero-actions"><a href="#latest">阅读最新原创 ↓</a><a href="/">返回个人站</a></div></div>'
+        f'<aside><small>CONTENT SYSTEM</small><strong>{len(valid_posts):02d}</strong><p>篇原创文章</p><div><span>原创</span><span>方法</span><span>资源</span></div></aside></section>'
+        '<section class="content-portals" aria-label="内容分类">'
+        '<a href="#latest"><span>01 · ORIGINALS</span><h2>原创文章</h2><p>旅行见闻、产品实践与数字生活，由运营系统持续归档。</p><b>浏览最新内容 ↓</b></a>'
+        '<a href="/mingtest-guides"><span>02 · METHODS</span><h2>测试方法</h2><p>把质量工程经验整理成可以复用的框架、清单和实践。</p><b>进入方法库 →</b></a>'
+        '<a href="/library"><span>03 · RESOURCES</span><h2>资源收藏</h2><p>外部文章、工具与参考资料，按主题集中检索和管理。</p><b>打开资源库 →</b></a></section>'
         f'<section id="latest" class="content-feed-head"><div><span>LATEST STORIES</span><h2>最新发布</h2></div><p>由内容运营系统自动归档，持续更新。</p></section>'
         f'<section class="content-grid">{cards}</section></main>'
-        '<footer class="content-footer"><div><b>Luckline</b><span>产品、技术与生活的长期记录。</span></div><nav><a href="/">个人站</a><a href="/library">知识库</a><a href="/timelens">时光智行</a></nav></footer>'
+        '<footer class="content-footer"><div><b>Luckline</b><span>产品、技术与生活的长期记录。</span></div><nav><a href="/">个人站</a><a href="/mingtest-guides">测试方法</a><a href="/library">资源收藏</a></nav></footer>'
     )
     return Response(
         _shell(
-            title="Luckline 文章｜旅行见闻、产品实践与数字生活",
-            description="小梁游记与铭锦数智的原创内容档案，持续整理旅行路线、产品实践和数字生活文章。",
-            canonical=f"{SITE_BASE}/articles",
+            title="Luckline 内容中心｜原创文章、测试方法与资源收藏",
+            description="Luckline 内容中心，统一收录原创文章、质量工程方法、旅行见闻与专业资源收藏。",
+            canonical=f"{SITE_BASE}/content",
             body=body,
         ),
         content_type="text/html; charset=utf-8",
@@ -240,7 +245,7 @@ def article_detail(slug: str) -> Response:
         <h1>{html.escape(title)}</h1><p>{html.escape(description)}</p></header>
         {f'<img class="article-cover" src="{html.escape(image, quote=True)}" alt="{html.escape(title, quote=True)}">' if post.get('coverImage') else ''}
         <div class="article-body">{_content_html(post.get('content'))}</div>
-        <footer class="article-foot">{original_link}<a href="/articles">返回全部文章</a></footer>
+        <footer class="article-foot">{original_link}<a href="/content">返回内容中心</a></footer>
         </article><aside class="article-cta"><span>TIME TO GO</span><h2>把旅行灵感变成真正的路线</h2>
         <p>在时光智行查看公开路线，或进入微信小程序继续规划。</p><a href="/travel/hangzhou">查看旅行路线 →</a></aside></main>"""
     )
@@ -273,7 +278,7 @@ def article_sitemap() -> Response:
         posts = (_api("/api/content/posts?page=1&pageSize=100").get("list") or [])
     except Exception:
         posts = []
-    urls = [f"<url><loc>{SITE_BASE}/articles</loc></url>"]
+    urls = [f"<url><loc>{SITE_BASE}/content</loc></url>"]
     for post in posts:
         slug = str(post.get("slug") or "")
         if not slug:
