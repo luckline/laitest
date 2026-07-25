@@ -1,6 +1,9 @@
 const API_BASE="https://timelens.cc",TOKEN_KEY="lingtest:admin-token";
 const $=selector=>document.querySelector(selector),loginPanel=$("#loginPanel"),adminPanel=$("#adminPanel"),leadList=$("#leadList"),loginMessage=$("#loginMessage");
 const escapeHtml=value=>String(value??"").replace(/[&<>"']/g,char=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[char]));
+document.head.insertAdjacentHTML("beforeend",'<link rel="stylesheet" href="/css/lingtest-admin-users.css?v=1">');
+adminPanel.querySelector(".admin-tabs [data-view='leads']").insertAdjacentHTML("beforebegin",'<button data-view="users">用户数据</button>');
+$("#usageView").insertAdjacentHTML("afterend",'<section id="usersView" hidden><div class="admin-head"><div><p>USER INSIGHTS</p><h1>用户数据</h1><span>查看用户增长、活跃与小程序数据沉淀情况。</span></div><div><span id="usersUpdatedAt" class="updated-at"></span><button class="refresh" data-refresh>刷新用户</button></div></div><div id="usersStatus" class="data-status" role="status">正在读取用户数据…</div><div id="userMetricGrid" class="metric-grid user-metrics" aria-live="polite"></div><section class="dashboard-panel user-panel"><div class="panel-head"><div><p>RECENT USERS</p><h2>最近活跃用户</h2></div><span>最多显示 100 位 · 手机号已脱敏</span></div><div id="userList" class="user-list"></div></section><div class="scope-note"><b>隐私说明</b><span>仅展示运营所需的聚合数据和脱敏手机号，不返回密码、微信 OpenID、完整手机号等敏感凭证。</span></div></section>');
 let token=sessionStorage.getItem(TOKEN_KEY)||"";
 const statusLabels={new:"待处理",contacted:"已联系",approved:"已通过",active:"已激活",rejected:"已拒绝"};
 async function api(path,options={}){const response=await fetch(`${API_BASE}${path}`,{...options,headers:{"Content-Type":"application/json","Authorization":`Bearer ${token}`,...options.headers}});const data=await response.json().catch(()=>({}));if(!response.ok||data.code!==0)throw new Error(data.message||`HTTP ${response.status}`);return data.data||data}
@@ -32,12 +35,27 @@ function renderUsage(routeData,cardData){
 }
 async function loadUsage(){const status=$("#usageStatus");status.hidden=false;status.className="data-status";status.textContent="正在读取当前数据…";try{const [routes,cards]=await Promise.all([loadPublicCollection("/api/trips/public"),loadPublicCollection("/api/cards/public")]);renderUsage(routes,cards)}catch(error){status.className="data-status error";status.textContent=`小程序数据加载失败：${error.message}`;$("#metricGrid").innerHTML=""}}
 async function loadLeads(){const status=$("#statusFilter").value;const data=await api(`/api/lingtest/admin/leads${status?`?status=${encodeURIComponent(status)}`:""}`);render(data.leads||[])}
+function dateTime(value){if(!value)return"从未登录";const date=new Date(value);return Number.isNaN(date.getTime())?"—":date.toLocaleString("zh-CN",{month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit"})}
+function renderUsers(data){
+  const summary=data.summary||{},users=Array.isArray(data.users)?data.users:[];
+  const metrics=[
+    {label:"注册用户",value:summary.totalUsers,note:`微信用户 ${number(summary.wechatUsers)}`,tone:"green"},
+    {label:"今日新增",value:summary.newToday,note:`近 7 日新增 ${number(summary.newSevenDays)}`,tone:"blue"},
+    {label:"今日活跃",value:summary.activeToday,note:`近 7 日活跃 ${number(summary.activeSevenDays)}`,tone:"orange"},
+    {label:"已验证手机",value:summary.mobileUsers,note:"可跨端登录账户",tone:"purple"}
+  ];
+  $("#userMetricGrid").innerHTML=metrics.map(item=>`<article class="metric-card ${item.tone}"><span>${item.label}</span><strong>${number(item.value)}</strong><small>${item.note}</small></article>`).join("");
+  $("#userList").innerHTML=users.length?users.map(user=>`<article><div class="user-identity"><i>${escapeHtml(String(user.nickname||"用").slice(0,1))}</i><span><b>${escapeHtml(user.nickname||`用户 ${user.id}`)}</b><small>${escapeHtml(user.mobileMasked||"未绑定手机")} · ${user.wechatBound?"微信用户":"非微信用户"}</small></span></div><div><b>${number(user.tripCount)}</b><small>路线</small></div><div><b>${number(user.recordCount)}</b><small>记录</small></div><div><b>${number(user.markerCount)}</b><small>足迹</small></div><time><b>${escapeHtml(dateTime(user.lastLoginAt))}</b><small>最近登录</small></time></article>`).join(""):"<div class='empty compact'>还没有用户数据</div>";
+  $("#usersUpdatedAt").textContent=`更新于 ${new Date().toLocaleTimeString("zh-CN",{hour:"2-digit",minute:"2-digit"})}`;
+  $("#usersStatus").hidden=true;
+}
+async function loadUsers(){const status=$("#usersStatus");status.hidden=false;status.className="data-status";status.textContent="正在读取用户数据…";try{renderUsers(await api("/api/lingtest/admin/users"))}catch(error){status.className="data-status error";status.textContent=`用户数据加载失败：${error.message}`;$("#userMetricGrid").innerHTML="";$("#userList").innerHTML=""}}
 async function loadPublicCollection(path){const first=await api(`${path}?page=1&pageSize=100`),pages=Math.ceil((Number(first.total)||0)/100);if(pages<=1)return first;const rest=await Promise.all(Array.from({length:pages-1},(_,index)=>api(`${path}?page=${index+2}&pageSize=100`)));return{...first,list:[...listOf(first),...rest.flatMap(listOf)]}}
 async function load(){try{await loadLeads();showAdmin();await loadUsage()}catch(error){if(/凭证|401/.test(error.message)){token="";sessionStorage.removeItem(TOKEN_KEY);showLogin(error.message)}else leadList.innerHTML=`<div class="empty">${escapeHtml(error.message)}</div>`}}
 $("#loginForm").addEventListener("submit",event=>{event.preventDefault();token=$("#adminToken").value.trim();sessionStorage.setItem(TOKEN_KEY,token);load()});
 $("#logout").addEventListener("click",()=>{token="";sessionStorage.removeItem(TOKEN_KEY);showLogin()});
-document.querySelectorAll("[data-refresh]").forEach(button=>button.addEventListener("click",()=>button.closest("#usageView")?loadUsage():loadLeads()));$("#statusFilter").addEventListener("change",loadLeads);
-document.querySelectorAll("[data-view]").forEach(button=>button.addEventListener("click",()=>{document.querySelectorAll("[data-view]").forEach(item=>item.classList.toggle("active",item===button));$("#usageView").hidden=button.dataset.view!=="usage";$("#leadsView").hidden=button.dataset.view!=="leads"}));
+document.querySelectorAll("[data-refresh]").forEach(button=>button.addEventListener("click",()=>button.closest("#usageView")?loadUsage():button.closest("#usersView")?loadUsers():loadLeads()));$("#statusFilter").addEventListener("change",loadLeads);
+document.querySelectorAll("[data-view]").forEach(button=>button.addEventListener("click",()=>{document.querySelectorAll("[data-view]").forEach(item=>item.classList.toggle("active",item===button));$("#usageView").hidden=button.dataset.view!=="usage";$("#usersView").hidden=button.dataset.view!=="users";$("#leadsView").hidden=button.dataset.view!=="leads";if(button.dataset.view==="users"&&!$("#userMetricGrid").children.length)loadUsers()}));
 leadList.addEventListener("click",async event=>{const card=event.target.closest(".lead-card");if(!card)return;const id=card.dataset.id;try{if(event.target.matches("[data-save]")){await api(`/api/lingtest/admin/leads/${encodeURIComponent(id)}`,{method:"PATCH",body:JSON.stringify({status:card.querySelector("[data-status]").value})});await load()}if(event.target.matches("[data-approve]")){event.target.disabled=true;const data=await api(`/api/lingtest/admin/leads/${encodeURIComponent(id)}/approve`,{method:"POST",body:JSON.stringify({durationDays:365})});$("#activationCode").textContent=data.activationCode;$("#codeDialog").showModal();await load()}}catch(error){alert(error.message)}finally{if(event.target)event.target.disabled=false}});
 $("#closeCode").addEventListener("click",()=>$("#codeDialog").close());$("#copyCode").addEventListener("click",async()=>{await navigator.clipboard.writeText($("#activationCode").textContent);$("#copyCode").textContent="已复制"});
 if(token)load();else showLogin();
