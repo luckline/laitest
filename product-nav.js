@@ -31,16 +31,50 @@
     const panel=document.createElement('div');
     panel.className='nav-content-panel';
     panel.setAttribute('role','menu');
-    panel.innerHTML=`
-      <a href="/content" role="menuitem"><b>全部原创</b><small>查看完整文章归档</small></a>
-      <a href="/content#latest" role="menuitem"><b>最新发布</b><small>阅读最近更新内容</small></a>`;
+    panel.innerHTML='<div class="nav-content-loading">正在加载文章…</div>';
+    let loaded=false;
+    const renderPosts=posts=>{
+      panel.replaceChildren();
+      posts.slice(0,4).forEach(post=>{
+        const link=document.createElement('a');
+        link.href=`/articles/${encodeURIComponent(String(post.slug||''))}`;
+        link.className='nav-content-post';
+        link.setAttribute('role','menuitem');
+        const title=document.createElement('b');
+        title.textContent=String(post.title||'未命名文章');
+        const date=document.createElement('small');
+        const value=new Date(post.publishedAt);
+        date.textContent=Number.isNaN(value.getTime())?'原创文章':new Intl.DateTimeFormat('zh-CN',{month:'2-digit',day:'2-digit'}).format(value);
+        link.append(title,date);
+        panel.append(link);
+      });
+      const all=document.createElement('a');
+      all.href='/content';
+      all.className='nav-content-all';
+      all.setAttribute('role','menuitem');
+      all.textContent=posts.length?'查看全部文章 →':'进入原创文章 →';
+      panel.append(all);
+    };
+    const loadPosts=()=>{
+      if(loaded)return;
+      loaded=true;
+      fetch('https://timelens.cc/api/content/posts?page=1&pageSize=4')
+        .then(response=>{
+          if(!response.ok)throw new Error(`HTTP ${response.status}`);
+          return response.json();
+        })
+        .then(payload=>renderPosts(payload?.data?.list||[]))
+        .catch(()=>renderPosts([]));
+    };
     const setOpen=open=>{
       menu.classList.toggle('open',open);
       button.setAttribute('aria-expanded',String(open));
     };
     button.addEventListener('click',event=>{
       event.stopPropagation();
-      setOpen(!menu.classList.contains('open'));
+      const open=!menu.classList.contains('open');
+      setOpen(open);
+      if(open)loadPosts();
     });
     panel.addEventListener('click',event=>event.stopPropagation());
     menu.append(button,panel);
