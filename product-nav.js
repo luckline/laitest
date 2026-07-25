@@ -16,6 +16,41 @@
     links.insertBefore(home,links.firstChild);
   }
 
+  const contentLink=[...(links?.querySelectorAll('a')||[])].find(link=>{
+    try{return new URL(link.href,location.href).pathname==='/content'}catch{return false}
+  });
+  if(contentLink){
+    const menu=document.createElement('div');
+    menu.className='nav-content-menu';
+    const button=document.createElement('button');
+    button.type='button';
+    button.className='nav-content-trigger';
+    button.setAttribute('aria-expanded','false');
+    button.setAttribute('aria-haspopup','menu');
+    button.innerHTML='<span>内容</span><i aria-hidden="true">⌄</i>';
+    const panel=document.createElement('div');
+    panel.className='nav-content-panel';
+    panel.setAttribute('role','menu');
+    panel.innerHTML=`
+      <a href="/content" role="menuitem"><b>内容总览</b><small>原创、方法与资源</small></a>
+      <a href="/content#latest" role="menuitem"><b>原创文章</b><small>最新发布与内容归档</small></a>
+      <a href="/mingtest-guides" role="menuitem"><b>测试方法</b><small>框架、清单与实践</small></a>
+      <a href="/library" role="menuitem"><b>资源收藏</b><small>外部资料与工具</small></a>`;
+    const setOpen=open=>{
+      menu.classList.toggle('open',open);
+      button.setAttribute('aria-expanded',String(open));
+    };
+    button.addEventListener('click',event=>{
+      event.stopPropagation();
+      setOpen(!menu.classList.contains('open'));
+    });
+    panel.addEventListener('click',event=>event.stopPropagation());
+    menu.append(button,panel);
+    contentLink.replaceWith(menu);
+    document.addEventListener('click',()=>setOpen(false));
+    document.addEventListener('keydown',event=>{if(event.key==='Escape')setOpen(false)});
+  }
+
   const toggle=document.createElement('button');
   toggle.type='button';
   toggle.className='nav-mobile-toggle';
