@@ -34,20 +34,20 @@
   <link rel="stylesheet" href="/css/home-v5.css?v=1">
   <link rel="stylesheet" href="/css/product-visuals.css?v=1">
   <link rel="stylesheet" href="/css/home-library.css?v=1">
-  <link rel="stylesheet" href="/css/home-v6.css?v=1">
+  <link rel="stylesheet" href="/css/home-v6.css?v=2">
 </head>
 <body class="personal-home">
   <header class="nav unified-nav" data-product="luckline">
     <a class="brand" href="/" aria-label="Luckline 首页"><span class="mark">L</span><span><b>Luckline</b><small>laitest.tech</small></span></a>
     <nav class="links" aria-label="主导航">
-      <a href="#projects">作品</a><a href="/library">知识库</a><a href="#about">关于</a><a href="#follow">关注</a>
+      <a href="#projects">作品</a><a href="/articles">文章</a><a href="/library">知识库</a><a href="#about">关于</a>
     </nav>
     <div class="nav-actions"><a class="btn solid nav-primary" href="mailto:lanceqa@agent.qq.com">联系我</a></div>
   </header>
 
   <main class="home-main">
     <section class="home-hero-v6">
-      <div><p class="eyebrow">LUCKLINE · PRODUCT &amp; QUALITY</p><h1>质量工程与 AI 产品，<br>持续交付中。</h1><p>我是 Luckline。把专业经验转化为真正可运行、可验证、可持续迭代的产品。</p><div class="hero-actions"><a class="btn solid" href="#projects">查看产品</a><a class="btn ghost" href="/library">知识库</a></div></div>
+      <div><p class="eyebrow">LUCKLINE · PRODUCT &amp; QUALITY</p><h1>质量工程与 AI 产品，<br>持续交付中。</h1><p>我是 Luckline。把专业经验转化为真正可运行、可验证、可持续迭代的产品。</p><div class="hero-actions"><a class="btn solid" href="#projects">查看产品</a><a class="btn ghost" href="/articles">阅读文章</a></div></div>
       <aside aria-label="在线产品"><small>LIVE PRODUCTS</small><a href="/mingtest"><span>01</span><div><b>铭测 MingTest</b><p>AI 测试设计与自动化</p></div><i>→</i></a><a href="/timelens"><span>02</span><div><b>时光智行 TimeLens</b><p>AI 旅行规划与城市足迹</p></div><i>→</i></a></aside>
     </section>
 
@@ -65,14 +65,21 @@
       </div>
     </section>
 
+    <section class="home-content-v6" aria-labelledby="content-title">
+      <div class="home-section-head"><div><p class="eyebrow">LATEST WRITING</p><h2 id="content-title">最近在写</h2></div><a href="/articles">查看全部文章 →</a></div>
+      <div id="homeLatestPosts" class="home-content-grid-v6" aria-live="polite">
+        <div class="home-content-loading-v6">正在加载最新文章…</div>
+      </div>
+    </section>
+
     <section id="about" class="home-bottom-v6">
       <div><p class="eyebrow">ABOUT</p><h2>工程判断，<br>产品表达。</h2><p>我是 Luckline，长期关注质量工程、AI 应用与独立产品。先把产品做出来，再在真实使用中持续校准。</p><a href="mailto:lanceqa@agent.qq.com">lanceqa@agent.qq.com →</a></div>
-      <div class="knowledge-card-v6"><small>LUCKLINE INDEX</small><b>100</b><span>条公开知识资源</span><p>质量工程、软件开发、产品与生活的持续整理。</p><div><a href="/library">打开知识库 →</a><a href="/mingtest-guides">测试方法与实践 →</a></div></div>
+      <div class="knowledge-card-v6"><small>LUCKLINE INDEX</small><b>100+</b><span>条公开内容与知识资源</span><p>旅行见闻、质量工程、软件开发与产品实践的持续整理。</p><div><a href="/articles">阅读最新文章 →</a><a href="/library">打开知识库 →</a></div></div>
       <aside id="follow"><img src="/img/qrcode_laitest.jpg" alt="微信公众号二维码"><div><small>WECHAT</small><b>关注公开内容</b><p>测试、AI 与工程实践</p></div></aside>
     </section>
   </main>
-  <footer class="foot"><div><b>Luckline</b><span>产品、技术与生活的长期记录。</span></div><div class="foot-links"><a href="#projects">作品</a><a href="/library">知识库</a><a href="/privacy.html">隐私</a><a href="/security.html">安全</a></div><small>© 2026 laitest.tech</small></footer>
+  <footer class="foot"><div><b>Luckline</b><span>产品、技术与生活的长期记录。</span></div><div class="foot-links"><a href="#projects">作品</a><a href="/articles">文章</a><a href="/library">知识库</a><a href="/privacy.html">隐私</a><a href="/security.html">安全</a></div><small>© 2026 laitest.tech</small></footer>
   <script type="application/ld+json">{"@context":"https://schema.org","@type":"Person","name":"Luckline","url":"https://laitest.tech/","email":"mailto:lanceqa@agent.qq.com","knowsAbout":["Quality Engineering","AI Testing","Independent Product Development"],"owns":[{"@type":"SoftwareApplication","name":"铭测 MingTest","alternateName":"laitest","url":"https://laitest.tech/mingtest","applicationCategory":"DeveloperApplication"},{"@type":"SoftwareApplication","name":"时光智行","alternateName":["TimeLens","时光透卡"],"url":"https://laitest.tech/timelens","applicationCategory":"TravelApplication"}]}</script>
-  <script src="/product-nav.js?v=5"></script><script defer src="/site-analytics.js"></script><script defer src="/_vercel/insights/script.js"></script>
+  <script src="/product-nav.js?v=5"></script><script defer src="/home-content.js?v=1"></script><script defer src="/site-analytics.js"></script><script defer src="/_vercel/insights/script.js"></script>
 </body>
 </html>
