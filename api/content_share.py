@@ -7,7 +7,7 @@ import re
 from datetime import datetime
 from html.parser import HTMLParser
 from urllib.error import HTTPError
-from urllib.parse import quote
+from urllib.parse import quote, unquote
 from urllib.request import Request, urlopen
 
 from flask import Flask, Response
@@ -211,6 +211,7 @@ def article_index() -> Response:
 
 @app.get("/articles/<slug>")
 def article_detail(slug: str) -> Response:
+    slug = unquote(slug)
     try:
         post = _api(f"/api/content/posts/{quote(slug)}")
     except HTTPError as error:

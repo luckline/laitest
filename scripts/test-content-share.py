@@ -44,6 +44,13 @@ class ContentShareTest(unittest.TestCase):
         self.assertIsNotNone(match)
         self.assertEqual(json.loads(match.group(1))["@type"], "Article")
 
+    def test_encoded_chinese_slug_is_not_double_encoded(self):
+        with patch.object(content_share, "_api", return_value=POST) as api:
+            response = self.client.get("/articles/%25E6%25B5%258B%25E8%25AF%2595")
+
+        self.assertEqual(response.status_code, 200)
+        api.assert_called_once_with("/api/content/posts/%E6%B5%8B%E8%AF%95")
+
     def test_article_index_links_to_detail(self):
         with patch.object(content_share, "_api", side_effect=self.fake_api):
             response = self.client.get("/articles")
