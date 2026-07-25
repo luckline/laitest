@@ -163,7 +163,7 @@ def _shell(*, title: str, description: str, canonical: str, body: str, image: st
 <meta property="og:image" content="{html.escape(image, quote=True)}"><meta property="og:url" content="{html.escape(canonical, quote=True)}">
 <meta name="twitter:card" content="summary_large_image"><meta name="theme-color" content="#173f38">
 {structured}<link rel="icon" href="/img/favicon.svg" type="image/svg+xml">
-<link rel="stylesheet" href="/css/content-articles.css?v=4"><link rel="stylesheet" href="/css/product-nav.css?v=6"><link rel="stylesheet" href="/css/site-density.css?v=1">
+<link rel="stylesheet" href="/css/content-articles.css?v=4"><link rel="stylesheet" href="/css/product-nav.css?v=6"><link rel="stylesheet" href="/css/site-density.css?v=2">
 </head><body>{body}<script src="/product-nav.js?v=8"></script><script defer src="/site-analytics.js"></script></body></html>"""
 
 
@@ -278,9 +278,12 @@ def article_detail(slug: str) -> Response:
         {f'<img class="article-cover" src="{html.escape(cover_image, quote=True)}" alt="{html.escape(title, quote=True)}">' if cover_image else ''}
         <div class="article-body">{_content_html(content)}</div>
         <footer class="article-foot">{original_link}<a href="/content">返回内容中心</a></footer>
-        {related_section}</article><aside class="article-cta"><span>FROM READING TO DOING</span><small>{product_name}</small>
+        {related_section}</article><aside class="article-side">
+        <section class="article-cta"><span>FROM READING TO DOING</span><small>{product_name}</small>
         <h2>{product_title}</h2><p>{product_copy}</p><a href="{product_href}">进入产品 →</a>
-        <footer><a href="/">返回个人主页</a><a href="/#content">查看首页文章</a></footer></aside></main>"""
+        <footer><a href="/">返回个人主页</a><a href="/#content">查看首页文章</a></footer></section>
+        <section class="article-wechat"><img src="/img/qrcode_laitest.jpg" alt="小梁游记微信公众号二维码">
+        <div><span>WECHAT</span><b>关注「小梁游记」</b><p>扫码关注，继续阅读旅行见闻与城市故事。</p></div></section></aside></main>"""
     )
     schema = {
         "@context": "https://schema.org",

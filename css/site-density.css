@@ -46,6 +46,13 @@
 .article-page>article{padding:34px 38px}
 .article-head h1{font-size:clamp(32px,3.5vw,40px)}
 .article-related{margin-top:40px}
+.article-side{position:sticky;top:24px;display:grid;gap:16px;align-self:start}
+.article-side .article-cta{position:static}
+.article-wechat{display:grid;grid-template-columns:86px minmax(0,1fr);align-items:center;gap:14px;padding:16px;border:1px solid #d6e1dc;border-radius:18px;background:#fff;box-shadow:0 12px 35px rgba(17,53,45,.06)}
+.article-wechat img{width:86px;height:86px;border-radius:9px;object-fit:cover}
+.article-wechat span{color:#16816d;font-size:8px;font-weight:900;letter-spacing:1.3px}
+.article-wechat b{display:block;margin-top:4px;color:#153b33;font-size:13px}
+.article-wechat p{margin:4px 0 0;color:#667872;font-size:10px;line-height:1.55}
 
 @media(max-width:680px){
   .personal-home .home-hero-v6{padding:26px 20px}
@@ -59,6 +66,9 @@
   .article-page{padding-top:24px}
   .article-page>article{padding:22px}
   .article-head h1{font-size:31px}
+  .article-side{position:static;order:2}
+  .article-wechat{grid-template-columns:76px minmax(0,1fr)}
+  .article-wechat img{width:76px;height:76px}
   .lingtest-landing .lt-hero{gap:24px}
   .lingtest-landing .lt-console{transform:none}
   .lingtest-landing .lt-console-body{grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;padding:12px}

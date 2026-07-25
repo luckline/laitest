@@ -40,6 +40,8 @@ class ContentShareTest(unittest.TestCase):
         self.assertIn("<h3>第一天</h3>", page)
         self.assertIn("<li>西湖散步</li>", page)
         self.assertIn('rel="canonical" href="https://laitest.tech/articles/hangzhou-weekend-demo"', page)
+        self.assertIn('src="/img/qrcode_laitest.jpg"', page)
+        self.assertIn("关注「小梁游记」", page)
         match = re.search(r'<script type="application/ld\+json">(.*?)</script>', page)
         self.assertIsNotNone(match)
         self.assertEqual(json.loads(match.group(1))["@type"], "Article")
