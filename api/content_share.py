@@ -163,7 +163,7 @@ def _shell(*, title: str, description: str, canonical: str, body: str, image: st
 <meta property="og:image" content="{html.escape(image, quote=True)}"><meta property="og:url" content="{html.escape(canonical, quote=True)}">
 <meta name="twitter:card" content="summary_large_image"><meta name="theme-color" content="#173f38">
 {structured}<link rel="icon" href="/img/favicon.svg" type="image/svg+xml">
-<link rel="stylesheet" href="/css/content-articles.css?v=3"><link rel="stylesheet" href="/css/product-nav.css?v=6">
+<link rel="stylesheet" href="/css/content-articles.css?v=4"><link rel="stylesheet" href="/css/product-nav.css?v=6">
 </head><body>{body}<script src="/product-nav.js?v=8"></script><script defer src="/site-analytics.js"></script></body></html>"""
 
 
@@ -183,26 +183,37 @@ def article_index() -> Response:
     except Exception:
         posts = []
     valid_posts = [post for post in posts if post.get("slug")]
-    cards = "".join(
-        f"""<article class="content-card{' content-card-featured' if index == 0 else ''}"><a href="/articles/{quote(str(post.get('slug') or ''))}">
-        <div class="content-card-top"><span>{html.escape(ACCOUNT_NAMES.get(str(post.get('accountKey')), str(post.get('accountKey') or 'Luckline')))}</span><time>{_date(post.get('publishedAt'))}</time></div>
-        <div class="content-card-copy"><small>{'FEATURED STORY' if index == 0 else f'NOTE {index + 1:02d}'}</small>
-        <h2>{html.escape(str(post.get('title') or '未命名文章'))}</h2>
-        <p>{html.escape(str(post.get('summary') or '打开查看完整内容。'))}</p></div>
-        <div class="content-card-foot"><b>阅读全文</b><i aria-hidden="true">↗</i></div></a></article>"""
-        for index, post in enumerate(valid_posts)
+    featured = valid_posts[0] if valid_posts else None
+    featured_html = ""
+    if featured:
+        featured_account = ACCOUNT_NAMES.get(str(featured.get("accountKey")), str(featured.get("accountKey") or "Luckline"))
+        featured_html = f"""<article class="journal-feature"><a href="/articles/{quote(str(featured.get('slug')))}">
+        <div class="journal-feature-number">01</div><div class="journal-feature-copy">
+        <div class="journal-meta"><span>FEATURED · {html.escape(featured_account)}</span><time>{_date(featured.get('publishedAt'))}</time></div>
+        <h2>{html.escape(str(featured.get('title') or '未命名文章'))}</h2>
+        <p>{html.escape(str(featured.get('summary') or '打开查看完整内容。'))}</p><b>阅读这篇文章 <i>↗</i></b></div></a></article>"""
+    archive = "".join(
+        f"""<article class="journal-row"><a href="/articles/{quote(str(post.get('slug')))}">
+        <span>{index + 2:02d}</span><div><small>{html.escape(ACCOUNT_NAMES.get(str(post.get('accountKey')), str(post.get('accountKey') or 'Luckline')))} · {_date(post.get('publishedAt'))}</small>
+        <h3>{html.escape(str(post.get('title') or '未命名文章'))}</h3><p>{html.escape(str(post.get('summary') or '打开查看完整内容。'))}</p></div><i>↗</i></a></article>"""
+        for index, post in enumerate(valid_posts[1:])
     )
-    if not cards:
-        cards = '<div class="content-empty"><h2>内容正在整理中</h2><p>龙虾运营产物会陆续沉淀到这里。</p></div>'
+    if not featured_html:
+        featured_html = '<div class="content-empty"><h2>内容正在整理中</h2><p>原创文章会从内容运营系统自动归档到这里。</p></div>'
+    archive_html = archive or '<p class="journal-awaiting">下一篇文章正在路上。</p>'
     body = (
         _header()
-        + '<main class="content-index"><section class="content-hero"><div><span>LUCKLINE · CONTENT</span>'
-        '<h1>持续创作，<br>持续沉淀。</h1><p>这里收录小梁游记与铭锦数智持续发布的原创文章，记录旅行见闻、产品实践与数字生活。</p>'
-        '<div class="content-hero-actions"><a href="#latest">阅读最新原创 ↓</a><a href="/">返回个人站</a></div></div>'
-        f'<aside><small>CONTENT SYSTEM</small><strong>{len(valid_posts):02d}</strong><p>篇原创文章</p><div><span>原创</span><span>方法</span><span>资源</span></div></aside></section>'
-        f'<section id="latest" class="content-feed-head"><div><span>LATEST STORIES</span><h2>最新发布</h2></div><p>由内容运营系统自动归档，持续更新。</p></section>'
-        f'<section class="content-grid">{cards}</section></main>'
-        '<footer class="content-footer"><div><b>Luckline</b><span>产品、技术与生活的长期记录。</span></div><nav><a href="/">个人站</a><a href="/content">原创文章</a></nav></footer>'
+        + '<main class="content-index journal-index"><section class="journal-masthead"><div><span>LUCKLINE JOURNAL</span>'
+        '<h1>在产品之外，<br>记录真实世界。</h1><p>旅行见闻、产品实践与数字生活。独立写作，也由内容系统持续归档。</p></div>'
+        f'<aside><small>ARCHIVE</small><strong>{len(valid_posts):02d}</strong><span>篇原创</span><p>小梁游记 × 铭锦数智</p></aside></section>'
+        '<nav class="journal-topics" aria-label="内容主题"><span>主题</span><a href="#latest">全部文章</a><i>旅行见闻</i><i>产品实践</i><i>数字生活</i></nav>'
+        f'<section id="latest" class="journal-section-head"><div><span>EDITOR’S PICK</span><h2>本期推荐</h2></div><p>最近更新</p></section>{featured_html}'
+        f'<section class="journal-section-head journal-archive-head"><div><span>THE ARCHIVE</span><h2>全部文章</h2></div><p>按发布时间倒序</p></section>'
+        f'<section class="journal-list">{archive_html}</section>'
+        '<section class="journal-products"><div><span>FROM IDEAS TO PRODUCTS</span><h2>阅读之后，继续动手。</h2></div>'
+        '<a href="/mingtest"><small>QUALITY</small><b>铭测 MingTest</b><p>AI 测试设计与自动化执行</p><i>→</i></a>'
+        '<a href="/timelens"><small>TRAVEL</small><b>时光智行</b><p>路线规划与城市足迹</p><i>→</i></a></section></main>'
+        '<footer class="content-footer"><div><b>Luckline Journal</b><span>产品、技术与生活的长期记录。</span></div><nav><a href="/">个人站</a><a href="/#content">首页文章</a></nav></footer>'
     )
     return Response(
         _shell(
