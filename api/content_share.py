@@ -163,7 +163,7 @@ def _shell(*, title: str, description: str, canonical: str, body: str, image: st
 <meta property="og:image" content="{html.escape(image, quote=True)}"><meta property="og:url" content="{html.escape(canonical, quote=True)}">
 <meta name="twitter:card" content="summary_large_image"><meta name="theme-color" content="#173f38">
 {structured}<link rel="icon" href="/img/favicon.svg" type="image/svg+xml">
-<link rel="stylesheet" href="/css/content-articles.css?v=4"><link rel="stylesheet" href="/css/product-nav.css?v=6">
+<link rel="stylesheet" href="/css/content-articles.css?v=4"><link rel="stylesheet" href="/css/product-nav.css?v=6"><link rel="stylesheet" href="/css/site-density.css?v=1">
 </head><body>{body}<script src="/product-nav.js?v=8"></script><script defer src="/site-analytics.js"></script></body></html>"""
 
 

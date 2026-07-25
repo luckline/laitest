@@ -1,0 +1,69 @@
+/* Shared public-page density pass: restrained type scale and shorter vertical rhythm. */
+.personal-home .home-hero-v6{min-height:290px;gap:46px;padding:38px 44px}
+.personal-home .home-hero-v6 h1{font-size:clamp(38px,4vw,50px);letter-spacing:-1.2px}
+.personal-home .home-products-v6{padding:34px 0 46px}
+.personal-home .home-product-v6{min-height:340px}
+.personal-home .product-copy-v6{padding:28px}
+.personal-home .home-content-v6{padding-bottom:48px}
+.personal-home .home-content-card-v6>a{padding:21px}
+.personal-home .home-content-card-v6 h3{font-size:19px}
+.personal-home .home-bottom-v6{padding:48px 0 56px}
+.personal-home .home-bottom-v6 h2{font-size:33px}
+.personal-home .knowledge-card-v6 b{font-size:46px}
+
+.lingtest-landing .lt-hero{padding-top:34px;padding-bottom:42px}
+.lingtest-landing .lt-hero h1{font-size:clamp(38px,4vw,48px)}
+.lingtest-landing .lt-proof{margin-bottom:48px}
+.lingtest-landing .lt-section{padding-top:54px;padding-bottom:54px}
+.lingtest-landing .lt-section h2,.lingtest-landing .lt-final h2{font-size:clamp(30px,3.4vw,40px)}
+.lingtest-landing .lt-workflow article{min-height:220px}
+.lingtest-landing .lt-final{padding:58px 20px}
+
+.pricing-hero{padding:48px 0 34px}
+.pricing-hero h1{font-size:clamp(36px,4vw,48px)}
+.pricing-hero>p:last-child{font-size:15px}
+.pricing-proof{gap:48px;margin:54px 0;padding:32px}
+.pricing-case{margin-bottom:54px}
+
+.tools-hero{min-height:170px;padding:28px 8px 22px}
+.tools-hero h1{font-size:clamp(34px,3.8vw,46px)}
+
+.route-main{margin-top:24px;margin-bottom:58px}
+.route-hero{min-height:270px;padding:34px}
+.route-hero h1{font-size:clamp(30px,4vw,44px)}
+.route-summary{padding:23px}
+.route-section-head{margin-top:30px}
+
+.journal-masthead{min-height:300px;gap:60px;padding:42px 4px 34px}
+.journal-masthead h1{font-size:clamp(40px,4.7vw,56px);letter-spacing:-1.6px}
+.journal-masthead aside strong{font-size:48px}
+.journal-section-head{padding-top:38px}
+.journal-feature>a{min-height:280px}
+.journal-feature h2{margin-top:34px;font-size:clamp(30px,3.4vw,40px)}
+.journal-archive-head{padding-top:54px}
+.journal-products{margin:56px 0}
+.article-page{padding-top:42px;padding-bottom:58px}
+.article-page>article{padding:34px 38px}
+.article-head h1{font-size:clamp(32px,3.5vw,40px)}
+.article-related{margin-top:40px}
+
+@media(max-width:680px){
+  .personal-home .home-hero-v6{padding:26px 20px}
+  .personal-home .home-hero-v6 h1{font-size:35px}
+  .personal-home .home-products-v6{padding:34px 0}
+  .personal-home .home-bottom-v6{padding:38px 0 44px}
+  .journal-masthead{padding:38px 0 28px}
+  .journal-masthead h1{font-size:38px}
+  .journal-section-head{padding-top:32px}
+  .journal-products{margin:42px 0}
+  .article-page{padding-top:24px}
+  .article-page>article{padding:22px}
+  .article-head h1{font-size:31px}
+  .lingtest-landing .lt-hero{gap:24px}
+  .lingtest-landing .lt-console{transform:none}
+  .lingtest-landing .lt-console-body{grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;padding:12px}
+  .lingtest-landing .lt-console-body>div{min-height:96px;padding:10px}
+  .lingtest-landing .lt-console-body>i{display:none}
+  .lingtest-landing .lt-console-body b{margin-top:8px;font-size:11px}
+  .lingtest-landing .lt-console-body p,.lingtest-landing .lt-console pre{display:none}
+}
