@@ -58,8 +58,8 @@ class ContentShareTest(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertIn('/articles/hangzhou-weekend-demo', response.get_data(as_text=True))
         self.assertIn('rel="canonical" href="https://laitest.tech/content"', response.get_data(as_text=True))
-        self.assertIn("测试方法", response.get_data(as_text=True))
-        self.assertIn("资源收藏", response.get_data(as_text=True))
+        self.assertNotIn("测试方法", response.get_data(as_text=True))
+        self.assertNotIn("资源收藏", response.get_data(as_text=True))
 
     def test_article_sitemap_is_valid(self):
         with patch.object(content_share, "_api", side_effect=self.fake_api):

@@ -32,10 +32,8 @@
     panel.className='nav-content-panel';
     panel.setAttribute('role','menu');
     panel.innerHTML=`
-      <a href="/content" role="menuitem"><b>内容总览</b><small>原创、方法与资源</small></a>
-      <a href="/content#latest" role="menuitem"><b>原创文章</b><small>最新发布与内容归档</small></a>
-      <a href="/mingtest-guides" role="menuitem"><b>测试方法</b><small>框架、清单与实践</small></a>
-      <a href="/library" role="menuitem"><b>资源收藏</b><small>外部资料与工具</small></a>`;
+      <a href="/content" role="menuitem"><b>全部原创</b><small>查看完整文章归档</small></a>
+      <a href="/content#latest" role="menuitem"><b>最新发布</b><small>阅读最近更新内容</small></a>`;
     const setOpen=open=>{
       menu.classList.toggle('open',open);
       button.setAttribute('aria-expanded',String(open));

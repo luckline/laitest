@@ -5,7 +5,7 @@ const isLocal = /^https?:\/\/(?:127\.0\.0\.1|localhost)(?::\d+)?$/.test(baseUrl)
 const localHtmlRoutes = new Map([
   ["/app", "/app.html"], ["/mingtest", "/app.html"],
   ["/mingtest-pricing", "/lingtest-pricing.html"], ["/mingtest-login", "/lingtest-login.html"],
-  ["/mingtest-admin", "/lingtest-admin.html"], ["/mingtest-guides", "/lingtest-guides.html"],
+  ["/mingtest-admin", "/lingtest-admin.html"],
   ["/mingtest-tools", "/lingtest-tools.html"], ["/timelens", "/timelens.html"],
   ["/timelens-route", "/timelens-route.html"],
 ]);
@@ -60,11 +60,6 @@ const checks = [
     name: "铭测版本入口",
     path: "/lingtest-account.js?v=5",
     contains: ["当前版本", "专业版 PRO", "生成额度", "执行额度", "mingtest:usage-updated", "contactMasked", "LICENSE_API", "/status?browserId="],
-  },
-  {
-    name: "铭测方法库",
-    path: "/mingtest-guides",
-    contains: ["方法与实践", 'href="/mingtest"', "product-nav.js?v=6"],
   },
   {
     name: "铭测工具箱",

@@ -19,7 +19,6 @@ Luckline 的个人站与产品中心，统一承载个人介绍、产品发布�
 | `/mingtest-pricing` | 铭测版本、服务与专业版申请 |
 | `/mingtest-login` | 铭测登录与注册（专业版申请前置） |
 | `/mingtest-admin` | 铭测申请审核与激活码管理（管理员 Token） |
-| `/mingtest-guides` | 测试方法与质量工程实践 |
 | `/mingtest-tools` | JSON、Diff、正则、时间戳和 Base64 等纯前端测试工具 |
 | `/timelens` | 时光智行 PC 版 |
 | `/travel/<route-id>` | SEO 友好的公开路线详情（旧 `/timelens-route?id=` 地址继续兼容） |
@@ -85,7 +84,6 @@ python3 -m laitest cli projects
 .
 ├── index.html                     # 个人主页
 ├── lingtest.html                  # 铭测产品介绍
-├── lingtest-guides.html           # 铭测方法库
 ├── lingtest-tools.html / .js      # 本地运行的常用测试工具箱
 ├── lingtest-pricing.html / .js    # 定价、服务、专业版申请与状态联动
 ├── lingtest-login.html / .js      # 铭测登录、注册与申请回跳
@@ -303,7 +301,6 @@ Node.js 示例见 `examples/shiguang_touka_travel_plan_client.js`。
 | 铭测账户与版本状态 | `lingtest-account.js`、`css/lingtest-account.css` |
 | 铭测定价与申请联动 | `lingtest-pricing.html`、`lingtest-pricing.js` |
 | 铭测申请审核 | `lingtest-admin.html`、`lingtest-admin.js` |
-| 测试方法文章 | `lingtest-guides.html` |
 | 跨产品导航 | `product-nav.js`、`css/product-nav.css` |
 | 公众号二维码 | `img/qrcode_laitest.jpg` |
 | 时光智行小程序码 | `img/timelens-miniapp.jpg` |

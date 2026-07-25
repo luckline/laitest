@@ -36,7 +36,7 @@
         posts.forEach(post=>root.append(renderPost(post)));
         return;
       }
-      root.innerHTML='<div class="home-content-loading-v6">内容正在整理中，欢迎先逛逛知识库。</div>';
+      root.innerHTML='<div class="home-content-loading-v6">原创内容正在整理中，稍后再来看看。</div>';
     })
     .catch(()=>{
       root.innerHTML='<div class="home-content-loading-v6"><a href="/content">前往内容中心 →</a></div>';

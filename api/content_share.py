@@ -170,7 +170,7 @@ def _shell(*, title: str, description: str, canonical: str, body: str, image: st
 def _header() -> str:
     return """<header class="content-nav unified-nav" data-product="luckline">
     <a class="content-brand" href="/"><span>L</span><div><b>Luckline</b><small>CONTENT ARCHIVE</small></div></a>
-    <nav><a href="/content">内容</a><a href="/mingtest-guides">测试方法</a><a href="/library">资源收藏</a></nav>
+    <nav><a href="/content">原创文章</a></nav>
     </header>"""
 
 
@@ -197,21 +197,17 @@ def article_index() -> Response:
     body = (
         _header()
         + '<main class="content-index"><section class="content-hero"><div><span>LUCKLINE · CONTENT</span>'
-        '<h1>原创、方法与资源，<br>统一沉淀。</h1><p>从持续发布的原创文章，到可以直接复用的测试方法，再到长期收藏的专业资料。</p>'
+        '<h1>持续创作，<br>持续沉淀。</h1><p>这里收录小梁游记与铭锦数智持续发布的原创文章，记录旅行见闻、产品实践与数字生活。</p>'
         '<div class="content-hero-actions"><a href="#latest">阅读最新原创 ↓</a><a href="/">返回个人站</a></div></div>'
         f'<aside><small>CONTENT SYSTEM</small><strong>{len(valid_posts):02d}</strong><p>篇原创文章</p><div><span>原创</span><span>方法</span><span>资源</span></div></aside></section>'
-        '<section class="content-portals" aria-label="内容分类">'
-        '<a href="#latest"><span>01 · ORIGINALS</span><h2>原创文章</h2><p>旅行见闻、产品实践与数字生活，由运营系统持续归档。</p><b>浏览最新内容 ↓</b></a>'
-        '<a href="/mingtest-guides"><span>02 · METHODS</span><h2>测试方法</h2><p>把质量工程经验整理成可以复用的框架、清单和实践。</p><b>进入方法库 →</b></a>'
-        '<a href="/library"><span>03 · RESOURCES</span><h2>资源收藏</h2><p>外部文章、工具与参考资料，按主题集中检索和管理。</p><b>打开资源库 →</b></a></section>'
         f'<section id="latest" class="content-feed-head"><div><span>LATEST STORIES</span><h2>最新发布</h2></div><p>由内容运营系统自动归档，持续更新。</p></section>'
         f'<section class="content-grid">{cards}</section></main>'
-        '<footer class="content-footer"><div><b>Luckline</b><span>产品、技术与生活的长期记录。</span></div><nav><a href="/">个人站</a><a href="/mingtest-guides">测试方法</a><a href="/library">资源收藏</a></nav></footer>'
+        '<footer class="content-footer"><div><b>Luckline</b><span>产品、技术与生活的长期记录。</span></div><nav><a href="/">个人站</a><a href="/content">原创文章</a></nav></footer>'
     )
     return Response(
         _shell(
-            title="Luckline 内容中心｜原创文章、测试方法与资源收藏",
-            description="Luckline 内容中心，统一收录原创文章、质量工程方法、旅行见闻与专业资源收藏。",
+            title="Luckline 原创文章｜旅行见闻、产品实践与数字生活",
+            description="Luckline 原创内容归档，持续收录旅行见闻、产品实践与数字生活文章。",
             canonical=f"{SITE_BASE}/content",
             body=body,
         ),
