@@ -24,6 +24,7 @@
   "builds": [
     { "src": "api/index.py", "use": "@vercel/python" },
     { "src": "api/timelens_share.py", "use": "@vercel/python" },
+    { "src": "api/content_share.py", "use": "@vercel/python" },
     { "src": "api/execute_case.js", "use": "@vercel/node" },
     { "src": "css/**", "use": "@vercel/static" },
     { "src": "img/**", "use": "@vercel/static" },
@@ -89,6 +90,9 @@
     { "source": "/timelens-route", "destination": "/api/timelens_share.py" },
     { "source": "/travel/(.*)", "destination": "/api/timelens_share.py" },
     { "source": "/timelens-routes-sitemap.xml", "destination": "/api/timelens_share.py" },
+    { "source": "/articles", "destination": "/api/content_share.py" },
+    { "source": "/articles/(.*)", "destination": "/api/content_share.py" },
+    { "source": "/articles-sitemap.xml", "destination": "/api/content_share.py" },
     { "source": "/(.*)", "destination": "/$1" }
   ]
 }

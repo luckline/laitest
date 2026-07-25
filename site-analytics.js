@@ -11,6 +11,7 @@ window.va=window.va||function(){(window.vaq=window.vaq||[]).push(arguments)};
     [/^\/mingtest-tools(?:\?|$)/,'open_toolbox'],
     [/^\/timelens-route(?:\?|$)/,'open_public_route'],
     [/^\/travel\/[^/?]+(?:\?|$)/,'open_public_route'],
+    [/^\/articles(?:\/|$|\?)/,'open_article'],
   ];
   const formEvents={leadForm:'submit_pro_application',loginForm:'submit_login',activationForm:'submit_activation',commentForm:'submit_route_comment'};
   const emit=(name,extra={})=>{
