@@ -2,3 +2,4 @@ User-agent: *
 Allow: /
 
 Sitemap: https://laitest.tech/sitemap.xml
+Sitemap: https://laitest.tech/timelens-routes-sitemap.xml

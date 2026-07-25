@@ -22,7 +22,7 @@ Luckline 的个人站与产品中心，统一承载个人介绍、产品发布�
 | `/mingtest-guides` | 测试方法与质量工程实践 |
 | `/mingtest-tools` | JSON、Diff、正则、时间戳和 Base64 等纯前端测试工具 |
 | `/timelens` | 时光智行 PC 版 |
-| `/timelens-route?id=<route-id>` | 可独立分享的公开路线详情 |
+| `/travel/<route-id>` | SEO 友好的公开路线详情（旧 `/timelens-route?id=` 地址继续兼容） |
 | `/privacy.html` | 隐私政策 |
 | `/terms.html` | 使用条款 |
 | `/security.html` | 安全说明 |
