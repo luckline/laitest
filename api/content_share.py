@@ -163,14 +163,14 @@ def _shell(*, title: str, description: str, canonical: str, body: str, image: st
 <meta property="og:image" content="{html.escape(image, quote=True)}"><meta property="og:url" content="{html.escape(canonical, quote=True)}">
 <meta name="twitter:card" content="summary_large_image"><meta name="theme-color" content="#173f38">
 {structured}<link rel="icon" href="/img/favicon.svg" type="image/svg+xml">
-<link rel="stylesheet" href="/css/content-articles.css?v=2"><link rel="stylesheet" href="/css/product-nav.css?v=6">
+<link rel="stylesheet" href="/css/content-articles.css?v=3"><link rel="stylesheet" href="/css/product-nav.css?v=6">
 </head><body>{body}<script src="/product-nav.js?v=8"></script><script defer src="/site-analytics.js"></script></body></html>"""
 
 
 def _header() -> str:
     return """<header class="content-nav unified-nav" data-product="luckline">
-    <a class="content-brand" href="/"><span>L</span><div><b>Luckline</b><small>CONTENT ARCHIVE</small></div></a>
-    <nav><a href="/content">原创文章</a></nav>
+    <a class="content-brand" href="/"><span>L</span><div><b>Luckline</b><small>laitest.tech</small></div></a>
+    <nav><a href="/">首页</a><a href="/#projects">作品</a><a href="/#content">内容</a><a href="/#about">关于</a></nav>
     </header>"""
 
 
@@ -230,20 +230,46 @@ def article_detail(slug: str) -> Response:
     title = str(post.get("title") or "Luckline 文章")
     description = str(post.get("summary") or title)[:160]
     canonical = f"{SITE_BASE}/articles/{quote(slug)}"
-    image = _safe_url(post.get("coverImage"), FALLBACK_IMAGE)
+    cover_image = _safe_url(post.get("coverImage"))
+    image = cover_image or FALLBACK_IMAGE
     account = ACCOUNT_NAMES.get(str(post.get("accountKey")), str(post.get("accountKey") or "Luckline"))
     original = _safe_url(post.get("platformUrl"))
     original_link = f'<a class="content-source" href="{html.escape(original, quote=True)}" rel="nofollow noopener">查看平台原文 ↗</a>' if original else ""
+    content = str(post.get("content") or "")
+    reading_minutes = max(1, round(len(re.sub(r"<[^>]+>", "", content)) / 500))
+    try:
+        related_posts = [
+            item for item in (_api("/api/content/posts?page=1&pageSize=6").get("list") or [])
+            if item.get("slug") and item.get("slug") != slug
+        ][:2]
+    except Exception:
+        related_posts = []
+    related = "".join(
+        f'<a href="/articles/{quote(str(item.get("slug")))}"><span>{_date(item.get("publishedAt"))}</span>'
+        f'<b>{html.escape(str(item.get("title") or "未命名文章"))}</b><i>继续阅读 →</i></a>'
+        for item in related_posts
+    )
+    related_section = (
+        f'<section class="article-related"><header><span>MORE FROM LUCKLINE</span><h2>继续阅读</h2></header><div>{related}</div></section>'
+        if related else ""
+    )
+    is_travel = str(post.get("contentType")) == "travel-note"
+    product_name = "时光智行" if is_travel else "铭测 MingTest"
+    product_title = "把旅行灵感变成真正的路线" if is_travel else "把方法变成可执行的测试资产"
+    product_copy = "规划路线、管理清单，也记录每一次真实出发。" if is_travel else "从需求分析到用例设计，再到自动化执行与证据留存。"
+    product_href = "/timelens" if is_travel else "/mingtest"
     body = (
         _header()
         + f"""<main class="article-page"><article>
         <header class="article-head"><span>{html.escape(account)} · {_date(post.get('publishedAt'))}</span>
         <h1>{html.escape(title)}</h1><p>{html.escape(description)}</p></header>
-        {f'<img class="article-cover" src="{html.escape(image, quote=True)}" alt="{html.escape(title, quote=True)}">' if post.get('coverImage') else ''}
-        <div class="article-body">{_content_html(post.get('content'))}</div>
+        <div class="article-meta"><span>原创文章</span><span>约 {reading_minutes} 分钟阅读</span></div>
+        {f'<img class="article-cover" src="{html.escape(cover_image, quote=True)}" alt="{html.escape(title, quote=True)}">' if cover_image else ''}
+        <div class="article-body">{_content_html(content)}</div>
         <footer class="article-foot">{original_link}<a href="/content">返回内容中心</a></footer>
-        </article><aside class="article-cta"><span>TIME TO GO</span><h2>把旅行灵感变成真正的路线</h2>
-        <p>在时光智行查看公开路线，或进入微信小程序继续规划。</p><a href="/travel/hangzhou">查看旅行路线 →</a></aside></main>"""
+        {related_section}</article><aside class="article-cta"><span>FROM READING TO DOING</span><small>{product_name}</small>
+        <h2>{product_title}</h2><p>{product_copy}</p><a href="{product_href}">进入产品 →</a>
+        <footer><a href="/">返回个人主页</a><a href="/#content">查看首页文章</a></footer></aside></main>"""
     )
     schema = {
         "@context": "https://schema.org",
