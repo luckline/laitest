@@ -43,11 +43,12 @@
       <div class="page-head">
         <div>
           <p>LIVE ORDERS</p>
-          <h1>今日订单</h1>
+          <h1 id="orderHeading">今日订单</h1>
           <span><i class="online-dot"></i><span id="connectionCopy">订单数据已连接</span></span>
         </div>
         <div class="head-actions">
           <span id="updatedAt"></span>
+          <label class="date-filter">营业日期<input id="orderDate" type="date"></label>
           <button id="refreshOrders" class="ghost-button">刷新</button>
         </div>
       </div>
@@ -104,6 +105,11 @@
             <span>正式营业使用 release 版本，打印前请逐张扫码确认。</span>
             <span>桌码只包含桌号，不包含顾客身份或订单信息。</span>
           </aside>
+        </section>
+        <section class="registered-tables">
+          <header><div><b>已登记桌台</b><span>只有启用的桌号可以提交订单</span></div><button id="refreshTables" class="ghost-button">刷新桌台</button></header>
+          <div id="tableRegistryStatus" class="data-status" role="status">正在读取桌台…</div>
+          <div id="registeredTableList" class="registered-table-list" aria-live="polite"></div>
         </section>
         <section id="codeList" class="code-list" aria-live="polite"></section>
       </section>

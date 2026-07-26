@@ -17,6 +17,15 @@ let loading = false
 let generatedCodes = []
 let adminMenu = null
 let menuLoading = false
+let tableRegistry = []
+let tableRegistryLoading = false
+
+function localDateValue(date = new Date()) {
+  const pad = value => String(value).padStart(2, "0")
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`
+}
+
+let activeOrderDate = localDateValue()
 
 const escapeHtml = value => String(value ?? "").replace(/[&<>"']/g, char => ({
   "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
@@ -81,7 +90,7 @@ function renderSummary(orders) {
   const count = status => orders.filter(order => order.status === status).length
   const revenue = orders.reduce((sum, order) => sum + (Number(order.total) || 0), 0)
   const cards = [
-    ["全部订单", orders.length, "今天"],
+    ["订单总数", orders.length, activeOrderDate],
     ["待接单", count("待接单"), "请及时处理"],
     ["制作中", count("制作中"), "后厨进行中"],
     ["订单金额", `¥${revenue.toFixed(2)}`, "未扣除退款"]
@@ -332,7 +341,7 @@ async function generateTableCodes() {
       status.textContent = `正在生成 ${index + 1}/${tableNumbers.length}：${tableNumbers[index]} 桌`
       const code = await api("/admin/table-qrcode", {
         method: "POST",
-        body: JSON.stringify({ tableNo: tableNumbers[index], width: 430 })
+        body: JSON.stringify({ storeId: STORE_ID, tableNo: tableNumbers[index], width: 430 })
       })
       if (!/^[A-Za-z0-9+/=]+$/.test(code.base64 || "") ||
           !["image/png", "image/jpeg"].includes(code.mimeType)) {
@@ -343,6 +352,7 @@ async function generateTableCodes() {
     }
     status.className = "data-status success"
     status.textContent = `已生成 ${generatedCodes.length} 张桌码，请扫码确认后再印刷`
+    await loadTables({ quiet: true })
   } catch (error) {
     if ([401, 403].includes(error.status)) clearToken("管理凭证无效或已失效，请重新输入")
     else {
@@ -351,6 +361,61 @@ async function generateTableCodes() {
     }
   } finally {
     button.disabled = false
+  }
+}
+
+function renderTables() {
+  const list = $("#registeredTableList")
+  if (!tableRegistry.length) {
+    list.innerHTML = `<div class="menu-empty-row">尚未登记桌台，生成桌码后会自动登记</div>`
+    return
+  }
+  list.innerHTML = tableRegistry.map(table => `
+    <article class="${table.enabled ? "" : "is-disabled"}">
+      <div><b>${escapeHtml(table.tableNo)} 桌</b><span>${table.enabled ? "可正常下单" : "已暂停下单"}</span></div>
+      <button class="${table.enabled ? "danger" : ""}" data-toggle-table="${escapeHtml(table.tableNo)}">${table.enabled ? "停用" : "启用"}</button>
+    </article>
+  `).join("")
+}
+
+async function loadTables({ quiet = false } = {}) {
+  if (tableRegistryLoading || !token) return
+  tableRegistryLoading = true
+  const status = $("#tableRegistryStatus")
+  if (!quiet) {
+    status.hidden = false
+    status.className = "data-status"
+    status.textContent = "正在读取桌台…"
+  }
+  try {
+    const data = await api(`/admin/stores/${encodeURIComponent(STORE_ID)}/tables`)
+    tableRegistry = Array.isArray(data.list) ? data.list : []
+    renderTables()
+    status.hidden = true
+  } catch (error) {
+    if ([401, 403].includes(error.status)) clearToken("管理凭证无效或已失效，请重新输入")
+    else {
+      status.hidden = false
+      status.className = "data-status error"
+      status.textContent = `桌台读取失败：${error.message}`
+    }
+  } finally {
+    tableRegistryLoading = false
+  }
+}
+
+async function toggleTable(tableNo) {
+  const table = tableRegistry.find(item => item.tableNo === tableNo)
+  if (!table) return
+  try {
+    await api(`/admin/stores/${encodeURIComponent(STORE_ID)}/tables/${encodeURIComponent(tableNo)}`, {
+      method: "PATCH",
+      body: JSON.stringify({ enabled: !table.enabled })
+    })
+    await loadTables()
+  } catch (error) {
+    if ([401, 403].includes(error.status)) clearToken("管理凭证无效或已失效，请重新输入")
+    else alert(error.message)
   }
 }
 
@@ -371,12 +436,13 @@ async function loadOrders({ quiet = false } = {}) {
     orderStatus.textContent = "正在读取订单…"
   }
   try {
-    const data = await api(`/stores/${encodeURIComponent(STORE_ID)}/orders`)
+    const data = await api(`/stores/${encodeURIComponent(STORE_ID)}/orders?date=${encodeURIComponent(activeOrderDate)}`)
     const orders = Array.isArray(data.list) ? data.list : []
     renderSummary(orders)
     renderOrders(activeStatus ? orders.filter(order => order.status === activeStatus) : orders)
     orderStatus.hidden = true
     $("#updatedAt").textContent = `更新于 ${new Date().toLocaleTimeString("zh-CN", { hour: "2-digit", minute: "2-digit" })}`
+    $("#orderHeading").textContent = activeOrderDate === localDateValue() ? "今日订单" : `${activeOrderDate} 订单`
     $("#connectionCopy").textContent = "订单数据已连接"
     showOrders()
   } catch (error) {
@@ -433,6 +499,15 @@ $("#loginForm").addEventListener("submit", event => {
 
 $("#logout").addEventListener("click", () => clearToken())
 $("#refreshOrders").addEventListener("click", () => loadOrders())
+$("#orderDate").value = activeOrderDate
+$("#orderDate").addEventListener("change", event => {
+  if (!event.target.value) {
+    event.target.value = activeOrderDate
+    return
+  }
+  activeOrderDate = event.target.value
+  loadOrders()
+})
 $("#workspaceTabs").addEventListener("click", event => {
   const button = event.target.closest("[data-view]")
   if (!button) return
@@ -443,6 +518,7 @@ $("#workspaceTabs").addEventListener("click", event => {
   $("#tablesView").hidden = activeView !== "tables"
   if (activeView === "orders") loadOrders({ quiet: true })
   if (activeView === "menu") loadMenu()
+  if (activeView === "tables") loadTables()
 })
 $("#statusTabs").addEventListener("click", event => {
   const button = event.target.closest("[data-status]")
@@ -511,6 +587,11 @@ document.addEventListener("keydown", event => {
   if (event.key === "Escape" && !$("#editorMask").hidden) closeEditor()
 })
 $("#generateCodes").addEventListener("click", generateTableCodes)
+$("#refreshTables").addEventListener("click", () => loadTables())
+$("#registeredTableList").addEventListener("click", event => {
+  const button = event.target.closest("[data-toggle-table]")
+  if (button) toggleTable(button.dataset.toggleTable)
+})
 $("#downloadAllCodes").addEventListener("click", () => {
   generatedCodes.forEach((code, index) => setTimeout(() => downloadCode(code), index * 180))
 })
