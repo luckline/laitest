@@ -19,6 +19,8 @@ let adminMenu = null
 let menuLoading = false
 let tableRegistry = []
 let tableRegistryLoading = false
+let editingImageUrls = []
+let imageUploading = false
 
 function localDateValue(date = new Date()) {
   const pad = value => String(value).padStart(2, "0")
@@ -40,12 +42,13 @@ function formatTime(value) {
 }
 
 async function api(path, options = {}) {
+  const isFormData = typeof FormData !== "undefined" && options.body instanceof FormData
   const response = await fetch(`${API_BASE}${path}`, {
     ...options,
     cache: "no-store",
     headers: {
-      "Content-Type": "application/json",
       "Authorization": `Bearer ${token}`,
+      ...(isFormData ? {} : { "Content-Type": "application/json" }),
       ...options.headers
     }
   })
@@ -235,11 +238,77 @@ function openEditor(type, record = {}, categoryId = "") {
   $("#dishPrice").value = record.id ? Number(record.price).toFixed(2) : ""
   $("#dishSort").value = Number(record.sortOrder) || 0
   $("#dishEmoji").value = record.emoji || ""
-  $("#dishImageUrl").value = record.imageUrl || ""
+  editingImageUrls = Array.isArray(record.imageUrls) && record.imageUrls.length
+    ? record.imageUrls.slice(0, 3)
+    : (record.imageUrl ? [record.imageUrl] : [])
+  renderDishImageGallery()
   $("#dishTag").value = record.tag || ""
   $("#dishDescription").value = record.description || ""
   $("#dishEnabled").checked = record.enabled !== false
   setTimeout(() => $("#dishName").focus(), 0)
+}
+
+function renderDishImageGallery() {
+  $("#chooseDishImages").disabled = imageUploading || editingImageUrls.length >= 3
+  $("#chooseDishImages").textContent = imageUploading
+    ? "上传中…"
+    : (editingImageUrls.length >= 3 ? "已满 3 张" : "选择图片")
+  $("#dishImageGallery").innerHTML = editingImageUrls.map((url, index) => `
+    <figure>
+      <img src="${escapeHtml(url)}" alt="菜品图片 ${index + 1}" referrerpolicy="no-referrer">
+      <button type="button" data-remove-dish-image="${index}" aria-label="移除第 ${index + 1} 张图片">×</button>
+      <figcaption>第 ${index + 1} 张${index === 0 ? " · 封面" : ""}</figcaption>
+    </figure>
+  `).join("")
+}
+
+async function uploadDishImages(files) {
+  const selected = [...files]
+  const available = 3 - editingImageUrls.length
+  const status = $("#editorStatus")
+  if (!selected.length) return
+  if (selected.length > available) {
+    status.hidden = false
+    status.className = "data-status error"
+    status.textContent = `最多还能上传 ${available} 张图片`
+    return
+  }
+  const invalid = selected.find(file =>
+    !["image/jpeg", "image/png", "image/webp"].includes(file.type) || file.size > 5 * 1024 * 1024
+  )
+  if (invalid) {
+    status.hidden = false
+    status.className = "data-status error"
+    status.textContent = "图片必须是 JPEG、PNG 或 WebP，且单张不超过 5MB"
+    return
+  }
+  imageUploading = true
+  renderDishImageGallery()
+  try {
+    for (let index = 0; index < selected.length; index += 1) {
+      status.hidden = false
+      status.className = "data-status"
+      status.textContent = `正在上传 ${index + 1}/${selected.length}…`
+      const form = new FormData()
+      form.append("image", selected[index])
+      const result = await api("/admin/menu/images/upload", { method: "POST", body: form })
+      if (!result.url) throw new Error("上传成功，但服务端未返回图片地址")
+      editingImageUrls.push(result.url)
+      renderDishImageGallery()
+    }
+    status.className = "data-status success"
+    status.textContent = `已上传 ${editingImageUrls.length}/3 张图片`
+  } catch (error) {
+    if ([401, 403].includes(error.status)) clearToken("管理凭证无效或已失效，请重新输入")
+    else {
+      status.className = "data-status error"
+      status.textContent = error.message
+    }
+  } finally {
+    imageUploading = false
+    $("#dishImageFiles").value = ""
+    renderDishImageGallery()
+  }
 }
 
 function closeEditor() {
@@ -250,6 +319,7 @@ function closeEditor() {
 async function saveEditor(form, path, method, payload) {
   const status = $("#editorStatus")
   const submit = form.querySelector('[type="submit"]')
+  if (imageUploading) return
   submit.disabled = true
   status.hidden = false
   status.className = "data-status"
@@ -572,7 +642,7 @@ $("#dishForm").addEventListener("submit", event => {
       price: $("#dishPrice").value,
       sortOrder: Number($("#dishSort").value),
       emoji: $("#dishEmoji").value,
-      imageUrl: $("#dishImageUrl").value,
+      imageUrls: editingImageUrls,
       tag: $("#dishTag").value,
       description: $("#dishDescription").value,
       enabled: $("#dishEnabled").checked
@@ -580,6 +650,14 @@ $("#dishForm").addEventListener("submit", event => {
   )
 })
 $("#closeEditor").addEventListener("click", closeEditor)
+$("#chooseDishImages").addEventListener("click", () => $("#dishImageFiles").click())
+$("#dishImageFiles").addEventListener("change", event => uploadDishImages(event.target.files || []))
+$("#dishImageGallery").addEventListener("click", event => {
+  const button = event.target.closest("[data-remove-dish-image]")
+  if (!button || imageUploading) return
+  editingImageUrls.splice(Number(button.dataset.removeDishImage), 1)
+  renderDishImageGallery()
+})
 $("#editorMask").addEventListener("click", event => {
   if (event.target === event.currentTarget || event.target.closest("[data-close-editor]")) closeEditor()
 })

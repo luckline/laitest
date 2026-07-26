@@ -143,7 +143,12 @@
           <label>菜品图标<input id="dishEmoji" maxlength="32" placeholder="例如：🥘"></label>
           <label>菜品标签<input id="dishTag" maxlength="40" placeholder="例如：招牌"></label>
         </div>
-        <label>菜品图片地址（可选）<input id="dishImageUrl" type="url" maxlength="1000" pattern="https://.*" placeholder="https://cdn.example.com/dish.jpg"><small>仅支持 HTTPS；留空时使用上方菜品图标。</small></label>
+        <section class="dish-image-editor">
+          <div><b>菜品图片</b><small>最多 3 张，支持 JPEG、PNG、WebP，单张不超过 5MB</small></div>
+          <input id="dishImageFiles" type="file" accept="image/jpeg,image/png,image/webp" multiple hidden>
+          <button id="chooseDishImages" class="ghost-button" type="button">选择图片</button>
+          <div id="dishImageGallery" class="dish-image-gallery"></div>
+        </section>
         <label>菜品描述<textarea id="dishDescription" maxlength="500" rows="3" placeholder="简要说明口味和特色"></textarea></label>
         <label class="switch-row"><span><b>立即上架</b><small>关闭后保留菜品数据，但顾客不可见</small></span><input id="dishEnabled" type="checkbox" checked></label>
         <footer><button class="ghost-button" type="button" data-close-editor>取消</button><button class="primary-action" type="submit">保存菜品</button></footer>
