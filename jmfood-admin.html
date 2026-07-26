@@ -44,7 +44,7 @@
         <button class="active" data-view="orders">订单管理</button>
         <button data-view="menu">菜单管理</button>
         <button data-view="tables">桌码管理</button>
-        <button id="merchantAccountsTab" data-view="accounts" hidden>商家账号</button>
+        <button id="merchantAccountsTab" data-view="accounts" hidden>平台管理</button>
       </nav>
       <section id="ordersView">
       <div class="page-head">
@@ -124,10 +124,13 @@
         <div class="page-head">
           <div>
             <p>MERCHANT ACCESS</p>
-            <h1>商家账号</h1>
-            <span>创建账号并限定可管理的门店；此入口仅迁移管理员可见</span>
+            <h1>平台管理</h1>
+            <span>统一管理门店、平台管理员与各门店账号授权</span>
           </div>
+          <div class="head-actions"><button id="refreshPlatform" class="ghost-button">刷新数据</button></div>
         </div>
+        <div id="platformStatus" class="data-status" role="status">正在读取平台数据…</div>
+        <div class="platform-grid">
         <section class="account-create-card">
           <div class="account-create-copy">
             <b>创建门店管理员</b>
@@ -144,6 +147,7 @@
                 <option value="manager">Manager · 门店经理</option>
                 <option value="staff">Staff · 普通员工</option>
               </select></label>
+              <label class="platform-check"><input id="newMerchantPlatformAdmin" type="checkbox"><span><b>平台管理员</b><small>可管理全部门店与账号；请严格控制人数</small></span></label>
             </div>
             <div class="account-form-actions">
               <span id="merchantAccountStatus" role="status"></span>
@@ -151,6 +155,27 @@
             </div>
           </form>
           <aside><b>安全提示</b><span>这里不会显示或保存已有密码。完成首批账号创建并验证后，应关闭旧平台 Token。</span></aside>
+        </section>
+        <section class="account-create-card">
+          <div class="account-create-copy"><b>新增门店</b><span>门店 ID 创建后不建议修改，将用于桌码和订单隔离。</span></div>
+          <form id="storeForm">
+            <div class="editor-grid">
+              <label>门店 ID<input id="newStoreId" minlength="2" maxlength="64" pattern="[A-Za-z0-9_-]+" required placeholder="例如 xiangmanwan-nanshan"></label>
+              <label>门店名称<input id="newStoreName" maxlength="120" required placeholder="例如 香满碗·南山店"></label>
+              <label>门店地址<input id="newStoreAddress" maxlength="300" placeholder="详细营业地址"></label>
+              <label>营业提示<input id="newStoreNotice" maxlength="500" placeholder="例如 现点现做，预计 15–25 分钟"></label>
+            </div>
+            <div class="account-form-actions"><span id="storeFormStatus"></span><button class="primary-action" type="submit">创建门店</button></div>
+          </form>
+        </section>
+        </div>
+        <section class="platform-list-card">
+          <header><div><b>门店列表</b><span>停用门店后顾客无法继续加载菜单</span></div></header>
+          <div id="platformStoreList" class="platform-record-list"></div>
+        </section>
+        <section class="platform-list-card">
+          <header><div><b>账号与授权</b><span>可停用账号、切换平台权限及调整单门店角色</span></div></header>
+          <div id="platformMerchantList" class="platform-record-list"></div>
         </section>
       </section>
       <div class="privacy-note">

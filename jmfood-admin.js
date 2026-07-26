@@ -22,6 +22,8 @@ let tableRegistry = []
 let tableRegistryLoading = false
 let editingImageUrls = []
 let imageUploading = false
+let platformStores = []
+let platformUsers = []
 
 function localDateValue(date = new Date()) {
   const pad = value => String(value).padStart(2, "0")
@@ -564,6 +566,66 @@ function stopAutoRefresh() {
   refreshTimer = null
 }
 
+function renderPlatformData() {
+  $("#platformStoreList").innerHTML = platformStores.map(store => `
+    <article class="platform-record ${store.enabled ? "" : "is-disabled"}">
+      <div class="platform-record-main"><b>${escapeHtml(store.name)}</b><small>${escapeHtml(store.id)}</small></div>
+      <div class="platform-record-meta"><span>${escapeHtml(store.address || "未填写地址")}</span><span>${escapeHtml(store.brand?.name || "未关联品牌")} · ${store.enabled ? "营业中" : "已停用"}</span></div>
+      <div class="platform-record-actions">
+        <button data-edit-store="${escapeHtml(store.id)}">编辑</button>
+        <button class="${store.enabled ? "danger" : ""}" data-toggle-platform-store="${escapeHtml(store.id)}">${store.enabled ? "停用" : "启用"}</button>
+      </div>
+    </article>
+  `).join("") || `<div class="empty"><b>暂无门店</b></div>`
+
+  $("#platformMerchantList").innerHTML = platformUsers.map(user => {
+    const membership = new Map((user.stores || []).map(store => [store.storeId, store.role]))
+    const access = platformStores.map(store => `
+      <label class="merchant-store-access">
+        <input type="checkbox" data-user-store="${user.id}" value="${escapeHtml(store.id)}" ${membership.has(store.id) ? "checked" : ""}>
+        <span>${escapeHtml(store.name)}</span>
+        <select data-user-role="${user.id}:${escapeHtml(store.id)}">
+          ${["owner", "manager", "staff"].map(role => `<option value="${role}" ${membership.get(store.id) === role ? "selected" : ""}>${role}</option>`).join("")}
+        </select>
+      </label>
+    `).join("")
+    return `<article class="platform-record merchant-record ${user.enabled ? "" : "is-disabled"}">
+      <div class="platform-record-main"><b>${escapeHtml(user.displayName)}</b><small>${escapeHtml(user.username)} · #${user.id}</small></div>
+      <div class="platform-record-meta">
+        <label class="platform-check"><input type="checkbox" data-user-platform="${user.id}" ${user.platformAdmin ? "checked" : ""}><span>平台管理员</span></label>
+        <div class="merchant-store-grid">${access || "<span>暂无门店</span>"}</div>
+      </div>
+      <div class="platform-record-actions">
+        <button data-save-user="${user.id}">保存授权</button>
+        <button data-reset-user-password="${user.id}">重置密码</button>
+        <button class="${user.enabled ? "danger" : ""}" data-toggle-user="${user.id}">${user.enabled ? "停用" : "启用"}</button>
+      </div>
+    </article>`
+  }).join("") || `<div class="empty"><b>暂无商家账号</b></div>`
+}
+
+async function loadPlatformData() {
+  if (!merchantSession?.platformAdmin) return
+  const status = $("#platformStatus")
+  status.hidden = false
+  status.className = "data-status"
+  status.textContent = "正在读取平台数据…"
+  try {
+    const [storesData, usersData] = await Promise.all([
+      api("/admin/stores"),
+      api("/admin/merchants")
+    ])
+    platformStores = Array.isArray(storesData) ? storesData : (storesData.list || [])
+    platformUsers = Array.isArray(usersData) ? usersData : (usersData.list || [])
+    renderPlatformData()
+    status.className = "data-status success"
+    status.textContent = `${platformStores.length} 家门店 · ${platformUsers.length} 个商家账号`
+  } catch (error) {
+    status.className = "data-status error"
+    status.textContent = error.message
+  }
+}
+
 async function bootstrapSession() {
   const data = await api("/merchant/auth/me")
   merchantSession = data
@@ -633,6 +695,7 @@ $("#workspaceTabs").addEventListener("click", event => {
   if (activeView === "orders") loadOrders({ quiet: true })
   if (activeView === "menu") loadMenu()
   if (activeView === "tables") loadTables()
+  if (activeView === "accounts") loadPlatformData()
 })
 
 $("#merchantAccountForm").addEventListener("submit", async event => {
@@ -651,6 +714,7 @@ $("#merchantAccountForm").addEventListener("submit", async event => {
         username,
         password: $("#newMerchantPassword").value,
         displayName: $("#newMerchantDisplayName").value.trim(),
+        platformAdmin: $("#newMerchantPlatformAdmin").checked,
         stores: [{
           storeId: $("#newMerchantStore").value,
           role: $("#newMerchantRole").value
@@ -661,11 +725,101 @@ $("#merchantAccountForm").addEventListener("submit", async event => {
     status.textContent = `账号 ${username} 已创建，可以退出后测试登录`
     event.currentTarget.reset()
     $("#newMerchantStore").value = currentStoreId
+    await loadPlatformData()
   } catch (error) {
     status.className = "error"
     status.textContent = error.message
   } finally {
     button.disabled = false
+  }
+})
+
+$("#storeForm").addEventListener("submit", async event => {
+  event.preventDefault()
+  const status = $("#storeFormStatus")
+  const button = event.currentTarget.querySelector("button")
+  button.disabled = true
+  status.className = ""
+  status.textContent = "正在创建门店…"
+  try {
+    await api("/admin/stores", {
+      method: "POST",
+      body: JSON.stringify({
+        id: $("#newStoreId").value.trim(),
+        name: $("#newStoreName").value.trim(),
+        address: $("#newStoreAddress").value.trim(),
+        notice: $("#newStoreNotice").value.trim()
+      })
+    })
+    status.className = "success"
+    status.textContent = "门店已创建"
+    event.currentTarget.reset()
+    await bootstrapSession()
+    await loadPlatformData()
+  } catch (error) {
+    status.className = "error"
+    status.textContent = error.message
+  } finally {
+    button.disabled = false
+  }
+})
+
+$("#refreshPlatform").addEventListener("click", loadPlatformData)
+$("#platformStoreList").addEventListener("click", async event => {
+  const toggle = event.target.closest("[data-toggle-platform-store]")
+  const edit = event.target.closest("[data-edit-store]")
+  const store = platformStores.find(item => item.id === (toggle?.dataset.togglePlatformStore || edit?.dataset.editStore))
+  if (!store) return
+  try {
+    if (toggle) {
+      await api(`/admin/stores/${encodeURIComponent(store.id)}`, {
+        method: "PATCH", body: JSON.stringify({ enabled: !store.enabled })
+      })
+    } else {
+      const name = prompt("门店名称", store.name)
+      if (name === null) return
+      const address = prompt("门店地址", store.address || "")
+      if (address === null) return
+      const notice = prompt("营业提示", store.notice || "")
+      if (notice === null) return
+      await api(`/admin/stores/${encodeURIComponent(store.id)}`, {
+        method: "PATCH", body: JSON.stringify({ name, address, notice })
+      })
+    }
+    await bootstrapSession()
+    await loadPlatformData()
+  } catch (error) {
+    alert(error.message)
+  }
+})
+
+$("#platformMerchantList").addEventListener("click", async event => {
+  const save = event.target.closest("[data-save-user]")
+  const toggle = event.target.closest("[data-toggle-user]")
+  const resetPassword = event.target.closest("[data-reset-user-password]")
+  const id = save?.dataset.saveUser || toggle?.dataset.toggleUser || resetPassword?.dataset.resetUserPassword
+  const user = platformUsers.find(item => String(item.id) === String(id))
+  if (!user) return
+  let payload
+  if (toggle) payload = { enabled: !user.enabled }
+  else if (resetPassword) {
+    const password = prompt(`为 ${user.username} 设置新密码（至少 10 位）`)
+    if (password === null) return
+    payload = { password }
+  } else payload = {
+    platformAdmin: Boolean($(`[data-user-platform="${id}"]`)?.checked),
+    stores: [...document.querySelectorAll(`[data-user-store="${id}"]:checked`)].map(input => ({
+      storeId: input.value,
+      role: document.querySelector(`[data-user-role="${id}:${CSS.escape(input.value)}"]`)?.value || "staff"
+    }))
+  }
+  try {
+    await api(`/admin/merchants/${encodeURIComponent(id)}`, {
+      method: "PATCH", body: JSON.stringify(payload)
+    })
+    await loadPlatformData()
+  } catch (error) {
+    alert(error.message)
   }
 })
 $("#statusTabs").addEventListener("click", event => {
