@@ -1,0 +1,97 @@
+.account-create-card {
+  max-width: 760px;
+  padding: 26px;
+  border: 1px solid var(--line);
+  border-radius: 19px;
+  background: #fff;
+  box-shadow: 0 12px 35px rgba(55, 37, 25, .05);
+}
+
+.account-create-copy {
+  display: grid;
+  margin-bottom: 20px;
+}
+
+.account-create-copy b {
+  font-size: 19px;
+}
+
+.account-create-copy span,
+.account-create-card aside {
+  color: var(--muted);
+}
+
+.account-create-card form {
+  display: grid;
+  gap: 18px;
+}
+
+.account-create-card label {
+  display: grid;
+  gap: 6px;
+  color: #675d56;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.account-create-card input,
+.account-create-card select {
+  width: 100%;
+  padding: 11px 12px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: #fcfbfa;
+  color: var(--ink);
+  outline: none;
+}
+
+.account-create-card input:focus,
+.account-create-card select:focus {
+  border-color: #e99a78;
+  box-shadow: 0 0 0 3px #fff0e8;
+}
+
+.account-form-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+}
+
+.account-form-actions span {
+  color: var(--muted);
+}
+
+.account-form-actions span.error {
+  color: var(--red);
+}
+
+.account-form-actions span.success {
+  color: var(--green);
+}
+
+.account-create-card aside {
+  display: flex;
+  gap: 12px;
+  margin-top: 20px;
+  padding: 13px 15px;
+  border-radius: 11px;
+  background: #f8f5f2;
+  font-size: 11px;
+}
+
+.account-create-card aside b {
+  flex: none;
+  color: #5e554f;
+}
+
+@media (max-width: 700px) {
+  .account-form-actions {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .account-form-actions button {
+    width: 100%;
+  }
+}

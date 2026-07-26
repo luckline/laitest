@@ -9,6 +9,7 @@
   <link rel="icon" href="/img/favicon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="/css/jmfood-admin.css?v=1">
   <link rel="stylesheet" href="/css/jmfood-admin-tables.css?v=1">
+  <link rel="stylesheet" href="/css/jmfood-admin-accounts.css?v=1">
 </head>
 <body>
   <header class="site-header">
@@ -43,6 +44,7 @@
         <button class="active" data-view="orders">订单管理</button>
         <button data-view="menu">菜单管理</button>
         <button data-view="tables">桌码管理</button>
+        <button id="merchantAccountsTab" data-view="accounts" hidden>商家账号</button>
       </nav>
       <section id="ordersView">
       <div class="page-head">
@@ -117,6 +119,39 @@
           <div id="registeredTableList" class="registered-table-list" aria-live="polite"></div>
         </section>
         <section id="codeList" class="code-list" aria-live="polite"></section>
+      </section>
+      <section id="accountsView" hidden>
+        <div class="page-head">
+          <div>
+            <p>MERCHANT ACCESS</p>
+            <h1>商家账号</h1>
+            <span>创建账号并限定可管理的门店；此入口仅迁移管理员可见</span>
+          </div>
+        </div>
+        <section class="account-create-card">
+          <div class="account-create-copy">
+            <b>创建门店管理员</b>
+            <span>账号创建后，请让负责人首次登录并妥善保管密码。</span>
+          </div>
+          <form id="merchantAccountForm">
+            <div class="editor-grid">
+              <label>登录账号<input id="newMerchantUsername" minlength="4" maxlength="80" autocomplete="off" required placeholder="例如 xiangmanwan_owner"></label>
+              <label>负责人名称<input id="newMerchantDisplayName" maxlength="100" required placeholder="例如 香满碗负责人"></label>
+              <label>初始密码<input id="newMerchantPassword" type="password" minlength="10" autocomplete="new-password" required placeholder="至少 10 位"></label>
+              <label>授权门店<select id="newMerchantStore" required></select></label>
+              <label>门店角色<select id="newMerchantRole" required>
+                <option value="owner">Owner · 店铺负责人</option>
+                <option value="manager">Manager · 门店经理</option>
+                <option value="staff">Staff · 普通员工</option>
+              </select></label>
+            </div>
+            <div class="account-form-actions">
+              <span id="merchantAccountStatus" role="status"></span>
+              <button id="createMerchantAccount" class="primary-action" type="submit">创建账号</button>
+            </div>
+          </form>
+          <aside><b>安全提示</b><span>这里不会显示或保存已有密码。完成首批账号创建并验证后，应关闭旧平台 Token。</span></aside>
+        </section>
       </section>
       <div class="privacy-note">
         <b>数据最小化</b>

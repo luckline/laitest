@@ -575,6 +575,11 @@ async function bootstrapSession() {
     `<option value="${escapeHtml(store.id)}">${escapeHtml(store.name)} · ${escapeHtml(store.role || "")}</option>`
   ).join("")
   $("#storePicker").value = currentStoreId
+  $("#merchantAccountsTab").hidden = !data.platformAdmin
+  $("#newMerchantStore").innerHTML = stores.map(store =>
+    `<option value="${escapeHtml(store.id)}">${escapeHtml(store.name)}</option>`
+  ).join("")
+  $("#newMerchantStore").value = currentStoreId
   const store = stores.find(item => item.id === currentStoreId)
   $("#headerStoreName").textContent = store?.name || "锦食铭味"
   showOrders()
@@ -624,9 +629,44 @@ $("#workspaceTabs").addEventListener("click", event => {
   $("#ordersView").hidden = activeView !== "orders"
   $("#menuView").hidden = activeView !== "menu"
   $("#tablesView").hidden = activeView !== "tables"
+  $("#accountsView").hidden = activeView !== "accounts"
   if (activeView === "orders") loadOrders({ quiet: true })
   if (activeView === "menu") loadMenu()
   if (activeView === "tables") loadTables()
+})
+
+$("#merchantAccountForm").addEventListener("submit", async event => {
+  event.preventDefault()
+  if (!merchantSession?.platformAdmin) return
+  const button = $("#createMerchantAccount")
+  const status = $("#merchantAccountStatus")
+  const username = $("#newMerchantUsername").value.trim()
+  button.disabled = true
+  status.className = ""
+  status.textContent = "正在创建账号…"
+  try {
+    await api("/admin/merchants", {
+      method: "POST",
+      body: JSON.stringify({
+        username,
+        password: $("#newMerchantPassword").value,
+        displayName: $("#newMerchantDisplayName").value.trim(),
+        stores: [{
+          storeId: $("#newMerchantStore").value,
+          role: $("#newMerchantRole").value
+        }]
+      })
+    })
+    status.className = "success"
+    status.textContent = `账号 ${username} 已创建，可以退出后测试登录`
+    event.currentTarget.reset()
+    $("#newMerchantStore").value = currentStoreId
+  } catch (error) {
+    status.className = "error"
+    status.textContent = error.message
+  } finally {
+    button.disabled = false
+  }
 })
 $("#statusTabs").addEventListener("click", event => {
   const button = event.target.closest("[data-status]")
