@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="robots" content="noindex,nofollow">
+  <meta name="referrer" content="no-referrer">
+  <title>香满碗 · 商家订单台</title>
+  <link rel="icon" href="/img/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/css/jmfood-admin.css?v=1">
+</head>
+<body>
+  <header class="site-header">
+    <a class="brand" href="/jmfood-admin" aria-label="香满碗商家订单台">
+      <i>香</i>
+      <span><b>香满碗</b><small>MERCHANT ORDER DESK</small></span>
+    </a>
+    <button id="logout" class="ghost-button" hidden>退出管理</button>
+  </header>
+
+  <main>
+    <section id="loginPanel" class="login-panel">
+      <p>MERCHANT ACCESS</p>
+      <h1>商家订单登录</h1>
+      <span>输入服务端配置的商家管理 Token。凭证仅保存在当前标签页，关闭标签页后自动清除。</span>
+      <form id="loginForm">
+        <label for="merchantToken">商家管理 Token</label>
+        <input id="merchantToken" type="password" autocomplete="current-password" placeholder="请输入商家管理凭证" required>
+        <button type="submit">进入订单台</button>
+      </form>
+      <div id="loginMessage" role="alert"></div>
+      <aside><b>隐私提示</b><span>请勿在共享电脑保存凭证、截屏或转发订单信息。</span></aside>
+    </section>
+
+    <section id="orderPanel" hidden>
+      <div class="page-head">
+        <div>
+          <p>LIVE ORDERS</p>
+          <h1>今日订单</h1>
+          <span><i class="online-dot"></i><span id="connectionCopy">订单数据已连接</span></span>
+        </div>
+        <div class="head-actions">
+          <span id="updatedAt"></span>
+          <button id="refreshOrders" class="ghost-button">刷新</button>
+        </div>
+      </div>
+
+      <div id="summary" class="summary" aria-label="订单概览"></div>
+      <nav id="statusTabs" class="status-tabs" aria-label="订单状态筛选">
+        <button class="active" data-status="">全部</button>
+        <button data-status="待接单">待接单</button>
+        <button data-status="制作中">制作中</button>
+        <button data-status="已完成">已完成</button>
+      </nav>
+      <div id="orderStatus" class="data-status" role="status">正在读取订单…</div>
+      <section id="orderList" class="order-list" aria-live="polite"></section>
+      <div class="privacy-note">
+        <b>数据最小化</b>
+        <span>本页仅展示履约必需的桌号、菜品、备注、金额和订单状态，不展示顾客 OpenID、用户 ID 或其他账号资料。</span>
+      </div>
+    </section>
+  </main>
+
+  <script src="/jmfood-admin.js?v=1"></script>
+</body>
+</html>
