@@ -5,28 +5,33 @@
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <meta name="robots" content="noindex,nofollow">
   <meta name="referrer" content="no-referrer">
-  <title>香满碗 · 商家订单台</title>
+  <title>锦食铭味 · 商家管理</title>
   <link rel="icon" href="/img/favicon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="/css/jmfood-admin.css?v=1">
   <link rel="stylesheet" href="/css/jmfood-admin-tables.css?v=1">
 </head>
 <body>
   <header class="site-header">
-    <a class="brand" href="/jmfood-admin" aria-label="香满碗商家订单台">
-      <i>香</i>
-      <span><b>香满碗</b><small>MERCHANT ORDER DESK</small></span>
+    <a class="brand" href="/jmfood-admin" aria-label="锦食铭味商家管理">
+      <i>锦</i>
+      <span><b id="headerStoreName">锦食铭味</b><small>MULTI-STORE OPERATIONS</small></span>
     </a>
-    <button id="logout" class="ghost-button" hidden>退出管理</button>
+    <div class="head-actions">
+      <label id="storePickerWrap" class="date-filter" hidden>当前门店<select id="storePicker"></select></label>
+      <button id="logout" class="ghost-button" hidden>退出管理</button>
+    </div>
   </header>
 
   <main>
     <section id="loginPanel" class="login-panel">
       <p>MERCHANT ACCESS</p>
       <h1>商家订单登录</h1>
-      <span>输入服务端配置的商家管理 Token。凭证仅保存在当前标签页，关闭标签页后自动清除。</span>
+      <span>使用分配给你的商家账号登录。登录后只会显示已授权门店。</span>
       <form id="loginForm">
-        <label for="merchantToken">商家管理 Token</label>
-        <input id="merchantToken" type="password" autocomplete="current-password" placeholder="请输入商家管理凭证" required>
+        <label for="merchantUsername">商家账号</label>
+        <input id="merchantUsername" autocomplete="username" placeholder="请输入商家账号" required>
+        <label for="merchantPassword">密码</label>
+        <input id="merchantPassword" type="password" autocomplete="current-password" placeholder="请输入密码" required>
         <button type="submit">进入订单台</button>
       </form>
       <div id="loginMessage" role="alert"></div>
@@ -103,7 +108,7 @@
             <b>印刷建议</b>
             <span>二维码至少 4 × 4 厘米，并在下方印出明确桌号。</span>
             <span>正式营业使用 release 版本，打印前请逐张扫码确认。</span>
-            <span>桌码只包含桌号，不包含顾客身份或订单信息。</span>
+            <span>桌码包含门店和桌号，不包含顾客身份或订单信息。</span>
           </aside>
         </section>
         <section class="registered-tables">

@@ -1,5 +1,4 @@
 const API_BASE = "https://timelens.cc/api/jmfood"
-const STORE_ID = "demo-store"
 const TOKEN_KEY = "jmfood:merchant-token"
 const AUTO_REFRESH_MS = 15000
 
@@ -10,6 +9,8 @@ const orderList = $("#orderList")
 const orderStatus = $("#orderStatus")
 const loginMessage = $("#loginMessage")
 let token = sessionStorage.getItem(TOKEN_KEY) || ""
+let merchantSession = null
+let currentStoreId = sessionStorage.getItem("jmfood:store-id") || ""
 let activeStatus = ""
 let activeView = "orders"
 let refreshTimer = null
@@ -67,19 +68,22 @@ function showLogin(message = "") {
   orderPanel.hidden = true
   $("#logout").hidden = true
   loginMessage.textContent = message
-  $("#merchantToken").value = ""
+  $("#merchantPassword").value = ""
+  $("#storePickerWrap").hidden = true
 }
 
 function showOrders() {
   loginPanel.hidden = true
   orderPanel.hidden = false
   $("#logout").hidden = false
+  $("#storePickerWrap").hidden = false
   startAutoRefresh()
 }
 
 function clearToken(message = "") {
   token = ""
   sessionStorage.removeItem(TOKEN_KEY)
+  merchantSession = null
   showLogin(message)
 }
 
@@ -184,7 +188,7 @@ async function loadMenu({ quiet = false } = {}) {
     status.textContent = "正在读取菜单…"
   }
   try {
-    adminMenu = await api(`/admin/stores/${encodeURIComponent(STORE_ID)}/menu`)
+    adminMenu = await api(`/admin/stores/${encodeURIComponent(currentStoreId)}/menu`)
     renderMenu()
     status.className = "data-status success"
     status.textContent = `菜单已更新：${adminMenu.categories.length} 个分类，${adminMenu.categories.reduce((sum, category) => sum + category.items.length, 0)} 道菜`
@@ -290,6 +294,7 @@ async function uploadDishImages(files) {
       status.className = "data-status"
       status.textContent = `正在上传 ${index + 1}/${selected.length}…`
       const form = new FormData()
+      form.append("storeId", currentStoreId)
       form.append("image", selected[index])
       const result = await api("/admin/menu/images/upload", { method: "POST", body: form })
       if (!result.url) throw new Error("上传成功，但服务端未返回图片地址")
@@ -341,7 +346,7 @@ async function saveEditor(form, path, method, payload) {
 
 async function toggleMenuRecord(type, record) {
   const isCategory = type === "category"
-  const path = `/admin/stores/${encodeURIComponent(STORE_ID)}/menu/${isCategory ? "categories" : "items"}/${encodeURIComponent(record.id)}`
+  const path = `/admin/stores/${encodeURIComponent(currentStoreId)}/menu/${isCategory ? "categories" : "items"}/${encodeURIComponent(record.id)}`
   try {
     await api(path, { method: "PATCH", body: JSON.stringify({ enabled: !record.enabled }) })
     await loadMenu({ quiet: true })
@@ -379,11 +384,12 @@ function expandTableNumbers(value) {
 }
 
 function renderCodes() {
+  const storeName = merchantSession?.stores?.find(store => store.id === currentStoreId)?.name || currentStoreId
   $("#downloadAllCodes").hidden = !generatedCodes.length
   $("#codeList").innerHTML = generatedCodes.map(code =>
     `<article class="code-card">
       <div class="code-image"><img src="data:${escapeHtml(code.mimeType)};base64,${code.base64}" alt="${escapeHtml(code.tableNo)} 桌小程序码"></div>
-      <div><span>香满碗</span><b>${escapeHtml(code.tableNo)} 桌</b><small>微信扫码点餐</small></div>
+      <div><span>${escapeHtml(storeName)}</span><b>${escapeHtml(code.tableNo)} 桌</b><small>微信扫码点餐</small></div>
       <button data-download-table="${escapeHtml(code.tableNo)}">下载 PNG</button>
     </article>`
   ).join("")
@@ -411,7 +417,7 @@ async function generateTableCodes() {
       status.textContent = `正在生成 ${index + 1}/${tableNumbers.length}：${tableNumbers[index]} 桌`
       const code = await api("/admin/table-qrcode", {
         method: "POST",
-        body: JSON.stringify({ storeId: STORE_ID, tableNo: tableNumbers[index], width: 430 })
+        body: JSON.stringify({ storeId: currentStoreId, tableNo: tableNumbers[index], width: 430 })
       })
       if (!/^[A-Za-z0-9+/=]+$/.test(code.base64 || "") ||
           !["image/png", "image/jpeg"].includes(code.mimeType)) {
@@ -458,7 +464,7 @@ async function loadTables({ quiet = false } = {}) {
     status.textContent = "正在读取桌台…"
   }
   try {
-    const data = await api(`/admin/stores/${encodeURIComponent(STORE_ID)}/tables`)
+    const data = await api(`/admin/stores/${encodeURIComponent(currentStoreId)}/tables`)
     tableRegistry = Array.isArray(data.list) ? data.list : []
     renderTables()
     status.hidden = true
@@ -478,7 +484,7 @@ async function toggleTable(tableNo) {
   const table = tableRegistry.find(item => item.tableNo === tableNo)
   if (!table) return
   try {
-    await api(`/admin/stores/${encodeURIComponent(STORE_ID)}/tables/${encodeURIComponent(tableNo)}`, {
+    await api(`/admin/stores/${encodeURIComponent(currentStoreId)}/tables/${encodeURIComponent(tableNo)}`, {
       method: "PATCH",
       body: JSON.stringify({ enabled: !table.enabled })
     })
@@ -492,7 +498,7 @@ async function toggleTable(tableNo) {
 function downloadCode(code) {
   const link = document.createElement("a")
   link.href = `data:${code.mimeType};base64,${code.base64}`
-  link.download = code.fileName || `香满碗-${code.tableNo}桌.png`
+  link.download = code.fileName || `${currentStoreId}-${code.tableNo}桌.png`
   link.rel = "noopener"
   link.click()
 }
@@ -506,7 +512,7 @@ async function loadOrders({ quiet = false } = {}) {
     orderStatus.textContent = "正在读取订单…"
   }
   try {
-    const data = await api(`/stores/${encodeURIComponent(STORE_ID)}/orders?date=${encodeURIComponent(activeOrderDate)}`)
+    const data = await api(`/stores/${encodeURIComponent(currentStoreId)}/orders?date=${encodeURIComponent(activeOrderDate)}`)
     const orders = Array.isArray(data.list) ? data.list : []
     renderSummary(orders)
     renderOrders(activeStatus ? orders.filter(order => order.status === activeStatus) : orders)
@@ -535,7 +541,7 @@ async function updateStatus(orderId, nextStatus, button) {
   try {
     await api(`/orders/${encodeURIComponent(orderId)}/status`, {
       method: "PATCH",
-      body: JSON.stringify({ status: nextStatus })
+      body: JSON.stringify({ storeId: currentStoreId, status: nextStatus })
     })
     await loadOrders()
   } catch (error) {
@@ -558,13 +564,45 @@ function stopAutoRefresh() {
   refreshTimer = null
 }
 
-$("#loginForm").addEventListener("submit", event => {
+async function bootstrapSession() {
+  const data = await api("/merchant/auth/me")
+  merchantSession = data
+  const stores = Array.isArray(data.stores) ? data.stores : []
+  if (!stores.length) throw new Error("该账号尚未授权任何门店")
+  if (!stores.some(store => store.id === currentStoreId)) currentStoreId = stores[0].id
+  sessionStorage.setItem("jmfood:store-id", currentStoreId)
+  $("#storePicker").innerHTML = stores.map(store =>
+    `<option value="${escapeHtml(store.id)}">${escapeHtml(store.name)} · ${escapeHtml(store.role || "")}</option>`
+  ).join("")
+  $("#storePicker").value = currentStoreId
+  const store = stores.find(item => item.id === currentStoreId)
+  $("#headerStoreName").textContent = store?.name || "锦食铭味"
+  showOrders()
+  await loadOrders()
+}
+
+$("#loginForm").addEventListener("submit", async event => {
   event.preventDefault()
-  token = $("#merchantToken").value.trim()
-  if (!token) return
-  sessionStorage.setItem(TOKEN_KEY, token)
-  loginMessage.textContent = ""
-  loadOrders()
+  loginMessage.textContent = "正在登录…"
+  try {
+    const response = await fetch(`${API_BASE}/merchant/auth/login`, {
+      method: "POST",
+      cache: "no-store",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        username: $("#merchantUsername").value.trim(),
+        password: $("#merchantPassword").value
+      })
+    })
+    const body = await response.json().catch(() => ({}))
+    if (!response.ok || body.code !== 0 || !body.data?.token) throw new Error(body.message || "登录失败")
+    token = body.data.token
+    sessionStorage.setItem(TOKEN_KEY, token)
+    loginMessage.textContent = ""
+    await bootstrapSession()
+  } catch (error) {
+    clearToken(error.message)
+  }
 })
 
 $("#logout").addEventListener("click", () => clearToken())
@@ -620,7 +658,7 @@ $("#categoryForm").addEventListener("submit", event => {
   const id = $("#categoryId").value
   saveEditor(
     event.currentTarget,
-    `/admin/stores/${encodeURIComponent(STORE_ID)}/menu/categories${id ? `/${encodeURIComponent(id)}` : ""}`,
+    `/admin/stores/${encodeURIComponent(currentStoreId)}/menu/categories${id ? `/${encodeURIComponent(id)}` : ""}`,
     id ? "PATCH" : "POST",
     {
       name: $("#categoryName").value,
@@ -634,7 +672,7 @@ $("#dishForm").addEventListener("submit", event => {
   const id = $("#dishId").value
   saveEditor(
     event.currentTarget,
-    `/admin/stores/${encodeURIComponent(STORE_ID)}/menu/items${id ? `/${encodeURIComponent(id)}` : ""}`,
+    `/admin/stores/${encodeURIComponent(currentStoreId)}/menu/items${id ? `/${encodeURIComponent(id)}` : ""}`,
     id ? "PATCH" : "POST",
     {
       categoryId: $("#dishCategory").value,
@@ -684,5 +722,17 @@ document.addEventListener("visibilitychange", () => {
 })
 window.addEventListener("beforeunload", stopAutoRefresh)
 
-if (token) loadOrders()
+$("#storePicker").addEventListener("change", async event => {
+  currentStoreId = event.target.value
+  sessionStorage.setItem("jmfood:store-id", currentStoreId)
+  const store = merchantSession?.stores?.find(item => item.id === currentStoreId)
+  $("#headerStoreName").textContent = store?.name || "锦食铭味"
+  adminMenu = null
+  generatedCodes = []
+  await loadOrders()
+  if (activeView === "menu") await loadMenu()
+  if (activeView === "tables") await loadTables()
+})
+
+if (token) bootstrapSession().catch(error => clearToken(error.message))
 else showLogin()
