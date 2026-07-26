@@ -8,6 +8,7 @@
   <title>香满碗 · 商家订单台</title>
   <link rel="icon" href="/img/favicon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="/css/jmfood-admin.css?v=1">
+  <link rel="stylesheet" href="/css/jmfood-admin-tables.css?v=1">
 </head>
 <body>
   <header class="site-header">
@@ -33,6 +34,11 @@
     </section>
 
     <section id="orderPanel" hidden>
+      <nav id="workspaceTabs" class="workspace-tabs" aria-label="商家功能">
+        <button class="active" data-view="orders">订单管理</button>
+        <button data-view="tables">桌码管理</button>
+      </nav>
+      <section id="ordersView">
       <div class="page-head">
         <div>
           <p>LIVE ORDERS</p>
@@ -54,6 +60,36 @@
       </nav>
       <div id="orderStatus" class="data-status" role="status">正在读取订单…</div>
       <section id="orderList" class="order-list" aria-live="polite"></section>
+      </section>
+
+      <section id="tablesView" hidden>
+        <div class="page-head">
+          <div>
+            <p>TABLE QR CODES</p>
+            <h1>桌码管理</h1>
+            <span>生成正式小程序码，扫码后自动带入对应桌号</span>
+          </div>
+        </div>
+        <section class="table-code-workspace">
+          <div class="table-code-form">
+            <label for="tableNumbers">桌号</label>
+            <textarea id="tableNumbers" rows="5" placeholder="支持逐个输入或范围，例如：&#10;A01-A10&#10;包厢01-包厢05"></textarea>
+            <small>使用空格、逗号或换行分隔，单次最多生成 50 张。</small>
+            <div class="table-code-actions">
+              <button id="generateCodes" class="primary-action">生成桌码</button>
+              <button id="downloadAllCodes" class="ghost-button" hidden>下载全部</button>
+            </div>
+            <div id="codeStatus" class="data-status" role="status" hidden></div>
+          </div>
+          <aside class="table-code-guide">
+            <b>印刷建议</b>
+            <span>二维码至少 4 × 4 厘米，并在下方印出明确桌号。</span>
+            <span>正式营业使用 release 版本，打印前请逐张扫码确认。</span>
+            <span>桌码只包含桌号，不包含顾客身份或订单信息。</span>
+          </aside>
+        </section>
+        <section id="codeList" class="code-list" aria-live="polite"></section>
+      </section>
       <div class="privacy-note">
         <b>数据最小化</b>
         <span>本页仅展示履约必需的桌号、菜品、备注、金额和订单状态，不展示顾客 OpenID、用户 ID 或其他账号资料。</span>

@@ -11,8 +11,10 @@ const orderStatus = $("#orderStatus")
 const loginMessage = $("#loginMessage")
 let token = sessionStorage.getItem(TOKEN_KEY) || ""
 let activeStatus = ""
+let activeView = "orders"
 let refreshTimer = null
 let loading = false
+let generatedCodes = []
 
 const escapeHtml = value => String(value ?? "").replace(/[&<>"']/g, char => ({
   "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
@@ -114,6 +116,96 @@ function renderOrders(orders) {
   }).join("")
 }
 
+function expandTableNumbers(value) {
+  const output = []
+  const seen = new Set()
+  const tokens = String(value || "").split(/[\s,，、;；]+/).map(item => item.trim()).filter(Boolean)
+  for (const token of tokens) {
+    const range = token.match(/^([A-Za-z\u4e00-\u9fa5_]*?)(\d+)-([A-Za-z\u4e00-\u9fa5_]*?)(\d+)$/)
+    if (range) {
+      const [, startPrefix, startDigits, endPrefixRaw, endDigits] = range
+      const endPrefix = endPrefixRaw || startPrefix
+      const start = Number(startDigits)
+      const end = Number(endDigits)
+      if (startPrefix !== endPrefix || end < start || end - start > 49) throw new Error(`无法识别桌号范围：${token}`)
+      const width = Math.max(startDigits.length, endDigits.length)
+      for (let number = start; number <= end; number += 1) {
+        const tableNo = `${startPrefix}${String(number).padStart(width, "0")}`
+        if (!seen.has(tableNo)) { seen.add(tableNo); output.push(tableNo) }
+      }
+      continue
+    }
+    if (!/^[A-Za-z0-9\u4e00-\u9fa5_-]{1,20}$/.test(token)) throw new Error(`桌号格式不正确：${token}`)
+    if (!seen.has(token)) { seen.add(token); output.push(token) }
+  }
+  if (!output.length) throw new Error("请至少输入一个桌号")
+  if (output.length > 50) throw new Error("单次最多生成 50 张桌码")
+  return output
+}
+
+function renderCodes() {
+  $("#downloadAllCodes").hidden = !generatedCodes.length
+  $("#codeList").innerHTML = generatedCodes.map(code =>
+    `<article class="code-card">
+      <div class="code-image"><img src="data:${escapeHtml(code.mimeType)};base64,${code.base64}" alt="${escapeHtml(code.tableNo)} 桌小程序码"></div>
+      <div><span>香满碗</span><b>${escapeHtml(code.tableNo)} 桌</b><small>微信扫码点餐</small></div>
+      <button data-download-table="${escapeHtml(code.tableNo)}">下载 PNG</button>
+    </article>`
+  ).join("")
+}
+
+async function generateTableCodes() {
+  const status = $("#codeStatus")
+  const button = $("#generateCodes")
+  let tableNumbers
+  try {
+    tableNumbers = expandTableNumbers($("#tableNumbers").value)
+  } catch (error) {
+    status.hidden = false
+    status.className = "data-status error"
+    status.textContent = error.message
+    return
+  }
+  generatedCodes = []
+  renderCodes()
+  button.disabled = true
+  status.hidden = false
+  status.className = "data-status"
+  try {
+    for (let index = 0; index < tableNumbers.length; index += 1) {
+      status.textContent = `正在生成 ${index + 1}/${tableNumbers.length}：${tableNumbers[index]} 桌`
+      const code = await api("/admin/table-qrcode", {
+        method: "POST",
+        body: JSON.stringify({ tableNo: tableNumbers[index], width: 430 })
+      })
+      if (!/^[A-Za-z0-9+/=]+$/.test(code.base64 || "") ||
+          !["image/png", "image/jpeg"].includes(code.mimeType)) {
+        throw new Error(`${tableNumbers[index]} 桌返回的图片数据无效`)
+      }
+      generatedCodes.push(code)
+      renderCodes()
+    }
+    status.className = "data-status success"
+    status.textContent = `已生成 ${generatedCodes.length} 张桌码，请扫码确认后再印刷`
+  } catch (error) {
+    if ([401, 403].includes(error.status)) clearToken("管理凭证无效或已失效，请重新输入")
+    else {
+      status.className = "data-status error"
+      status.textContent = `生成失败：${error.message}`
+    }
+  } finally {
+    button.disabled = false
+  }
+}
+
+function downloadCode(code) {
+  const link = document.createElement("a")
+  link.href = `data:${code.mimeType};base64,${code.base64}`
+  link.download = code.fileName || `香满碗-${code.tableNo}桌.png`
+  link.rel = "noopener"
+  link.click()
+}
+
 async function loadOrders({ quiet = false } = {}) {
   if (loading || !token) return
   loading = true
@@ -165,7 +257,7 @@ async function updateStatus(orderId, nextStatus, button) {
 function startAutoRefresh() {
   stopAutoRefresh()
   refreshTimer = setInterval(() => {
-    if (!document.hidden) loadOrders({ quiet: true })
+    if (!document.hidden && activeView === "orders") loadOrders({ quiet: true })
   }, AUTO_REFRESH_MS)
 }
 
@@ -185,6 +277,15 @@ $("#loginForm").addEventListener("submit", event => {
 
 $("#logout").addEventListener("click", () => clearToken())
 $("#refreshOrders").addEventListener("click", () => loadOrders())
+$("#workspaceTabs").addEventListener("click", event => {
+  const button = event.target.closest("[data-view]")
+  if (!button) return
+  activeView = button.dataset.view
+  $("#workspaceTabs").querySelectorAll("button").forEach(item => item.classList.toggle("active", item === button))
+  $("#ordersView").hidden = activeView !== "orders"
+  $("#tablesView").hidden = activeView !== "tables"
+  if (activeView === "orders") loadOrders({ quiet: true })
+})
 $("#statusTabs").addEventListener("click", event => {
   const button = event.target.closest("[data-status]")
   if (!button) return
@@ -195,6 +296,16 @@ $("#statusTabs").addEventListener("click", event => {
 orderList.addEventListener("click", event => {
   const button = event.target.closest("[data-order-id]")
   if (button) updateStatus(button.dataset.orderId, button.dataset.nextStatus, button)
+})
+$("#generateCodes").addEventListener("click", generateTableCodes)
+$("#downloadAllCodes").addEventListener("click", () => {
+  generatedCodes.forEach((code, index) => setTimeout(() => downloadCode(code), index * 180))
+})
+$("#codeList").addEventListener("click", event => {
+  const button = event.target.closest("[data-download-table]")
+  if (!button) return
+  const code = generatedCodes.find(item => item.tableNo === button.dataset.downloadTable)
+  if (code) downloadCode(code)
 })
 document.addEventListener("visibilitychange", () => {
   if (!document.hidden && token) loadOrders({ quiet: true })
