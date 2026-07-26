@@ -15,6 +15,8 @@ let activeView = "orders"
 let refreshTimer = null
 let loading = false
 let generatedCodes = []
+let adminMenu = null
+let menuLoading = false
 
 const escapeHtml = value => String(value ?? "").replace(/[&<>"']/g, char => ({
   "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
@@ -114,6 +116,160 @@ function renderOrders(orders) {
       </footer>
     </article>`
   }).join("")
+}
+
+function renderMenu() {
+  const manager = $("#menuManager")
+  const categories = adminMenu && Array.isArray(adminMenu.categories) ? adminMenu.categories : []
+  if (!categories.length) {
+    manager.innerHTML = `<div class="empty"><i>菜</i><b>还没有菜单分类</b><span>先新增分类，再添加菜品</span></div>`
+    return
+  }
+  manager.innerHTML = categories.map(category => `
+    <article class="menu-category ${category.enabled ? "" : "is-disabled"}">
+      <header>
+        <div>
+          <span class="menu-order">排序 ${Number(category.sortOrder) || 0}</span>
+          <h2>${escapeHtml(category.name)}</h2>
+          <small>${category.items.length} 道菜 · ${category.enabled ? "前台展示中" : "分类已隐藏"}</small>
+        </div>
+        <div class="menu-actions">
+          <button class="ghost-button" data-add-dish="${escapeHtml(category.id)}">添加菜品</button>
+          <button class="ghost-button" data-edit-category="${escapeHtml(category.id)}">编辑分类</button>
+          <button class="state-action ${category.enabled ? "danger" : ""}" data-toggle-category="${escapeHtml(category.id)}">${category.enabled ? "隐藏分类" : "恢复展示"}</button>
+        </div>
+      </header>
+      <div class="dish-admin-list">
+        ${category.items.length ? category.items.map(item => `
+          <div class="dish-admin-row ${item.enabled ? "" : "is-disabled"}">
+            <div class="dish-admin-icon">${item.imageUrl
+              ? `<img src="${escapeHtml(item.imageUrl)}" alt="" referrerpolicy="no-referrer">`
+              : escapeHtml(item.emoji || "🍽️")}</div>
+            <div class="dish-admin-copy">
+              <div><b>${escapeHtml(item.name)}</b>${item.tag ? `<em>${escapeHtml(item.tag)}</em>` : ""}</div>
+              <span>${escapeHtml(item.description || "暂无描述")}</span>
+              <small>排序 ${Number(item.sortOrder) || 0} · ${item.enabled ? "已上架" : "已下架"}</small>
+            </div>
+            <strong>¥${Number(item.price || 0).toFixed(2)}</strong>
+            <div class="dish-admin-actions">
+              <button data-edit-dish="${escapeHtml(item.id)}">编辑</button>
+              <button class="${item.enabled ? "danger" : ""}" data-toggle-dish="${escapeHtml(item.id)}">${item.enabled ? "下架" : "上架"}</button>
+            </div>
+          </div>
+        `).join("") : `<div class="menu-empty-row">该分类暂无菜品</div>`}
+      </div>
+    </article>
+  `).join("")
+}
+
+async function loadMenu({ quiet = false } = {}) {
+  if (menuLoading || !token) return
+  menuLoading = true
+  const status = $("#menuStatus")
+  if (!quiet) {
+    status.hidden = false
+    status.className = "data-status"
+    status.textContent = "正在读取菜单…"
+  }
+  try {
+    adminMenu = await api(`/admin/stores/${encodeURIComponent(STORE_ID)}/menu`)
+    renderMenu()
+    status.className = "data-status success"
+    status.textContent = `菜单已更新：${adminMenu.categories.length} 个分类，${adminMenu.categories.reduce((sum, category) => sum + category.items.length, 0)} 道菜`
+  } catch (error) {
+    if ([401, 403].includes(error.status)) clearToken("管理凭证无效或已失效，请重新输入")
+    else {
+      status.hidden = false
+      status.className = "data-status error"
+      status.textContent = `菜单读取失败：${error.message}`
+    }
+  } finally {
+    menuLoading = false
+  }
+}
+
+function findCategory(id) {
+  return adminMenu?.categories.find(category => category.id === id)
+}
+
+function findDish(id) {
+  for (const category of adminMenu?.categories || []) {
+    const dish = category.items.find(item => item.id === id)
+    if (dish) return dish
+  }
+  return null
+}
+
+function openEditor(type, record = {}, categoryId = "") {
+  const categoryMode = type === "category"
+  $("#editorMask").hidden = false
+  document.body.classList.add("editor-open")
+  $("#categoryForm").hidden = !categoryMode
+  $("#dishForm").hidden = categoryMode
+  $("#editorStatus").hidden = true
+  $("#editorKicker").textContent = categoryMode ? "CATEGORY EDITOR" : "DISH EDITOR"
+  $("#editorTitle").textContent = `${record.id ? "编辑" : "新增"}${categoryMode ? "分类" : "菜品"}`
+  if (categoryMode) {
+    $("#categoryId").value = record.id || ""
+    $("#categoryName").value = record.name || ""
+    $("#categorySort").value = Number(record.sortOrder) || 0
+    $("#categoryEnabled").checked = record.enabled !== false
+    setTimeout(() => $("#categoryName").focus(), 0)
+    return
+  }
+  $("#dishCategory").innerHTML = (adminMenu?.categories || []).map(category =>
+    `<option value="${escapeHtml(category.id)}">${escapeHtml(category.name)}${category.enabled ? "" : "（已隐藏）"}</option>`
+  ).join("")
+  $("#dishId").value = record.id || ""
+  $("#dishName").value = record.name || ""
+  $("#dishCategory").value = record.categoryId || categoryId
+  $("#dishPrice").value = record.id ? Number(record.price).toFixed(2) : ""
+  $("#dishSort").value = Number(record.sortOrder) || 0
+  $("#dishEmoji").value = record.emoji || ""
+  $("#dishImageUrl").value = record.imageUrl || ""
+  $("#dishTag").value = record.tag || ""
+  $("#dishDescription").value = record.description || ""
+  $("#dishEnabled").checked = record.enabled !== false
+  setTimeout(() => $("#dishName").focus(), 0)
+}
+
+function closeEditor() {
+  $("#editorMask").hidden = true
+  document.body.classList.remove("editor-open")
+}
+
+async function saveEditor(form, path, method, payload) {
+  const status = $("#editorStatus")
+  const submit = form.querySelector('[type="submit"]')
+  submit.disabled = true
+  status.hidden = false
+  status.className = "data-status"
+  status.textContent = "正在保存…"
+  try {
+    await api(path, { method, body: JSON.stringify(payload) })
+    closeEditor()
+    await loadMenu()
+  } catch (error) {
+    if ([401, 403].includes(error.status)) clearToken("管理凭证无效或已失效，请重新输入")
+    else {
+      status.className = "data-status error"
+      status.textContent = error.message
+    }
+  } finally {
+    submit.disabled = false
+  }
+}
+
+async function toggleMenuRecord(type, record) {
+  const isCategory = type === "category"
+  const path = `/admin/stores/${encodeURIComponent(STORE_ID)}/menu/${isCategory ? "categories" : "items"}/${encodeURIComponent(record.id)}`
+  try {
+    await api(path, { method: "PATCH", body: JSON.stringify({ enabled: !record.enabled }) })
+    await loadMenu({ quiet: true })
+  } catch (error) {
+    if ([401, 403].includes(error.status)) clearToken("管理凭证无效或已失效，请重新输入")
+    else alert(error.message)
+  }
 }
 
 function expandTableNumbers(value) {
@@ -283,8 +439,10 @@ $("#workspaceTabs").addEventListener("click", event => {
   activeView = button.dataset.view
   $("#workspaceTabs").querySelectorAll("button").forEach(item => item.classList.toggle("active", item === button))
   $("#ordersView").hidden = activeView !== "orders"
+  $("#menuView").hidden = activeView !== "menu"
   $("#tablesView").hidden = activeView !== "tables"
   if (activeView === "orders") loadOrders({ quiet: true })
+  if (activeView === "menu") loadMenu()
 })
 $("#statusTabs").addEventListener("click", event => {
   const button = event.target.closest("[data-status]")
@@ -296,6 +454,61 @@ $("#statusTabs").addEventListener("click", event => {
 orderList.addEventListener("click", event => {
   const button = event.target.closest("[data-order-id]")
   if (button) updateStatus(button.dataset.orderId, button.dataset.nextStatus, button)
+})
+$("#refreshMenu").addEventListener("click", () => loadMenu())
+$("#addCategory").addEventListener("click", () => openEditor("category"))
+$("#menuManager").addEventListener("click", event => {
+  const addDish = event.target.closest("[data-add-dish]")
+  if (addDish) return openEditor("dish", {}, addDish.dataset.addDish)
+  const editCategory = event.target.closest("[data-edit-category]")
+  if (editCategory) return openEditor("category", findCategory(editCategory.dataset.editCategory))
+  const toggleCategory = event.target.closest("[data-toggle-category]")
+  if (toggleCategory) return toggleMenuRecord("category", findCategory(toggleCategory.dataset.toggleCategory))
+  const editDish = event.target.closest("[data-edit-dish]")
+  if (editDish) return openEditor("dish", findDish(editDish.dataset.editDish))
+  const toggleDish = event.target.closest("[data-toggle-dish]")
+  if (toggleDish) return toggleMenuRecord("dish", findDish(toggleDish.dataset.toggleDish))
+})
+$("#categoryForm").addEventListener("submit", event => {
+  event.preventDefault()
+  const id = $("#categoryId").value
+  saveEditor(
+    event.currentTarget,
+    `/admin/stores/${encodeURIComponent(STORE_ID)}/menu/categories${id ? `/${encodeURIComponent(id)}` : ""}`,
+    id ? "PATCH" : "POST",
+    {
+      name: $("#categoryName").value,
+      sortOrder: Number($("#categorySort").value),
+      enabled: $("#categoryEnabled").checked
+    }
+  )
+})
+$("#dishForm").addEventListener("submit", event => {
+  event.preventDefault()
+  const id = $("#dishId").value
+  saveEditor(
+    event.currentTarget,
+    `/admin/stores/${encodeURIComponent(STORE_ID)}/menu/items${id ? `/${encodeURIComponent(id)}` : ""}`,
+    id ? "PATCH" : "POST",
+    {
+      categoryId: $("#dishCategory").value,
+      name: $("#dishName").value,
+      price: $("#dishPrice").value,
+      sortOrder: Number($("#dishSort").value),
+      emoji: $("#dishEmoji").value,
+      imageUrl: $("#dishImageUrl").value,
+      tag: $("#dishTag").value,
+      description: $("#dishDescription").value,
+      enabled: $("#dishEnabled").checked
+    }
+  )
+})
+$("#closeEditor").addEventListener("click", closeEditor)
+$("#editorMask").addEventListener("click", event => {
+  if (event.target === event.currentTarget || event.target.closest("[data-close-editor]")) closeEditor()
+})
+document.addEventListener("keydown", event => {
+  if (event.key === "Escape" && !$("#editorMask").hidden) closeEditor()
 })
 $("#generateCodes").addEventListener("click", generateTableCodes)
 $("#downloadAllCodes").addEventListener("click", () => {

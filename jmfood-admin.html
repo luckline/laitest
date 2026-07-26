@@ -36,6 +36,7 @@
     <section id="orderPanel" hidden>
       <nav id="workspaceTabs" class="workspace-tabs" aria-label="商家功能">
         <button class="active" data-view="orders">订单管理</button>
+        <button data-view="menu">菜单管理</button>
         <button data-view="tables">桌码管理</button>
       </nav>
       <section id="ordersView">
@@ -60,6 +61,22 @@
       </nav>
       <div id="orderStatus" class="data-status" role="status">正在读取订单…</div>
       <section id="orderList" class="order-list" aria-live="polite"></section>
+      </section>
+
+      <section id="menuView" hidden>
+        <div class="page-head">
+          <div>
+            <p>MENU OPERATIONS</p>
+            <h1>菜单管理</h1>
+            <span>管理分类、价格、展示顺序和上下架状态</span>
+          </div>
+          <div class="head-actions">
+            <button id="addCategory" class="ghost-button">新增分类</button>
+            <button id="refreshMenu" class="primary-action">刷新菜单</button>
+          </div>
+        </div>
+        <div id="menuStatus" class="data-status" role="status">切换到菜单管理后读取数据</div>
+        <section id="menuManager" class="menu-manager" aria-live="polite"></section>
       </section>
 
       <section id="tablesView" hidden>
@@ -96,6 +113,38 @@
       </div>
     </section>
   </main>
+
+  <div id="editorMask" class="editor-mask" hidden>
+    <section class="editor-dialog" role="dialog" aria-modal="true" aria-labelledby="editorTitle">
+      <header>
+        <div><small id="editorKicker">MENU EDITOR</small><h2 id="editorTitle">编辑菜单</h2></div>
+        <button id="closeEditor" type="button" aria-label="关闭">×</button>
+      </header>
+      <form id="categoryForm" hidden>
+        <input id="categoryId" type="hidden">
+        <label>分类名称<input id="categoryName" maxlength="120" required placeholder="例如：店长推荐"></label>
+        <label>展示顺序<input id="categorySort" type="number" min="-10000" max="10000" step="1" value="0" required></label>
+        <label class="switch-row"><span><b>前台展示</b><small>关闭后，该分类及菜品不会出现在小程序</small></span><input id="categoryEnabled" type="checkbox" checked></label>
+        <footer><button class="ghost-button" type="button" data-close-editor>取消</button><button class="primary-action" type="submit">保存分类</button></footer>
+      </form>
+      <form id="dishForm" hidden>
+        <input id="dishId" type="hidden">
+        <div class="editor-grid">
+          <label>菜品名称<input id="dishName" maxlength="120" required placeholder="例如：招牌红烧肉"></label>
+          <label>所属分类<select id="dishCategory" required></select></label>
+          <label>价格（元）<input id="dishPrice" type="number" min="0" max="999999.99" step="0.01" required placeholder="38.00"></label>
+          <label>展示顺序<input id="dishSort" type="number" min="-10000" max="10000" step="1" value="0" required></label>
+          <label>菜品图标<input id="dishEmoji" maxlength="32" placeholder="例如：🥘"></label>
+          <label>菜品标签<input id="dishTag" maxlength="40" placeholder="例如：招牌"></label>
+        </div>
+        <label>菜品图片地址（可选）<input id="dishImageUrl" type="url" maxlength="1000" pattern="https://.*" placeholder="https://cdn.example.com/dish.jpg"><small>仅支持 HTTPS；留空时使用上方菜品图标。</small></label>
+        <label>菜品描述<textarea id="dishDescription" maxlength="500" rows="3" placeholder="简要说明口味和特色"></textarea></label>
+        <label class="switch-row"><span><b>立即上架</b><small>关闭后保留菜品数据，但顾客不可见</small></span><input id="dishEnabled" type="checkbox" checked></label>
+        <footer><button class="ghost-button" type="button" data-close-editor>取消</button><button class="primary-action" type="submit">保存菜品</button></footer>
+      </form>
+      <div id="editorStatus" class="data-status" role="alert" hidden></div>
+    </section>
+  </div>
 
   <script src="/jmfood-admin.js?v=1"></script>
 </body>
