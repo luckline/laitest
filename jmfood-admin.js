@@ -195,7 +195,7 @@ async function loadMenu({ quiet = false } = {}) {
     status.className = "data-status success"
     status.textContent = `菜单已更新：${adminMenu.categories.length} 个分类，${adminMenu.categories.reduce((sum, category) => sum + category.items.length, 0)} 道菜`
   } catch (error) {
-    if ([401, 403].includes(error.status)) clearToken("管理凭证无效或已失效，请重新输入")
+    if (error.status === 401) clearToken("管理凭证无效或已失效，请重新输入")
     else {
       status.hidden = false
       status.className = "data-status error"
@@ -306,7 +306,7 @@ async function uploadDishImages(files) {
     status.className = "data-status success"
     status.textContent = `已上传 ${editingImageUrls.length}/3 张图片`
   } catch (error) {
-    if ([401, 403].includes(error.status)) clearToken("管理凭证无效或已失效，请重新输入")
+    if (error.status === 401) clearToken("管理凭证无效或已失效，请重新输入")
     else {
       status.className = "data-status error"
       status.textContent = error.message
@@ -336,7 +336,7 @@ async function saveEditor(form, path, method, payload) {
     closeEditor()
     await loadMenu()
   } catch (error) {
-    if ([401, 403].includes(error.status)) clearToken("管理凭证无效或已失效，请重新输入")
+    if (error.status === 401) clearToken("管理凭证无效或已失效，请重新输入")
     else {
       status.className = "data-status error"
       status.textContent = error.message
@@ -353,7 +353,7 @@ async function toggleMenuRecord(type, record) {
     await api(path, { method: "PATCH", body: JSON.stringify({ enabled: !record.enabled }) })
     await loadMenu({ quiet: true })
   } catch (error) {
-    if ([401, 403].includes(error.status)) clearToken("管理凭证无效或已失效，请重新输入")
+    if (error.status === 401) clearToken("管理凭证无效或已失效，请重新输入")
     else alert(error.message)
   }
 }
@@ -432,7 +432,7 @@ async function generateTableCodes() {
     status.textContent = `已生成 ${generatedCodes.length} 张桌码，请扫码确认后再印刷`
     await loadTables({ quiet: true })
   } catch (error) {
-    if ([401, 403].includes(error.status)) clearToken("管理凭证无效或已失效，请重新输入")
+    if (error.status === 401) clearToken("管理凭证无效或已失效，请重新输入")
     else {
       status.className = "data-status error"
       status.textContent = `生成失败：${error.message}`
@@ -471,7 +471,7 @@ async function loadTables({ quiet = false } = {}) {
     renderTables()
     status.hidden = true
   } catch (error) {
-    if ([401, 403].includes(error.status)) clearToken("管理凭证无效或已失效，请重新输入")
+    if (error.status === 401) clearToken("管理凭证无效或已失效，请重新输入")
     else {
       status.hidden = false
       status.className = "data-status error"
@@ -492,7 +492,7 @@ async function toggleTable(tableNo) {
     })
     await loadTables()
   } catch (error) {
-    if ([401, 403].includes(error.status)) clearToken("管理凭证无效或已失效，请重新输入")
+    if (error.status === 401) clearToken("管理凭证无效或已失效，请重新输入")
     else alert(error.message)
   }
 }
@@ -524,7 +524,7 @@ async function loadOrders({ quiet = false } = {}) {
     $("#connectionCopy").textContent = "订单数据已连接"
     showOrders()
   } catch (error) {
-    if ([401, 403].includes(error.status)) {
+    if (error.status === 401) {
       clearToken("管理凭证无效或已失效，请重新输入")
       return
     }
@@ -547,7 +547,7 @@ async function updateStatus(orderId, nextStatus, button) {
     })
     await loadOrders()
   } catch (error) {
-    if ([401, 403].includes(error.status)) clearToken("管理凭证无效或已失效，请重新输入")
+    if (error.status === 401) clearToken("管理凭证无效或已失效，请重新输入")
     else alert(error.message)
   } finally {
     button.disabled = false
@@ -564,6 +564,25 @@ function startAutoRefresh() {
 function stopAutoRefresh() {
   if (refreshTimer) clearInterval(refreshTimer)
   refreshTimer = null
+}
+
+function applyCurrentStorePermissions() {
+  const store = merchantSession?.stores?.find(item => item.id === currentStoreId)
+  const canManageOperations = Boolean(
+    merchantSession?.platformAdmin || ["owner", "manager"].includes(store?.role)
+  )
+  $("#menuWorkspaceTab").hidden = !canManageOperations
+  $("#tablesWorkspaceTab").hidden = !canManageOperations
+  if (!canManageOperations && ["menu", "tables"].includes(activeView)) {
+    activeView = "orders"
+    $("#workspaceTabs").querySelectorAll("[data-view]").forEach(button =>
+      button.classList.toggle("active", button.dataset.view === "orders")
+    )
+    $("#ordersView").hidden = false
+    $("#menuView").hidden = true
+    $("#tablesView").hidden = true
+    $("#accountsView").hidden = true
+  }
 }
 
 function renderPlatformData() {
@@ -644,6 +663,7 @@ async function bootstrapSession() {
   $("#newMerchantStore").value = currentStoreId
   const store = stores.find(item => item.id === currentStoreId)
   $("#headerStoreName").textContent = store?.name || "锦食铭味"
+  applyCurrentStorePermissions()
   showOrders()
   await loadOrders()
 }
@@ -921,6 +941,7 @@ $("#storePicker").addEventListener("change", async event => {
   sessionStorage.setItem("jmfood:store-id", currentStoreId)
   const store = merchantSession?.stores?.find(item => item.id === currentStoreId)
   $("#headerStoreName").textContent = store?.name || "锦食铭味"
+  applyCurrentStorePermissions()
   adminMenu = null
   generatedCodes = []
   await loadOrders()
