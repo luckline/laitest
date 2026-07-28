@@ -1,5 +1,7 @@
 User-agent: *
 Allow: /
+Disallow: /liang-family-tree
+Disallow: /liang-family-tree.html
 
 Sitemap: https://laitest.tech/sitemap.xml
 Sitemap: https://laitest.tech/timelens-routes-sitemap.xml
