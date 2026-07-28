@@ -6,7 +6,8 @@ function load(){try{const d=JSON.parse(localStorage.getItem(KEY));if(!Array.isAr
 function save(){localStorage.setItem(KEY,JSON.stringify(members))}
 const children=id=>members.filter(m=>m.parentId===id),byId=id=>members.find(m=>m.id===id);
 function collapseSideBranches(){collapsed=new Set(members.filter(m=>children(m.id).length&&!direct.has(m.id)).map(m=>m.id))}
-function subtreeCount(id){return 1+children(id).reduce((total,child)=>total+subtreeCount(child.id),0)}
+function spouseCount(member){return member?.spouse?member.spouse.split(/[、，,／/]+/).map(name=>name.trim()).filter(Boolean).length:0}
+function subtreeCount(id){const member=byId(id);return 1+spouseCount(member)+children(id).reduce((total,child)=>total+subtreeCount(child.id),0)}
 function descendants(id){return children(id).flatMap(c=>[c.id,...descendants(c.id)])}
 function topology(id){const s=new Set([id,...descendants(id)]);let m=byId(id);while(m?.parentId){s.add(m.parentId);children(m.parentId).forEach(x=>s.add(x.id));m=byId(m.parentId)}return s}
 function ancestorIds(id){const ids=[];let m=byId(id);while(m){ids.push(m.id);m=byId(m.parentId)}return ids}
