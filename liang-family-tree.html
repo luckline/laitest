@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>梁氏家族树 · 梁集</title>
+  <meta name="description" content="梁氏家族关系拓扑，支持按姓名检索、展开与成员维护。">
+  <link rel="stylesheet" href="/css/liang-family-tree.css?v=2">
+</head>
+<body>
+  <header class="hero">
+    <div><p>梁氏族谱 · 梁集</p><h1>梁氏家族树</h1><span>从梁应运一支展开，按姓名定位完整关系拓扑</span></div>
+    <button id="addButton" class="primary" type="button">＋ 新增成员</button>
+  </header>
+  <main>
+    <section class="toolbar">
+      <label><span>按姓名检索并展开拓扑</span><input id="search" type="search" list="names" placeholder="例如：梁领君、梁应运"><datalist id="names"></datalist></label>
+      <div><button id="expand" type="button">全部展开</button><button id="collapse" type="button">收起旁支</button><button id="export" type="button">导出</button><label class="file">导入<input id="import" type="file" accept="application/json"></label></div>
+    </section>
+    <section class="stats"><span><b id="count">0</b> 位成员</span><span><b id="generations">0</b> 代</span><span id="storage">正在连接数据…</span></section>
+    <section class="workspace">
+      <div class="stage"><p class="tip">点击人物查看档案；搜索姓名会展开祖先、同辈和子女。</p><div id="tree"></div><p id="empty" hidden>没有找到匹配成员</p></div>
+      <aside>
+        <p class="kicker">人物档案</p><h2 id="profileName">请选择成员</h2><p id="profileMeta">点击树中的人物查看亲属关系。</p>
+        <dl id="relations"></dl>
+        <div id="profileActions" hidden><button id="addChild">添加子女</button><button id="editMember">编辑资料</button></div>
+      </aside>
+    </section>
+  </main>
+  <dialog id="dialog"><form id="form">
+    <header><div><p class="kicker">成员资料</p><h2 id="formTitle">新增成员</h2></div><button type="button" id="close" aria-label="关闭">×</button></header>
+    <input id="id" type="hidden">
+    <div class="fields">
+      <label>姓名<input id="name" required maxlength="30"></label><label>排行／字<input id="title" maxlength="40"></label>
+      <label>配偶<input id="spouse" maxlength="80"></label><label>父辈<select id="parent"></select></label>
+      <label>关系<select id="relation"><option value="biological">亲生</option><option value="adopted">继子／出继</option></select></label>
+      <label class="wide">备注<textarea id="note" rows="3" maxlength="200"></textarea></label>
+    </div>
+    <footer><button type="button" id="cancel">取消</button><button class="primary" type="submit">保存</button></footer>
+  </form></dialog>
+  <script src="/liang-family-tree.js?v=2"></script>
+</body>
+</html>
