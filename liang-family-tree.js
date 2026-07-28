@@ -1,5 +1,5 @@
 (()=>{"use strict";
-const KEY="liang-family-tree-v2",API=(window.LIANG_FAMILY_API_BASE||"https://timelens.cc").replace(/\/$/,""),direct=new Set(["yingyun","youguang","yide","jinxin","yupei","lingjun"]);
+const KEY="liang-family-tree-v2",API=(window.LIANG_FAMILY_API_BASE||"https://timelens.cc").replace(/\/$/,""),direct=new Set(["yingyun","youguang","yuede","jinxin","yupei","lingjun"]);
 const seed=[];
 const $=s=>document.querySelector(s);let members=[],collapsed=new Set(),selected=null,backend=false,relationPath=new Set(),dragId=null;
 function load(){try{const d=JSON.parse(localStorage.getItem(KEY));if(!Array.isArray(d)||!d.length)return structuredClone(seed);const saved=new Map(d.map(m=>[m.id,m]));return seed.map(m=>saved.get(m.id)||structuredClone(m)).concat(d.filter(m=>!seed.some(s=>s.id===m.id)))}catch{return structuredClone(seed)}}
