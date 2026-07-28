@@ -13,7 +13,7 @@
   <meta property="og:title" content="梁氏家族树 · 梁集">
   <meta property="og:description" content="梁氏家族关系拓扑，支持按姓名检索、展开与成员维护。">
   <meta property="og:url" content="https://laitest.tech/liang-family-tree">
-  <link rel="stylesheet" href="/css/liang-family-tree.css?v=3">
+  <link rel="stylesheet" href="/css/liang-family-tree.css?v=4">
 </head>
 <body>
   <header class="hero">
@@ -21,6 +21,12 @@
     <button id="addButton" class="primary" type="button">＋ 新增成员</button>
   </header>
   <main>
+    <section class="village-history" aria-labelledby="villageHistoryTitle">
+      <p class="kicker">村落沿革</p>
+      <h2 id="villageHistoryTitle">从葛庄、梁庄到梁集</h2>
+      <p>梁集村位于县城东北约 7.5 公里处，原名葛庄，由葛氏所建。明朝永乐二年（1404 年），梁氏始祖兄弟二人由山西洪洞县迁来，分别居于本县葛庄与梁岗（今废）；数年后，梁岗一支又迁居葛庄。</p>
+      <p>后来葛氏外迁，梁氏人丁日益兴旺，村名遂改为<strong>梁庄</strong>。清朝道光二十年（1840 年），村中兴起集市，随后更名为<strong>梁集</strong>，沿用至今。</p>
+    </section>
     <section class="toolbar">
       <label><span>按姓名检索并展开拓扑</span><input id="search" type="search" list="names" placeholder="例如：梁领君、梁应运"><datalist id="names"></datalist></label>
       <div><button id="expand" type="button">全部展开</button><button id="collapse" type="button">收起旁支</button><button id="export" type="button">导出</button><label class="file">导入<input id="import" type="file" accept="application/json"></label></div>
