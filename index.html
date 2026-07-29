@@ -37,54 +37,79 @@
   <link rel="stylesheet" href="/css/home-v6.css?v=3">
   <link rel="stylesheet" href="/css/home-jmfood.css?v=1">
   <link rel="stylesheet" href="/css/site-density.css?v=2">
+  <link rel="stylesheet" href="/css/home-value.css?v=1">
 </head>
 <body class="personal-home">
   <header class="nav unified-nav" data-product="luckline">
     <a class="brand" href="/" aria-label="Luckline 首页"><span class="mark">L</span><span><b>Luckline</b><small>laitest.tech</small></span></a>
     <nav class="links" aria-label="主导航">
-      <a href="#projects">作品</a><a href="#content">内容</a><a href="#about">关于</a>
+      <a href="#needs">需求</a><a href="#projects">案例</a><a href="#method">方法</a><a href="#content">内容</a>
     </nav>
-    <div class="nav-actions"><a class="btn solid nav-primary" href="mailto:lanceqa@agent.qq.com">联系我</a></div>
+    <div class="nav-actions"><a class="btn solid nav-primary" href="#contact">聊聊你的问题</a></div>
   </header>
 
   <main class="home-main">
     <section class="home-hero-v6">
-      <div><p class="eyebrow">LUCKLINE · PRODUCT &amp; QUALITY</p><h1>质量工程与 AI 产品，<br>持续交付中。</h1><p>我是 Luckline。把专业经验转化为真正可运行、可验证、可持续迭代的产品。</p><div class="hero-actions"><a class="btn solid" href="#projects">查看产品</a><a class="btn ghost" href="#content">阅读文章</a></div></div>
-      <aside aria-label="在线产品"><small>LIVE PRODUCTS</small><a href="/mingtest"><span>01</span><div><b>铭测 MingTest</b><p>AI 测试设计与自动化</p></div><i>→</i></a><a href="/timelens"><span>02</span><div><b>时光智行 TimeLens</b><p>AI 旅行规划与城市足迹</p></div><i>→</i></a><a href="/jmfood"><span>03</span><div><b>锦食铭味</b><p>多门店扫码点餐与经营管理</p></div><i>→</i></a></aside>
+      <div><p class="eyebrow">LUCKLINE · VERIFIABLE DELIVERY</p><h1>把复杂需求，<br>做成可验证的产品。</h1><p>我是 Luckline，用质量工程与 AI，把业务想法转化为可运行、可追溯、可持续迭代的产品。</p><div class="hero-actions"><a class="btn solid" href="#needs">看我解决什么问题</a><a class="btn ghost" href="#projects">体验在线产品</a></div></div>
+      <aside aria-label="已经解决的问题"><small>PROBLEMS → OUTCOMES</small><a href="/mingtest"><span>01</span><div><b>测试交付形成闭环</b><p>从需求分析到执行证据</p></div><i>→</i></a><a href="/timelens"><span>02</span><div><b>零散信息变成路线</b><p>从行程规划到城市足迹</p></div><i>→</i></a><a href="/jmfood"><span>03</span><div><b>人工记单走向履约</b><p>从扫码点餐到门店管理</p></div><i>→</i></a></aside>
+    </section>
+
+    <section id="needs" class="home-needs" aria-labelledby="needs-title">
+      <div class="home-section-head"><div><p class="eyebrow">WHO I HELP</p><h2 id="needs-title">你可能正在解决这些问题</h2></div><p>先从真实困扰出发，再决定需要什么产品。</p></div>
+      <div class="home-needs-grid">
+        <article><span>01 · QUALITY DELIVERY</span><h3>测试交付效率</h3><p>需求变化快，测试设计、自动化执行与报告证据彼此割裂。</p><a href="/mingtest">把测试连成闭环 →</a></article>
+        <article><span>02 · AI PRODUCT</span><h3>AI 产品落地</h3><p>原型容易做，真正困难的是稳定运行、验证效果和持续迭代。</p><a href="#method">查看我的交付方法 →</a></article>
+        <article><span>03 · BUSINESS SYSTEM</span><h3>业务流程数字化</h3><p>真实场景角色多、流程长，需要从需求判断到产品交付的完整路径。</p><a href="/jmfood">查看门店场景实践 →</a></article>
+      </div>
     </section>
 
     <section id="projects" class="home-products-v6" aria-labelledby="products-title">
-      <div class="home-section-head"><div><p class="eyebrow">PRODUCTS</p><h2 id="products-title">直接进入产品</h2></div><p>选择你现在要解决的问题。</p></div>
+      <div class="home-section-head"><div><p class="eyebrow">PROOF IN PRODUCTS</p><h2 id="products-title">用真实产品证明能力</h2></div><p>不是概念展示，每个产品都可以进入和体验。</p></div>
       <div class="home-product-grid-v6">
         <article class="home-product-v6 lingtest-v6">
-          <div class="product-copy-v6"><div class="product-meta-v6"><span class="product-mark-v6">铭</span><small>AI QUALITY WORKSPACE</small><i>在线</i></div><h3>铭测 <span>MingTest</span></h3><p>把需求转成可执行、可追溯的测试资产。</p><ul><li>测试分析与用例设计</li><li>Web 与 API 自动化</li><li>运行证据与报告闭环</li></ul><div class="product-actions-v6"><a class="btn solid" href="/mingtest" data-event="open_laitest">进入铭测 →</a><a href="/mingtest#tools">工具箱</a></div></div>
+          <div class="product-copy-v6"><div class="product-meta-v6"><span class="product-mark-v6">铭</span><small>AI QUALITY WORKSPACE</small><i>在线</i></div><p class="product-audience">面向测试负责人和质量团队</p><h3>铭测 <span>MingTest</span></h3><p>把需求转成可执行、可追溯的测试资产。</p><ul><li>测试分析与用例设计</li><li>Web 与 API 自动化</li><li>运行证据与报告闭环</li></ul><div class="product-actions-v6"><a class="btn solid" href="/mingtest" data-event="open_laitest">体验测试闭环 →</a><a href="/mingtest#tools">查看工具箱</a></div></div>
           <a class="product-screen-v6" href="/mingtest" aria-label="进入铭测 MingTest"><img src="/img/lingtest-workspace-preview.png" width="1440" height="900" alt="铭测 MingTest 工作台"><span>需求分析 → 测试设计 → 自动化执行</span></a>
         </article>
         <article class="home-product-v6 timelens-v6">
-          <div class="product-copy-v6"><div class="product-meta-v6"><span class="product-mark-v6">时</span><small>AI TRAVEL WORKSPACE</small><i>在线</i></div><h3>时光智行 <span>TimeLens</span></h3><p>从路线规划到城市足迹，管理每一次出发。</p><ul><li>目的地与 AI 行程规划</li><li>出发清单与旅行记录</li><li>路线分享与城市足迹</li></ul><div class="product-actions-v6"><a class="btn timelens-button-v6" href="/timelens" data-event="open_timelens">开始规划 →</a><a href="/timelens">路线广场</a></div></div>
+          <div class="product-copy-v6"><div class="product-meta-v6"><span class="product-mark-v6">时</span><small>AI TRAVEL WORKSPACE</small><i>在线</i></div><p class="product-audience">面向希望完整管理旅程的人</p><h3>时光智行 <span>TimeLens</span></h3><p>把零散旅行信息变成可执行路线与长期足迹。</p><ul><li>目的地与 AI 行程规划</li><li>出发清单与旅行记录</li><li>路线分享与城市足迹</li></ul><div class="product-actions-v6"><a class="btn timelens-button-v6" href="/timelens" data-event="open_timelens">体验完整旅程 →</a><a href="/timelens">浏览路线广场</a></div></div>
           <a class="product-screen-v6" href="/timelens" aria-label="进入时光智行 TimeLens"><img src="/img/timelens-workspace-preview.png" width="1440" height="900" alt="时光智行路线广场"><span>路线规划 → 出发清单 → 城市足迹</span></a>
         </article>
         <article class="home-product-v6 jmfood-v6">
-          <div class="product-copy-v6"><div class="product-meta-v6"><span class="product-mark-v6">锦</span><small>WECHAT ORDERING</small><i>开发版</i></div><h3>锦食铭味 <span>jmfood</span></h3><p>让顾客扫码点餐，让门店清楚履约。</p><ul><li>门店与桌号专属扫码入口</li><li>菜单、订单、桌台一体管理</li><li>多门店账号与角色权限</li></ul><div class="product-actions-v6"><a class="btn jmfood-button-v6" href="/jmfood" data-event="open_jmfood">了解产品 →</a><a href="/jmfood-admin">商家管理</a></div></div>
+          <div class="product-copy-v6"><div class="product-meta-v6"><span class="product-mark-v6">锦</span><small>WECHAT ORDERING</small><i>开发版</i></div><p class="product-audience">面向需要数字化履约的餐饮门店</p><h3>锦食铭味 <span>jmfood</span></h3><p>让顾客扫码点餐，让门店清楚履约。</p><ul><li>门店与桌号专属扫码入口</li><li>菜单、订单、桌台一体管理</li><li>多门店账号与角色权限</li></ul><div class="product-actions-v6"><a class="btn jmfood-button-v6" href="/jmfood" data-event="open_jmfood">查看业务方案 →</a><a href="/jmfood-admin">进入商家管理</a></div></div>
           <a class="product-screen-v6 jmfood-screen-v6" href="/jmfood" aria-label="进入锦食铭味产品页"><div class="jmfood-mini-preview"><header><i>香</i><span><small>香满碗</small><b>A08 桌</b></span></header><main><aside>店长推荐<br>主食小吃<br>饮品</aside><section><b>招牌红烧肉</b><small>慢炖入味 · 肥而不腻</small><strong>¥38　＋</strong><b>青椒小炒肉</b><small>锅气十足 · 下饭首选</small><strong>¥28　＋</strong></section></main><footer>已选 2 份　<b>¥66</b><i>去下单</i></footer></div><span>扫码进入 → 选菜下单 → 门店履约</span></a>
         </article>
       </div>
     </section>
 
+    <section id="method" class="home-method" aria-labelledby="method-title">
+      <div class="home-method-intro"><p class="eyebrow">HOW I DELIVER</p><h2 id="method-title">一套反复使用的<br>产品交付方法。</h2><p>三个领域不同的产品，背后使用的是同一种能力：先定义什么结果值得交付，再把它做成可以被真实使用和验证的系统。</p></div>
+      <ol>
+        <li><span>01</span><div><b>理解真实需求</b><p>找到具体的人、场景和阻碍，不从功能清单开始。</p></div></li>
+        <li><span>02</span><div><b>定义可验证结果</b><p>明确完成标准、关键路径和能够留下的证据。</p></div></li>
+        <li><span>03</span><div><b>构建可运行产品</b><p>连接体验、工程和质量，让方案真正投入使用。</p></div></li>
+        <li><span>04</span><div><b>持续校准迭代</b><p>从真实反馈中判断下一步，而不是一次性交付后结束。</p></div></li>
+      </ol>
+    </section>
+
     <section id="content" class="home-content-v6" aria-labelledby="content-title">
-      <div class="home-section-head"><div><p class="eyebrow">LATEST WRITING</p><h2 id="content-title">最近在写</h2></div><a href="/content">进入内容中心 →</a></div>
+      <div class="home-section-head"><div><p class="eyebrow">WRITING &amp; PRACTICE</p><h2 id="content-title">记录判断，也公开过程</h2></div><a href="/content">进入内容中心 →</a></div>
       <div id="homeLatestPosts" class="home-content-grid-v6" aria-live="polite">
         <div class="home-content-loading-v6">正在加载最新文章…</div>
       </div>
     </section>
 
     <section id="about" class="home-bottom-v6">
-      <div><p class="eyebrow">ABOUT</p><h2>工程判断，<br>产品表达。</h2><p>我是 Luckline，长期关注质量工程、AI 应用与独立产品。先把产品做出来，再在真实使用中持续校准。</p><a href="mailto:lanceqa@agent.qq.com">lanceqa@agent.qq.com →</a></div>
-      <div class="knowledge-card-v6"><small>LUCKLINE ORIGINALS</small><b>持续</b><span>发布原创内容</span><p>旅行见闻、产品实践与数字生活，由内容运营系统持续归档。</p><div><a href="/content">阅读全部文章 →</a></div></div>
-      <aside id="follow"><img src="/img/qrcode_laitest.jpg" alt="微信公众号二维码"><div><small>WECHAT</small><b>关注公开内容</b><p>测试、AI 与工程实践</p></div></aside>
+      <div><p class="eyebrow">ABOUT LUCKLINE</p><h2>长期做一件事：<br>把复杂需求变成真正可用的产品。</h2><p>从测试分析与自动化执行，到 AI 旅行规划和门店点餐，我持续把不同场景中的真实问题做成在线产品，并用运行结果校准下一次迭代。</p><ul class="about-proof"><li>3 个真实产品持续构建</li><li>覆盖测试、旅行与门店业务</li><li>从需求判断到运行验证完整交付</li></ul></div>
+      <div class="knowledge-card-v6"><small>STABLE VALUE</small><b>可验证</b><span>比身份标签更重要</span><p>能否运行、能否留下证据、能否持续改进，是我判断产品交付的共同标准。</p><div><a href="#projects">查看产品证明 →</a><a href="/content">阅读实践记录 →</a></div></div>
+      <aside id="follow"><img src="/img/qrcode_laitest.jpg" alt="微信公众号二维码"><div><small>WECHAT</small><b>关注公开实践</b><p>测试、AI 与产品交付</p></div></aside>
+    </section>
+
+    <section id="contact" class="home-contact" aria-labelledby="contact-title">
+      <div><p class="eyebrow">START WITH THE PROBLEM</p><h2 id="contact-title">你正在为什么问题发愁？</h2><p>如果你正在处理测试效率、AI 产品落地或业务流程数字化，可以把当前场景、主要阻碍和期望结果发给我。</p></div>
+      <a class="btn solid" href="mailto:lanceqa@agent.qq.com?subject=聊聊我的产品问题&amp;body=当前场景：%0A主要阻碍：%0A期望结果：">描述你的问题 →</a>
     </section>
   </main>
-  <footer class="foot"><div><b>Luckline</b><span>产品、技术与生活的长期记录。</span></div><div class="foot-links"><a href="#projects">作品</a><a href="#content">内容</a><a href="/privacy.html">隐私</a><a href="/security.html">安全</a></div><small>© 2026 laitest.tech</small></footer>
+  <footer class="foot"><div><b>Luckline</b><span>把复杂需求，做成可验证的产品。</span></div><div class="foot-links"><a href="#needs">需求</a><a href="#projects">案例</a><a href="#method">方法</a><a href="/privacy.html">隐私</a><a href="/security.html">安全</a></div><small>© 2026 laitest.tech</small></footer>
   <script type="application/ld+json">{"@context":"https://schema.org","@type":"Person","name":"Luckline","url":"https://laitest.tech/","email":"mailto:lanceqa@agent.qq.com","knowsAbout":["Quality Engineering","AI Testing","Independent Product Development"],"owns":[{"@type":"SoftwareApplication","name":"铭测 MingTest","alternateName":"laitest","url":"https://laitest.tech/mingtest","applicationCategory":"DeveloperApplication"},{"@type":"SoftwareApplication","name":"时光智行","alternateName":["TimeLens","时光透卡"],"url":"https://laitest.tech/timelens","applicationCategory":"TravelApplication"},{"@type":"SoftwareApplication","name":"锦食铭味","alternateName":"jmfood","url":"https://laitest.tech/jmfood","applicationCategory":"BusinessApplication"}]}</script>
   <script src="/product-nav.js?v=8"></script><script defer src="/home-content.js?v=1"></script><script defer src="/site-analytics.js"></script><script defer src="/_vercel/insights/script.js"></script>
 </body>

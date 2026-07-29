@@ -1,0 +1,37 @@
+.home-needs,.home-method,.home-contact{scroll-margin-top:100px}
+.home-needs{padding:42px 0 54px}
+.home-needs-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px}
+.home-needs-grid article{display:flex;min-height:225px;flex-direction:column;padding:27px;border:1px solid #d4dfda;border-radius:20px;background:rgba(255,255,255,.76);box-shadow:0 14px 38px rgba(22,57,49,.045);transition:transform .18s,border-color .18s}
+.home-needs-grid article:hover{transform:translateY(-3px);border-color:#94b7a9}
+.home-needs-grid span{color:#157762;font-size:9px;font-weight:900;letter-spacing:1.25px}
+.home-needs-grid h3{margin:28px 0 10px;color:#173a32;font:600 24px/1.25 Georgia,"Songti SC",serif}
+.home-needs-grid p{margin:0 0 24px;color:#657771;font-size:13px;line-height:1.7}
+.home-needs-grid a{margin-top:auto;color:#147863;font-size:12px;font-weight:900;text-decoration:none}
+.product-audience{margin:15px 0 -13px!important;color:#16806a!important;font-size:10px!important;font-weight:800;letter-spacing:.25px}
+.home-method{display:grid;grid-template-columns:minmax(0,.8fr) minmax(420px,1.2fr);gap:68px;margin:20px 0 64px;padding:48px;border-radius:26px;background:#173d35;color:#fff;box-shadow:0 22px 60px rgba(16,51,43,.13)}
+.home-method .eyebrow{color:#83d5b8}
+.home-method h2{margin:7px 0 18px;font:500 38px/1.18 Georgia,"Songti SC",serif}
+.home-method-intro>p:last-child{max-width:430px;margin:0;color:#bcd1ca;font-size:13px;line-height:1.8}
+.home-method ol{display:grid;margin:0;padding:0;list-style:none}
+.home-method li{display:grid;grid-template-columns:42px 1fr;gap:15px;padding:17px 0;border-bottom:1px solid rgba(255,255,255,.14)}
+.home-method li:first-child{padding-top:0}.home-method li:last-child{padding-bottom:0;border-bottom:0}
+.home-method li>span{color:#7dd0b3;font:700 12px Georgia,serif}
+.home-method li b{display:block;font-size:15px}.home-method li p{margin:5px 0 0;color:#abc4bb;font-size:11px;line-height:1.6}
+.about-proof{display:flex;flex-wrap:wrap;gap:8px;margin:20px 0 0;padding:0;list-style:none}
+.about-proof li{padding:7px 10px;border-radius:999px;background:#e9f2ee;color:#326158;font-size:10px;font-weight:800}
+.home-contact{display:flex;align-items:center;justify-content:space-between;gap:40px;margin:0 0 56px;padding:38px 42px;border:1px solid #b8cdc4;border-radius:24px;background:linear-gradient(120deg,#e5f1ec,#f8faf7)}
+.home-contact h2{margin:5px 0 10px;color:#173a32;font:500 34px/1.2 Georgia,"Songti SC",serif}
+.home-contact p:not(.eyebrow){max-width:680px;margin:0;color:#657771;font-size:13px;line-height:1.7}
+.home-contact>a{flex:0 0 auto}
+
+@media(max-width:900px){
+  .home-needs-grid{grid-template-columns:1fr 1fr}.home-needs-grid article:last-child{grid-column:1/-1}
+  .home-method{grid-template-columns:1fr;gap:34px;padding:40px}
+  .home-bottom-v6{grid-template-columns:1fr 1fr}.home-bottom-v6>div:first-child{grid-column:1/-1}
+}
+@media(max-width:680px){
+  .home-needs{padding:34px 0 44px}.home-needs-grid{grid-template-columns:1fr}.home-needs-grid article:last-child{grid-column:auto}.home-needs-grid article{min-height:0;padding:22px}.home-needs-grid h3{margin-top:20px}
+  .home-method{gap:28px;margin:6px 0 45px;padding:28px 22px;border-radius:20px}.home-method h2{font-size:32px}.home-method li{grid-template-columns:34px 1fr}
+  .home-contact{display:block;margin-bottom:42px;padding:28px 22px}.home-contact h2{font-size:30px}.home-contact>a{display:inline-flex;margin-top:22px}
+  .about-proof{display:grid}
+}
