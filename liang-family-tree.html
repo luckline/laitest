@@ -34,7 +34,7 @@
       <div class="control-panel-header"><div><p class="kicker">族谱工具</p><h2>检索与关系分析</h2></div></div>
       <div class="toolbar">
         <label><span>姓名检索</span><input id="search" type="search" list="names" placeholder="输入姓名"><datalist id="names"></datalist></label>
-        <div><button id="expand" type="button">全部展开</button><button id="collapse" type="button">收起旁支</button><button id="export" type="button">导出数据</button><label class="file">导入数据<input id="import" type="file" accept="application/json"></label></div>
+        <div><button id="expand" type="button">全部展开</button><button id="collapse" type="button">收起旁支</button><button id="export" type="button" hidden>导出数据</button><label id="importControl" class="file" hidden>导入数据<input id="import" type="file" accept="application/json"></label></div>
       </div>
       <div class="relationship-query">
         <label><span>多人关系查询</span><input id="relationshipSearch" type="text" placeholder="输入两人或多人，用逗号、顿号或空格分隔"></label>
@@ -63,6 +63,6 @@
     </div>
     <footer><button type="button" id="cancel">取消</button><button class="primary" type="submit">保存</button></footer>
   </form></dialog>
-  <script src="/liang-family-tree.js?v=11"></script>
+  <script src="/liang-family-tree.js?v=12"></script>
 </body>
 </html>
