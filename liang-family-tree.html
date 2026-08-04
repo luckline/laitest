@@ -13,32 +13,38 @@
   <meta property="og:title" content="梁氏家族树 · 梁集">
   <meta property="og:description" content="梁氏家族关系拓扑，支持按姓名检索、展开与成员维护。">
   <meta property="og:url" content="https://laitest.tech/liang-family-tree">
-  <link rel="stylesheet" href="/css/liang-family-tree.css?v=5">
+  <link rel="stylesheet" href="/css/liang-family-tree.css?v=6">
 </head>
 <body>
   <header class="hero">
-    <div><p>梁氏族谱 · 梁集</p><h1>梁氏家族树</h1><span>从梁应运一支展开，按姓名定位完整关系拓扑</span></div>
-    <button id="addButton" class="primary" type="button">＋ 新增成员</button>
+    <div class="hero-copy">
+      <p class="hero-eyebrow">梁氏族谱 · 梁集</p>
+      <h1>梁氏家族树</h1>
+      <p class="hero-description">以世系为脉络，查阅、检索并维护梁氏家族关系</p>
+      <div class="hero-tags"><span>私密访问</span><span>关系拓扑</span><span>逐层统计</span></div>
+    </div>
+    <div class="hero-actions"><button id="addButton" class="primary" type="button">＋ 新增成员</button></div>
   </header>
   <main>
     <section class="village-history" aria-labelledby="villageHistoryTitle">
-      <p class="kicker">村落沿革</p>
-      <h2 id="villageHistoryTitle">从葛庄、梁庄到梁集</h2>
-      <p>梁集村位于县城东北约 7.5 公里处，原名葛庄，由葛氏所建。明朝永乐二年（1404 年），梁氏始祖兄弟二人由山西洪洞县迁来，分别居于本县葛庄与梁岗（今废）；数年后，梁岗一支又迁居葛庄。</p>
-      <p>后来葛氏外迁，梁氏人丁日益兴旺，村名遂改为<strong>梁庄</strong>。清朝道光二十年（1840 年），村中兴起集市，随后更名为<strong>梁集</strong>，沿用至今。</p>
+      <div class="history-heading"><p class="kicker">村落沿革</p><h2 id="villageHistoryTitle">从葛庄、梁庄<br>到梁集</h2><span class="history-rule"></span></div>
+      <div class="history-copy"><p>梁集村位于县城东北约 7.5 公里处，原名葛庄，由葛氏所建。明朝永乐二年（1404 年），梁氏始祖兄弟二人由山西洪洞县迁来，分别居于本县葛庄与梁岗（今废）；数年后，梁岗一支又迁居葛庄。</p><p>后来葛氏外迁，梁氏人丁日益兴旺，村名遂改为<strong>梁庄</strong>。清朝道光二十年（1840 年），村中兴起集市，随后更名为<strong>梁集</strong>，沿用至今。</p></div>
     </section>
-    <section class="toolbar">
-      <label><span>按姓名检索并展开拓扑</span><input id="search" type="search" list="names" placeholder="输入姓名"><datalist id="names"></datalist></label>
-      <div><button id="expand" type="button">全部展开</button><button id="collapse" type="button">收起旁支</button><button id="export" type="button">导出</button><label class="file">导入<input id="import" type="file" accept="application/json"></label></div>
+    <section class="control-panel">
+      <div class="control-panel-header"><div><p class="kicker">族谱工具</p><h2>检索与关系分析</h2></div></div>
+      <div class="toolbar">
+        <label><span>姓名检索</span><input id="search" type="search" list="names" placeholder="输入姓名"><datalist id="names"></datalist></label>
+        <div><button id="expand" type="button">全部展开</button><button id="collapse" type="button">收起旁支</button><button id="export" type="button">导出数据</button><label class="file">导入数据<input id="import" type="file" accept="application/json"></label></div>
+      </div>
+      <div class="relationship-query">
+        <label><span>多人关系查询</span><input id="relationshipSearch" type="text" placeholder="输入两人或多人，用逗号、顿号或空格分隔"></label>
+        <button id="calculateRelationship" class="primary" type="button">计算关系</button>
+        <div id="relationshipResult" hidden aria-live="polite"></div>
+      </div>
     </section>
-    <section class="relationship-query">
-      <label><span>多人关系查询</span><input id="relationshipSearch" type="text" placeholder="输入两人或多人，用逗号、顿号或空格分隔"></label>
-      <button id="calculateRelationship" class="primary" type="button">计算关系</button>
-      <div id="relationshipResult" hidden aria-live="polite"></div>
-    </section>
-    <section class="stats"><span><b id="count">0</b> 位成员</span><span><b id="generations">0</b> 代</span><span id="storage">正在连接数据…</span></section>
+    <section class="stats"><span class="stat-item"><b id="count">0</b> 位成员</span><span class="stat-item"><b id="generations">0</b> 代世系</span><span id="storage" class="stat-item stat-storage">正在连接数据…</span></section>
     <section class="workspace">
-      <div class="stage"><p class="tip">点击人物查看档案；搜索姓名会展开关系拓扑；按住人物卡片拖到另一人物上，可调整其父辈。</p><div id="tree"></div><p id="empty" hidden>没有找到匹配成员</p></div>
+      <div class="stage"><div class="stage-header"><h2>世系总览</h2><p class="tip">点击查看档案 · 拖动调整父辈 · ＋ / − 展开收起</p></div><div id="tree"></div><p id="empty" hidden>没有找到匹配成员</p></div>
       <aside>
         <p class="kicker">人物档案</p><h2 id="profileName">请选择成员</h2><p id="profileMeta">点击树中的人物查看亲属关系。</p>
         <dl id="relations"></dl>
