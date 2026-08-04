@@ -86,6 +86,12 @@ main { max-width: 1680px; margin: 0 auto; padding: 26px clamp(14px, 4vw, 58px) 7
 .history-rule { display: block; width: 42px; height: 3px; margin-top: 18px; background: var(--gold); }
 .village-history p:not(.kicker) { max-width: 980px; margin: 0 0 9px; color: #5e554a; font-size: 15px; line-height: 1.95; }
 .village-history strong { color: var(--red); }
+.ancestral-guidance { display: grid; grid-template-columns: minmax(180px, .7fr) minmax(0, 1.6fr); gap: 22px; margin-top: 20px; padding: 20px 22px; background: rgba(255, 255, 255, .64); border: 1px solid #e1d4bc; border-radius: 11px; }
+.ancestral-guidance span { color: var(--red); font: 700 10px var(--sans); letter-spacing: .2em; }
+.ancestral-guidance h3 { margin: 7px 0 0; font-size: 20px; font-weight: 500; letter-spacing: .06em; }
+.ancestral-guidance ul { display: grid; gap: 7px; margin: 0; padding: 0; list-style: none; }
+.ancestral-guidance li { position: relative; padding-left: 17px; color: #5e554a; font: 13px/1.7 var(--sans); }
+.ancestral-guidance li::before { content: ""; position: absolute; left: 0; top: .65em; width: 6px; height: 6px; background: var(--gold); border-radius: 50%; }
 
 .control-panel { margin-bottom: 16px; padding: 18px; background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow-sm); }
 .control-panel-header { display: flex; justify-content: space-between; gap: 18px; margin-bottom: 15px; }
@@ -169,6 +175,7 @@ form footer button { padding: 10px 15px; background: #fff; border: 1px solid var
 
 @media (max-width: 900px) {
   .village-history { grid-template-columns: 1fr; gap: 16px; }
+  .ancestral-guidance { grid-template-columns: 1fr; gap: 12px; }
   .workspace { grid-template-columns: 1fr; }
   aside { position: static; }
 }
