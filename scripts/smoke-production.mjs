@@ -14,7 +14,7 @@ const checks = [
   {
     name: "个人主页",
     path: "/",
-    contains: ["Luckline", 'href="/mingtest"', 'href="/timelens"', "product-nav.js?v=8", "home-v6.css?v=1", "直接进入产品", "AI QUALITY WORKSPACE", "AI TRAVEL WORKSPACE", "lingtest-workspace-preview.png", "timelens-workspace-preview.png", "img/og-cover.png"],
+    contains: ["Luckline", 'href="/mingtest"', 'href="/timelens"', "product-nav.js?v=8", "home-v6.css?v=3", "用真实产品证明能力", "AI QUALITY WORKSPACE", "AI TRAVEL WORKSPACE", "lingtest-workspace-preview.png", "timelens-workspace-preview.png", "img/og-cover.png", "家庭方法库"],
   },
   {
     name: "铭测产品页",
@@ -49,7 +49,7 @@ const checks = [
   {
     name: "铭测管理后台",
     path: "/mingtest-admin",
-    contains: ["noindex,nofollow", "管理员登录", "专业版申请", "lingtest-admin.js?v=1"],
+    contains: ["noindex,nofollow", "管理员登录", "专业版申请", "lingtest-admin.js?v=2"],
   },
   {
     name: "铭测管理脚本",
