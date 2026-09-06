@@ -9,6 +9,7 @@ import urllib.request
 from typing import Any
 
 from flask import Flask, jsonify, request
+from laitest.travel_transport import error_response
 
 from laitest.ai import ai_runtime_status, generate_cases, generate_cases_local, generate_travel_plan, professional_case_from_suggested
 from laitest.test_pipeline import build_pipeline_delivery, compose_pipeline_prompt, normalize_generation_mode, run_pipeline_skill
@@ -534,17 +535,10 @@ def post_ai_travel_plan() -> tuple[Any, int] | Any:
     try:
         plan = generate_travel_plan(prompt)
     except RuntimeError as e:
-        status = 503 if "missing DEEPSEEK_API_KEY" in str(e) else 502
-        return (
-            jsonify(
-                {
-                    "error": str(e),
-                    "provider": "deepseek",
-                    "elapsed_ms": int((time.monotonic() - t0) * 1000),
-                }
-            ),
-            status,
-        )
+        failure, status = error_response(e)
+        failure["elapsed_ms"] = int((time.monotonic() - t0) * 1000)
+        print(json.dumps({"event":"travel_plan_failed", **failure}), flush=True)
+        return jsonify(failure), status
 
     elapsed_ms = int((time.monotonic() - t0) * 1000)
     runtime = ai_runtime_status()

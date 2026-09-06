@@ -10,6 +10,7 @@ from dataclasses import dataclass
 from http.client import IncompleteRead, RemoteDisconnected
 from typing import Any
 from urllib import error, request
+from .travel_transport import request_travel, settings as travel_settings
 
 
 @dataclass(frozen=True)
@@ -2257,6 +2258,9 @@ def ai_runtime_status() -> dict[str, Any]:
         "deepseek_max_tokens": _safe_int_env("DEEPSEEK_MAX_TOKENS", 4096, 512, 8192),
         "deepseek_max_cases": _safe_int_env("DEEPSEEK_MAX_CASES", 10, 1, 30),
         "deepseek_prompt_max_chars": _safe_int_env("DEEPSEEK_PROMPT_MAX_CHARS", 4500, 500, 20000),
+        "travel_timeout_s": travel_settings()[0],
+        "travel_retries": travel_settings()[1],
+        "travel_total_deadline_s": travel_settings()[2],
         "deepseek_travel_max_tokens": _safe_int_env("DEEPSEEK_TRAVEL_MAX_TOKENS", 2200, 512, 8192),
         "deepseek_travel_prompt_max_chars": _safe_int_env("DEEPSEEK_TRAVEL_PROMPT_MAX_CHARS", 6000, 500, 30000),
         "deepseek_travel_temperature": _safe_float_env("DEEPSEEK_TRAVEL_TEMPERATURE", 0.4, 0.0, 1.5),
@@ -2436,9 +2440,6 @@ def generate_travel_plan(prompt: str) -> str:
     if not _deepseek_api_key():
         raise RuntimeError("missing DEEPSEEK_API_KEY/DeepSeek_API_KEY")
 
-    _timeout_config, timeout_s = _deepseek_timeout_effective()
-    _retries_config, retries = _deepseek_retries_effective()
-    total_deadline_s = _deepseek_total_deadline_effective(timeout_s, retries)
     max_tokens = _safe_int_env("DEEPSEEK_TRAVEL_MAX_TOKENS", 2200, 512, 8192)
     prompt_max_chars = _safe_int_env("DEEPSEEK_TRAVEL_PROMPT_MAX_CHARS", 6000, 500, 30000)
     temperature = _safe_float_env("DEEPSEEK_TRAVEL_TEMPERATURE", 0.4, 0.0, 1.5)
@@ -2463,12 +2464,7 @@ def generate_travel_plan(prompt: str) -> str:
         "max_tokens": max_tokens,
     }
 
-    data = _deepseek_request_chat_completion(
-        req_body,
-        timeout_s=timeout_s,
-        retries=retries,
-        total_deadline_s=total_deadline_s,
-    )
+    data = request_travel(_deepseek_chat_url(), _deepseek_api_key(), req_body)
     try:
         plan = _parse_openai_compatible_response_text(data, provider="deepseek").strip()
     except Exception as e:

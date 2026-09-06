@@ -308,3 +308,18 @@ git push origin main
 - 页面执行功能仅用于已获授权的目标。
 - 生产密钥应定期轮换。
 - 对外政策见 `privacy.html`、`terms.html` 和 `security.html`。
+
+
+### 旅行规划调用预算
+
+旅行规划 `/api/ai/travel_plan` 使用独立配置，不再继承通用 DeepSeek 超时及重试设置：
+
+- `DEEPSEEK_TRAVEL_TIMEOUT_S`：单次请求预算，默认 45 秒，上限 60 秒。
+- `DEEPSEEK_TRAVEL_RETRIES`：默认 1 次重试，上限 1 次；余额不足、鉴权和参数错误不重试。
+- `DEEPSEEK_TRAVEL_TOTAL_DEADLINE_S`：所有尝试合计预算，默认且上限 65 秒。读取保活数据时同样检查预算。
+
+TimeLens 调用方当前等待 75 秒，内层预算需更短。接口失败返回安全的 `errorCode`（余额、鉴权、限流、超时、连接、响应格式等），不返回原始模型报文。运行状态新增 `travel_timeout_s`、`travel_retries`、`travel_total_deadline_s`，用于验证部署是否生效。失败日志事件为 `travel_plan_failed`。
+
+运行无网络测试：`PYTHONDONTWRITEBYTECODE=1 python3 scripts/test-travel-transport.py`。
+
+这仍是同步生成接口，不保证任何模型故障都可恢复，也不是持久化后台任务队列。修改的预算控制覆盖连接和响应读取，DNS 解析仍受操作系统解析器行为影响。

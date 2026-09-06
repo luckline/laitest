@@ -11,6 +11,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import parse_qs, urlparse
 
+from .travel_transport import error_response
 from .ai import ai_runtime_status, generate_cases, generate_cases_local, generate_travel_plan, professional_case_from_suggested
 from .test_pipeline import build_pipeline_delivery, compose_pipeline_prompt, normalize_generation_mode, run_pipeline_skill
 from .db import db_conn, json_loads, row_to_dict, utc_now_iso
@@ -585,16 +586,10 @@ class Handler(BaseHTTPRequestHandler):
                 try:
                     plan = generate_travel_plan(prompt)
                 except RuntimeError as e:
-                    status = HTTPStatus.SERVICE_UNAVAILABLE if "missing DEEPSEEK_API_KEY" in str(e) else HTTPStatus.BAD_GATEWAY
-                    _send_json(
-                        self,
-                        int(status),
-                        {
-                            "error": str(e),
-                            "provider": "deepseek",
-                            "elapsed_ms": int((time.monotonic() - t0) * 1000),
-                        },
-                    )
+                    failure, status = error_response(e)
+                    failure["elapsed_ms"] = int((time.monotonic() - t0) * 1000)
+                    print(json.dumps({"event":"travel_plan_failed", **failure}), flush=True)
+                    _send_json(self, status, failure)
                     return
 
                 elapsed_ms = int((time.monotonic() - t0) * 1000)
