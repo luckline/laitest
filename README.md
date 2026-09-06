@@ -323,3 +323,11 @@ TimeLens 调用方当前等待 75 秒，内层预算需更短。接口失败返�
 运行无网络测试：`PYTHONDONTWRITEBYTECODE=1 python3 scripts/test-travel-transport.py`。
 
 这仍是同步生成接口，不保证任何模型故障都可恢复，也不是持久化后台任务队列。修改的预算控制覆盖连接和响应读取，DNS 解析仍受操作系统解析器行为影响。
+
+### 旅行规划回复可靠性
+
+旅行接口默认输出额度为 4096 token，显式关闭思考模式，并要求优先覆盖全部日期、精简重复说明。如果部署环境已经设置 `DEEPSEEK_TRAVEL_MAX_TOKENS=2200`，请改为 `4096`；环境变量会覆盖代码默认值。
+
+截断、空回答或无效 JSON 可在同一 65 秒总预算内重试一次；截断时提高第二次请求的 token 上限（最大 8192）。鉴权、余额等错误不会触发响应重试。仍未完成时保留失败状态，不把半份攻略当作成功交付。
+
+`GET /api/ai/status` 的 `runtime.travel_response_policy` 应为 `bounded-complete-v2`，`travel_thinking` 应为 `disabled`。失败日志的 `responseReason=token_limit` 表示输出截断；`empty_content` 表示没有正式回答。日志不包含用户提示词或 AI 正文。

@@ -65,11 +65,13 @@ def _attempt(url, key, body, deadline):
         connection.close()
 
 
-def request_travel(url, key, payload):
+def request_travel(url, key, payload, deadline=None):
     timeout, retries, budget = settings()
-    end = time.monotonic() + budget
+    end = min(time.monotonic() + budget, deadline) if deadline is not None else time.monotonic() + budget
     body = json.dumps(payload, ensure_ascii=True).encode('utf-8')
     for attempt in range(retries + 1):
+        if end <= time.monotonic():
+            raise TravelPlanError('AI_TIMEOUT',504)
         try:
             return _attempt(url, key, body, min(end, time.monotonic() + timeout))
         except (socket.timeout, TimeoutError):

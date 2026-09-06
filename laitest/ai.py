@@ -10,7 +10,7 @@ from dataclasses import dataclass
 from http.client import IncompleteRead, RemoteDisconnected
 from typing import Any
 from urllib import error, request
-from .travel_transport import request_travel, parse_travel_response, settings as travel_settings
+from .travel_transport import request_travel, parse_travel_response, TravelPlanError, settings as travel_settings
 
 
 @dataclass(frozen=True)
@@ -2258,10 +2258,13 @@ def ai_runtime_status() -> dict[str, Any]:
         "deepseek_max_tokens": _safe_int_env("DEEPSEEK_MAX_TOKENS", 4096, 512, 8192),
         "deepseek_max_cases": _safe_int_env("DEEPSEEK_MAX_CASES", 10, 1, 30),
         "deepseek_prompt_max_chars": _safe_int_env("DEEPSEEK_PROMPT_MAX_CHARS", 4500, 500, 20000),
+        "travel_response_policy": "bounded-complete-v2",
+        "travel_thinking": "disabled",
+        "travel_response_retries": 1,
         "travel_timeout_s": travel_settings()[0],
         "travel_retries": travel_settings()[1],
         "travel_total_deadline_s": travel_settings()[2],
-        "deepseek_travel_max_tokens": _safe_int_env("DEEPSEEK_TRAVEL_MAX_TOKENS", 2200, 512, 8192),
+        "deepseek_travel_max_tokens": _safe_int_env("DEEPSEEK_TRAVEL_MAX_TOKENS", 4096, 512, 8192),
         "deepseek_travel_prompt_max_chars": _safe_int_env("DEEPSEEK_TRAVEL_PROMPT_MAX_CHARS", 6000, 500, 30000),
         "deepseek_travel_temperature": _safe_float_env("DEEPSEEK_TRAVEL_TEMPERATURE", 0.4, 0.0, 1.5),
         "qianwen_api_key_configured": has_qianwen,
@@ -2440,7 +2443,7 @@ def generate_travel_plan(prompt: str) -> str:
     if not _deepseek_api_key():
         raise RuntimeError("missing DEEPSEEK_API_KEY/DeepSeek_API_KEY")
 
-    max_tokens = _safe_int_env("DEEPSEEK_TRAVEL_MAX_TOKENS", 2200, 512, 8192)
+    max_tokens = _safe_int_env("DEEPSEEK_TRAVEL_MAX_TOKENS", 4096, 512, 8192)
     prompt_max_chars = _safe_int_env("DEEPSEEK_TRAVEL_PROMPT_MAX_CHARS", 6000, 500, 30000)
     temperature = _safe_float_env("DEEPSEEK_TRAVEL_TEMPERATURE", 0.4, 0.0, 1.5)
 
@@ -2465,5 +2468,23 @@ def generate_travel_plan(prompt: str) -> str:
         "max_tokens": max_tokens,
     }
 
-    data = request_travel(_deepseek_chat_url(), _deepseek_api_key(), req_body)
-    return parse_travel_response(data)
+    # Leave room for the final answer instead of spending the whole response on
+    # repeated background descriptions. Never present a truncated reply as complete.
+    req_body["messages"].append({"role":"system", "content":
+        "请精简表达，先完整覆盖用户要求的每一天，再补公共提醒。每日保留路线、时段安排和必要休息；交通、预算和预约建议避免重复。全文尽量控制在1600个汉字内，天数较多时缩短每日描述，不遗漏日期。"})
+    deadline = time.monotonic() + travel_settings()[2]
+    for attempt in range(2):
+        try:
+            data = request_travel(_deepseek_chat_url(), _deepseek_api_key(), req_body, deadline=deadline)
+            return parse_travel_response(data)
+        except TravelPlanError as exc:
+            retryable = exc.code == 'AI_RESPONSE_INVALID' and exc.reason in {
+                'token_limit', 'empty_content', 'reasoning_without_answer', 'non_json', 'missing_choices'}
+            if not retryable or attempt or deadline - time.monotonic() < 10:
+                raise
+            print(json.dumps({"event":"travel_plan_response_retry", "reason":exc.reason,
+                              "attempt":2, "remaining_seconds":round(deadline-time.monotonic())}), flush=True)
+            if exc.reason == 'token_limit':
+                req_body['max_tokens'] = min(8192, max(4096, max_tokens * 2))
+            req_body['messages'][-1]['content'] += "本次请输出完整简洁方案，省略开场白与重复说明。"
+    raise TravelPlanError('AI_RESPONSE_INVALID')

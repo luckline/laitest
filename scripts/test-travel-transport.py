@@ -65,3 +65,19 @@ with patch.dict(os.environ,{'DEEPSEEK_API_KEY':'fixture-only'}), patch('laitest.
     assert generate_travel_plan('synthetic test') == 'Day 1: complete route'
     assert request.call_args.args[2]['thinking'] == {'type':'disabled'}
 print('PASS empty, truncated, filtered responses and non-thinking request')
+
+# Invalid answers get one bounded retry; auth and filtered answers do not.
+valid=json.dumps({'choices':[{'finish_reason':'stop','message':{'content':'Day 1 complete'}}]})
+truncated=json.dumps({'choices':[{'finish_reason':'length','message':{'content':'partial'}}]})
+with patch.dict(os.environ,{'DEEPSEEK_API_KEY':'fixture-only','DEEPSEEK_TRAVEL_MAX_TOKENS':'2200'}), patch('laitest.ai.request_travel',side_effect=[truncated,valid]) as request:
+    assert generate_travel_plan('fixture') == 'Day 1 complete'
+    assert request.call_count == 2
+    assert request.call_args.args[2]['max_tokens'] == 4400
+    assert request.call_args_list[0].kwargs['deadline'] == request.call_args_list[1].kwargs['deadline']
+with patch.dict(os.environ,{'DEEPSEEK_API_KEY':'fixture-only'}), patch('laitest.ai.request_travel',return_value=truncated) as request:
+    assert error_code(lambda:generate_travel_plan('fixture')) == 'AI_RESPONSE_INVALID'
+    assert request.call_count == 2
+with patch.dict(os.environ,{'DEEPSEEK_API_KEY':'fixture-only'}), patch('laitest.ai.request_travel',side_effect=TravelPlanError('AI_AUTH_FAILED')) as request:
+    assert error_code(lambda:generate_travel_plan('fixture')) == 'AI_AUTH_FAILED'
+    assert request.call_count == 1
+print('PASS response repair cap, shared deadline, token expansion, terminal auth')
