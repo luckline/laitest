@@ -44,3 +44,24 @@ from laitest.ai import generate_travel_plan
 with patch.dict(os.environ,{'DEEPSEEK_API_KEY':'fixture-only'}),patch('laitest.travel_transport._attempt',return_value='{"choices":[{"message":{"content":"Day 1: fixture route"}}]}'):
     assert generate_travel_plan('synthetic test') == 'Day 1: fixture route'
 print('PASS travel generator integration')
+
+from laitest.travel_transport import parse_travel_response
+import json
+for payload, reason in [
+    ('<html>error</html>', 'non_json'),
+    ('{}', 'missing_choices'),
+    (json.dumps({'choices':[{'message':{'content':'', 'reasoning_content':'private'}}]}), 'reasoning_without_answer'),
+    (json.dumps({'choices':[{'finish_reason':'length','message':{'content':'partial route'}}]}), 'token_limit'),
+    (json.dumps({'choices':[{'message':{'content':None}}]}), 'empty_content'),
+    (json.dumps({'choices':[{'finish_reason':'content_filter','message':{'content':'partial'}}]}), 'unfinished_or_filtered'),
+]:
+    try:
+        parse_travel_response(payload)
+        raise AssertionError('expected invalid response')
+    except TravelPlanError as exc:
+        assert exc.reason == reason
+        assert 'private' not in str(error_response(exc))
+with patch.dict(os.environ,{'DEEPSEEK_API_KEY':'fixture-only'}), patch('laitest.ai.request_travel',return_value=json.dumps({'choices':[{'finish_reason':'stop','message':{'content':'Day 1: complete route'}}]})) as request:
+    assert generate_travel_plan('synthetic test') == 'Day 1: complete route'
+    assert request.call_args.args[2]['thinking'] == {'type':'disabled'}
+print('PASS empty, truncated, filtered responses and non-thinking request')

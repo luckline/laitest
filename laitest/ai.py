@@ -10,7 +10,7 @@ from dataclasses import dataclass
 from http.client import IncompleteRead, RemoteDisconnected
 from typing import Any
 from urllib import error, request
-from .travel_transport import request_travel, settings as travel_settings
+from .travel_transport import request_travel, parse_travel_response, settings as travel_settings
 
 
 @dataclass(frozen=True)
@@ -2461,18 +2461,9 @@ def generate_travel_plan(prompt: str) -> str:
         ],
         "temperature": temperature,
         "stream": False,
+        "thinking": {"type": "disabled"},
         "max_tokens": max_tokens,
     }
 
     data = request_travel(_deepseek_chat_url(), _deepseek_api_key(), req_body)
-    try:
-        plan = _parse_openai_compatible_response_text(data, provider="deepseek").strip()
-    except Exception as e:
-        preview = re.sub(r"\s+", " ", str(data or ""))[:180]
-        raise RuntimeError(
-            f"deepseek returned invalid travel plan content: {e}; preview={preview}"
-        ) from e
-
-    if not plan:
-        raise RuntimeError("deepseek response missing travel plan")
-    return plan
+    return parse_travel_response(data)

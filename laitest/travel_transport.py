@@ -8,9 +8,10 @@ from urllib.parse import urlsplit
 
 
 class TravelPlanError(RuntimeError):
-    def __init__(self, code, status=502):
+    def __init__(self, code, status=502, reason=None):
         super().__init__(code)
         self.code, self.status = code, status
+        self.reason = reason
 
 
 def settings():
@@ -88,6 +89,36 @@ def request_travel(url, key, payload):
 
 def error_response(exc):
     if isinstance(exc, TravelPlanError):
-        return {'error':exc.code, 'errorCode':exc.code, 'provider':'deepseek'}, exc.status
+        return {'error':exc.code, 'errorCode':exc.code, 'provider':'deepseek', **({'responseReason': exc.reason} if exc.reason else {})}, exc.status
     code = 'AI_AUTH_FAILED' if 'missing DEEPSEEK_API_KEY' in str(exc) else 'AI_RESPONSE_INVALID'
     return {'error':code, 'errorCode':code, 'provider':'deepseek'}, 503 if code == 'AI_AUTH_FAILED' else 502
+
+
+def parse_travel_response(data):
+    """Never deliver reasoning, partial output or malformed JSON as a paid plan."""
+    def invalid(reason):
+        raise TravelPlanError('AI_RESPONSE_INVALID', reason=reason)
+    try:
+        payload = json.loads(data)
+    except (ValueError, TypeError):
+        invalid('non_json')
+    if not isinstance(payload, dict):
+        invalid('invalid_envelope')
+    choices = payload.get('choices')
+    if not isinstance(choices, list) or not choices or not isinstance(choices[0], dict):
+        invalid('missing_choices')
+    choice = choices[0]
+    finish = choice.get('finish_reason')
+    if finish == 'length':
+        invalid('token_limit')
+    if finish not in (None, 'stop'):
+        invalid('unfinished_or_filtered')
+    message = choice.get('message')
+    if not isinstance(message, dict):
+        invalid('missing_message')
+    if message.get('tool_calls'):
+        invalid('unexpected_tool_calls')
+    content = message.get('content')
+    if not isinstance(content, str) or not content.strip():
+        invalid('reasoning_without_answer' if message.get('reasoning_content') else 'empty_content')
+    return content.strip()
