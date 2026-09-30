@@ -12,6 +12,10 @@
 | 梁点 · 自媒体 AI 工作台 | 账号管理、选题策划、AI 创作、发布与收益复盘 | [进入工作台](http://timelens.cc:8787/#overview)（独立部署） |
 | 铭锦三省 Sanxing | 即时亲子沟通与家庭有效方法沉淀 | `/#sanxing`（微信小程序体验码） |
 
+内容中心 `/content` 按每页 12 篇展示全部文章，支持 `topic=travel-note`（旅行见闻）和 `topic=tech-note`（技术与产品）筛选，以及 `page=2` 等分页参数。文章站点地图会遍历上游全部分页；上游读取失败时返回 503，避免发布不完整的文章归档。
+
+Excel 导出依赖固定为 SheetJS 0.18.5，从 `vendor/xlsx/xlsx.full.min.js` 本站加载；来源为 `https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js`，Apache 2.0 许可证保留于 `vendor/xlsx/LICENSE`。
+
 ## 快速开始
 
 ### 环境要求

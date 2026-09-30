@@ -3,6 +3,7 @@ import re
 import unittest
 import xml.etree.ElementTree as ET
 from unittest.mock import patch
+from urllib.parse import parse_qs, urlparse
 
 from api import content_share
 
@@ -80,6 +81,72 @@ class ContentShareTest(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         ET.fromstring(response.data)
         self.assertIn(b"/articles/hangzhou-weekend-demo", response.data)
+
+    def paginated_api(self, path):
+        params = parse_qs(urlparse(path).query)
+        page = int(params.get("page", [1])[0])
+        size = int(params.get("pageSize", [100])[0])
+        posts = [{**POST, "slug": f"article-{i:03d}", "contentType": "travel-note" if i % 2 else "tech-note"} for i in range(170)]
+        return {"list": posts[(page - 1) * size:page * size], "total": len(posts)}
+
+    def test_all_articles_are_reachable_across_pages(self):
+        slugs = []
+        with patch.object(content_share, "_api", side_effect=self.paginated_api):
+            for page in range(1, 16):
+                response = self.client.get(f"/content?page={page}")
+                self.assertEqual(response.status_code, 200)
+                body = response.get_data(as_text=True)
+                current = re.findall(r'href="/articles/(article-\d+)"', body)
+                self.assertLessEqual(len(current), 12)
+                slugs.extend(current)
+                self.assertIn('<strong>170</strong>', body)
+                if page < 15:
+                    self.assertIn(f'rel="next" href="/content?page={page + 1}"', body)
+                else:
+                    self.assertNotIn('rel="next"', body)
+                if page > 1:
+                    self.assertIn(f'rel="canonical" href="https://laitest.tech/content?page={page}"', body)
+        self.assertEqual(len(slugs), 170)
+        self.assertEqual(len(set(slugs)), 170)
+
+    def test_topic_filter_persists_when_paginating(self):
+        with patch.object(content_share, "_api", side_effect=self.paginated_api):
+            response = self.client.get("/content?topic=travel-note&page=2")
+        body = response.get_data(as_text=True)
+        self.assertIn("共 85 篇", body)
+        self.assertIn('href="/content?topic=travel-note&amp;page=3"', body)
+        self.assertIn('href="/content?topic=travel-note" aria-current="page"', body)
+        slugs = re.findall(r'href="/articles/article-(\d+)"', body)
+        self.assertEqual(len(slugs), 12)
+        self.assertTrue(all(int(slug) % 2 for slug in slugs))
+
+    def test_sitemap_includes_articles_beyond_first_hundred(self):
+        with patch.object(content_share, "_api", side_effect=self.paginated_api):
+            response = self.client.get("/articles-sitemap.xml")
+        root = ET.fromstring(response.data)
+        self.assertEqual(len(root), 171)
+        self.assertIn(b"/articles/article-169", response.data)
+
+    def test_missing_and_invalid_pages(self):
+        with patch.object(content_share, "_api", side_effect=self.paginated_api):
+            for url in ["/content?page=0", "/content?page=oops", "/content?topic=invalid"]:
+                self.assertEqual(self.client.get(url).status_code, 400)
+            self.assertEqual(self.client.get("/content?page=16").status_code, 404)
+
+    def test_partial_upstream_failure_does_not_publish_incomplete_archive(self):
+        first = self.paginated_api("/api/content/posts?page=1&pageSize=100")
+        for url in ["/content", "/articles-sitemap.xml"]:
+            with patch.object(content_share, "_api", side_effect=[first, RuntimeError("unavailable")]):
+                response = self.client.get(url)
+            self.assertEqual(response.status_code, 503)
+            self.assertEqual(response.headers["Cache-Control"], "no-store")
+
+    def test_repeated_upstream_page_does_not_loop_or_look_complete(self):
+        first = self.paginated_api("/api/content/posts?page=1&pageSize=100")
+        with patch.object(content_share, "_api", return_value=first) as api:
+            response = self.client.get("/content")
+        self.assertEqual(response.status_code, 503)
+        self.assertEqual(api.call_count, 2)
 
     def test_html_content_drops_scripts(self):
         output = content_share._content_html("<p>正常正文</p><script>alert(1)</script>")

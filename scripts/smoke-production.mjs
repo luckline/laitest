@@ -14,17 +14,22 @@ const checks = [
   {
     name: "个人主页",
     path: "/",
-    contains: ["Luckline", 'href="/mingtest"', 'href="/timelens"', "product-nav.js?v=8", "home-v6.css?v=3", "用真实产品证明能力", "AI QUALITY WORKSPACE", "AI TRAVEL WORKSPACE", "lingtest-workspace-preview.png", "timelens-workspace-preview.png", "img/og-cover.png", "家庭方法库"],
+    contains: ["Luckline", 'href="/mingtest"', 'href="/timelens"', "product-nav.js?v=9", "home-v6.css?v=4", "用真实产品证明能力", "AI QUALITY WORKSPACE", "AI TRAVEL WORKSPACE", "lingtest-workspace-preview.png", "timelens-workspace-preview.png", "img/og-cover.png", "家庭方法库"],
   },
   {
     name: "铭测产品页",
     path: "/mingtest",
-    contains: ["铭测 MingTest", "从需求分析到测试资产交付", "product-nav.js?v=8", "lingtest-account.js?v=5", "AI 用例设计", "自动化执行", "API 自动化", 'data-workspace-mode="tools"', 'id="toolsWorkspace"', "/mingtest-tools?embed=1"],
+    contains: ["铭测 MingTest", "从需求分析到测试资产交付", "product-nav.js?v=9", "lingtest-account.js?v=5", "AI 用例设计", "自动化执行", "API 自动化", 'data-workspace-mode="tools"', 'id="toolsWorkspace"', "/mingtest-tools?embed=1"],
   },
   {
     name: "铭测工作台",
     path: "/app",
-    contains: ["AI QUALITY WORKSPACE", "product-nav.js?v=8", "lingtest-account.js?v=5", "app-shell-fix.css?v=5", "system-density.css?v=2", "workspace-polish.css?v=2", "api-testing-v2.css?v=2", "api-testing.js?v=5", "app.js?v=workspace-menu-2", "lingtest-execution.css?v=2", "lingtest-pipeline.css?v=4", "从需求分析到测试资产交付", "AI 用例设计", "自动化执行", "executionWorkspace", "快速生成", "文档驱动", "高级模式", "分步调试", "运行当前技能", "一键运行完整流程", "导入 OpenAPI / cURL", "apiImportDialog", "sddSpecFile", "Case Home JSON", "我的生成记录", "登录后次数翻倍", "PRO ACTIVATION", 'id="aiPrompt"'],
+    contains: ["AI QUALITY WORKSPACE", "product-nav.js?v=9", "lingtest-account.js?v=5", "app-shell-fix.css?v=5", "system-density.css?v=2", "workspace-polish.css?v=2", "api-testing-v2.css?v=2", "api-testing.js?v=5", "app.js?v=workspace-menu-2", "lingtest-execution.css?v=2", "lingtest-pipeline.css?v=4", "从需求分析到测试资产交付", "AI 用例设计", "自动化执行", "executionWorkspace", "快速生成", "文档驱动", "高级模式", "分步调试", "运行当前技能", "一键运行完整流程", "导入 OpenAPI / cURL", "apiImportDialog", "sddSpecFile", "Case Home JSON", "我的生成记录", "登录后次数翻倍", "PRO ACTIVATION", 'id="aiPrompt"'],
+  },
+  {
+    name: "Excel 本站依赖",
+    path: "/vendor/xlsx/xlsx.full.min.js?v=0.18.5",
+    contains: ["SheetJS", "0.18.5"],
   },
   {
     name: "铭测定价",
@@ -110,7 +115,7 @@ const checks = [
   },
   {
     name: "产品导航脚本",
-    path: "/product-nav.js?v=8",
+    path: "/product-nav.js?v=9",
     contains: ["product!=='luckline'", "site-home-link", "返回 Luckline 个人主页", "home.textContent='主页'"],
   },
   {
@@ -179,9 +184,9 @@ async function runSecurityHeaderCheck() {
   const expected = {
     "x-content-type-options": "nosniff",
     "referrer-policy": "strict-origin-when-cross-origin",
-    "x-frame-options": "DENY",
+    "x-frame-options": "SAMEORIGIN",
     "permissions-policy": "camera=()",
-    "content-security-policy": "frame-ancestors 'none'",
+    "content-security-policy": "frame-ancestors 'self'",
   };
   const missing = Object.entries(expected).filter(([name, value]) => !String(response.headers.get(name) || "").includes(value));
   if (missing.length) throw new Error(`缺少安全响应头：${missing.map(([name]) => name).join("、")}`);

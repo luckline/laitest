@@ -19,13 +19,23 @@
   const toggle=document.createElement('button');
   toggle.type='button';
   toggle.className='nav-mobile-toggle';
-  toggle.setAttribute('aria-label','打开导航菜单');
-  toggle.textContent='☰';
-  toggle.onclick=()=>{
-    const open=nav.classList.toggle('nav-mobile-open');
+  if(links){
+    if(!links.id)links.id='site-navigation';
+    toggle.setAttribute('aria-controls',links.id);
+  }
+  const setOpen=open=>{
+    nav.classList.toggle('nav-mobile-open',open);
     toggle.textContent=open?'×':'☰';
     toggle.setAttribute('aria-label',open?'关闭导航菜单':'打开导航菜单');
+    toggle.setAttribute('aria-expanded',String(open));
   };
+  setOpen(false);
+  toggle.onclick=()=>setOpen(!nav.classList.contains('nav-mobile-open'));
   actions.insertBefore(toggle,actions.firstChild);
-  document.addEventListener('keydown',e=>{if(e.key==='Escape')nav.classList.remove('nav-mobile-open')});
+  links?.addEventListener('click',e=>{if(e.target.closest('a,button'))setOpen(false)});
+  document.addEventListener('click',e=>{if(!nav.contains(e.target))setOpen(false)});
+  document.addEventListener('keydown',e=>{
+    if(e.key==='Escape'&&nav.classList.contains('nav-mobile-open')){setOpen(false);toggle.focus()}
+  });
+  window.matchMedia('(max-width:760px)').addEventListener('change',()=>setOpen(false));
 })();

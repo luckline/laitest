@@ -7,10 +7,10 @@ import re
 from datetime import datetime
 from html.parser import HTMLParser
 from urllib.error import HTTPError
-from urllib.parse import quote, unquote
+from urllib.parse import quote, unquote, urlencode
 from urllib.request import Request, urlopen
 
-from flask import Flask, Response
+from flask import Flask, Response, request
 
 app = Flask(__name__)
 
@@ -18,6 +18,8 @@ API_BASE = "https://timelens.cc"
 SITE_BASE = "https://laitest.tech"
 FALLBACK_IMAGE = f"{SITE_BASE}/img/og-cover.png"
 ACCOUNT_NAMES = {"xiaoliang": "小梁游记", "mingjin": "铭锦数智"}
+CONTENT_TOPICS = {"": "全部文章", "travel-note": "旅行见闻", "tech-note": "技术与产品"}
+CONTENT_PAGE_SIZE = 12
 
 
 def _api(path: str) -> dict:
@@ -32,6 +34,48 @@ def _api(path: str) -> dict:
 def _safe_url(value: object, fallback: str = "") -> str:
     raw = str(value or "").strip()
     return raw if raw.startswith(("https://", "http://", "/")) else fallback
+
+
+def _all_posts() -> list[dict]:
+    """The upstream endpoint paginates but does not support contentType filters."""
+    posts: dict[str, dict] = {}
+    page = 1
+    received = 0
+    while True:
+        data = _api(f"/api/content/posts?page={page}&pageSize=100")
+        batch = data.get("list") or []
+        total = int(data.get("total", received + len(batch)))
+        if not batch:
+            if received < total:
+                raise RuntimeError("文章列表未完整返回")
+            break
+        before = len(posts)
+        for post in batch:
+            if post.get("slug"):
+                posts[str(post["slug"])] = post
+        received += len(batch)
+        if page > 1 and len(posts) == before:
+            raise RuntimeError("文章分页未返回新内容")
+        if received >= total:
+            break
+        page += 1
+    return sorted(posts.values(), key=lambda post: (str(post.get("publishedAt") or ""), str(post["slug"])), reverse=True)
+
+
+def _content_url(page: int = 1, topic: str = "") -> str:
+    params = {}
+    if topic:
+        params["topic"] = topic
+    if page > 1:
+        params["page"] = page
+    return "/content" + ("?" + urlencode(params) if params else "")
+
+
+def _content_error(message: str, status: int) -> Response:
+    return Response(
+        f'<meta name="robots" content="noindex"><h1>{message}</h1><p><a href="/content">返回内容中心</a></p>',
+        status=status, content_type="text/html; charset=utf-8", headers={"Cache-Control": "no-store"},
+    )
 
 
 def _inline_markdown(value: str) -> str:
@@ -163,8 +207,8 @@ def _shell(*, title: str, description: str, canonical: str, body: str, image: st
 <meta property="og:image" content="{html.escape(image, quote=True)}"><meta property="og:url" content="{html.escape(canonical, quote=True)}">
 <meta name="twitter:card" content="summary_large_image"><meta name="theme-color" content="#173f38">
 {structured}<link rel="icon" href="/img/favicon.svg" type="image/svg+xml">
-<link rel="stylesheet" href="/css/content-articles.css?v=4"><link rel="stylesheet" href="/css/product-nav.css?v=6"><link rel="stylesheet" href="/css/site-density.css?v=2">
-</head><body>{body}<script src="/product-nav.js?v=8"></script><script defer src="/site-analytics.js"></script></body></html>"""
+<link rel="stylesheet" href="/css/content-articles.css?v=5"><link rel="stylesheet" href="/css/product-nav.css?v=6"><link rel="stylesheet" href="/css/site-density.css?v=2">
+</head><body>{body}<script src="/product-nav.js?v=9"></script><script defer src="/site-analytics.js"></script></body></html>"""
 
 
 def _header() -> str:
@@ -177,13 +221,24 @@ def _header() -> str:
 @app.get("/content")
 @app.get("/articles")
 def article_index() -> Response:
+    topic = request.args.get("topic", "")
     try:
-        data = _api("/api/content/posts?page=1&pageSize=100")
-        posts = data.get("list") or []
+        page = int(request.args.get("page", "1"))
+    except ValueError:
+        return _content_error("无效的文章页码", 400)
+    if topic not in CONTENT_TOPICS or page < 1:
+        return _content_error("无效的文章分类或页码", 400)
+    try:
+        posts = _all_posts()
     except Exception:
-        posts = []
-    valid_posts = [post for post in posts if post.get("slug")]
-    featured = valid_posts[0] if valid_posts else None
+        return _content_error("文章暂时无法加载，请稍后重试", 503)
+    filtered = [post for post in posts if not topic or post.get("contentType") == topic]
+    total_pages = max(1, (len(filtered) + CONTENT_PAGE_SIZE - 1) // CONTENT_PAGE_SIZE)
+    if page > total_pages:
+        return _content_error("这一页文章不存在", 404)
+    offset = (page - 1) * CONTENT_PAGE_SIZE
+    valid_posts = filtered[offset:offset + CONTENT_PAGE_SIZE]
+    featured = valid_posts[0] if valid_posts and page == 1 else None
     featured_html = ""
     if featured:
         featured_account = ACCOUNT_NAMES.get(str(featured.get("accountKey")), str(featured.get("accountKey") or "Luckline"))
@@ -194,22 +249,32 @@ def article_index() -> Response:
         <p>{html.escape(str(featured.get('summary') or '打开查看完整内容。'))}</p><b>阅读这篇文章 <i>↗</i></b></div></a></article>"""
     archive = "".join(
         f"""<article class="journal-row"><a href="/articles/{quote(str(post.get('slug')))}">
-        <span>{index + 2:02d}</span><div><small>{html.escape(ACCOUNT_NAMES.get(str(post.get('accountKey')), str(post.get('accountKey') or 'Luckline')))} · {_date(post.get('publishedAt'))}</small>
+        <span>{offset + index + (2 if featured else 1):02d}</span><div><small>{html.escape(ACCOUNT_NAMES.get(str(post.get('accountKey')), str(post.get('accountKey') or 'Luckline')))} · {_date(post.get('publishedAt'))}</small>
         <h3>{html.escape(str(post.get('title') or '未命名文章'))}</h3><p>{html.escape(str(post.get('summary') or '打开查看完整内容。'))}</p></div><i>↗</i></a></article>"""
-        for index, post in enumerate(valid_posts[1:])
+        for index, post in enumerate(valid_posts[1:] if featured else valid_posts)
     )
-    if not featured_html:
-        featured_html = '<div class="content-empty"><h2>内容正在整理中</h2><p>原创文章会从内容运营系统自动归档到这里。</p></div>'
-    archive_html = archive or '<p class="journal-awaiting">下一篇文章正在路上。</p>'
+    if featured_html:
+        featured_html = '<section id="latest" class="journal-section-head"><div><span>EDITOR’S PICK</span><h2>本期推荐</h2></div><p>最近更新</p></section>' + featured_html
+    archive_html = archive or ("" if featured else '<p class="journal-awaiting">这个分类暂时没有文章，试试其他分类。</p>')
+    topics_html = '<nav class="journal-topics" aria-label="内容主题"><span>主题</span>' + "".join(
+        f'<a href="{html.escape(_content_url(topic=key), quote=True)}"' + (' aria-current="page"' if key == topic else '') + f'>{label}</a>'
+        for key, label in CONTENT_TOPICS.items()
+    ) + '</nav>'
+    pagination = '<nav class="journal-pagination" aria-label="文章分页">'
+    if page > 1:
+        pagination += f'<a rel="prev" href="{html.escape(_content_url(page - 1, topic), quote=True)}">← 上一页</a>'
+    pagination += f'<span>第 {page} / {total_pages} 页 · 共 {len(filtered)} 篇</span>'
+    if page < total_pages:
+        pagination += f'<a rel="next" href="{html.escape(_content_url(page + 1, topic), quote=True)}">下一页 →</a>'
+    pagination += '</nav>'
     body = (
         _header()
         + '<main class="content-index journal-index"><section class="journal-masthead"><div><span>LUCKLINE JOURNAL</span>'
         '<h1>在产品之外，<br>记录真实世界。</h1><p>旅行见闻、产品实践与数字生活。独立写作，也由内容系统持续归档。</p></div>'
-        f'<aside><small>ARCHIVE</small><strong>{len(valid_posts):02d}</strong><span>篇原创</span><p>小梁游记 × 铭锦数智</p></aside></section>'
-        '<nav class="journal-topics" aria-label="内容主题"><span>主题</span><a href="#latest">全部文章</a><i>旅行见闻</i><i>产品实践</i><i>数字生活</i></nav>'
-        f'<section id="latest" class="journal-section-head"><div><span>EDITOR’S PICK</span><h2>本期推荐</h2></div><p>最近更新</p></section>{featured_html}'
-        f'<section class="journal-section-head journal-archive-head"><div><span>THE ARCHIVE</span><h2>全部文章</h2></div><p>按发布时间倒序</p></section>'
-        f'<section class="journal-list">{archive_html}</section>'
+        f'<aside><small>ARCHIVE</small><strong>{len(posts):02d}</strong><span>篇原创</span><p>小梁游记 × 铭锦数智</p></aside></section>'
+        f'{topics_html}{featured_html}'
+        f'<section class="journal-section-head journal-archive-head"><div><span>THE ARCHIVE</span><h2>{CONTENT_TOPICS[topic]}</h2></div><p>按发布时间倒序 · 共 {len(filtered)} 篇</p></section>'
+        f'<section class="journal-list">{archive_html}</section>{pagination}'
         '<section class="journal-products"><div><span>FROM IDEAS TO PRODUCTS</span><h2>阅读之后，继续动手。</h2></div>'
         '<a href="/mingtest"><small>QUALITY</small><b>铭测 MingTest</b><p>AI 测试设计与自动化执行</p><i>→</i></a>'
         '<a href="/timelens"><small>TRAVEL</small><b>时光智行</b><p>路线规划与城市足迹</p><i>→</i></a></section></main>'
@@ -217,9 +282,9 @@ def article_index() -> Response:
     )
     return Response(
         _shell(
-            title="Luckline 原创文章｜旅行见闻、产品实践与数字生活",
+            title=f"{CONTENT_TOPICS[topic]}{' · 第 ' + str(page) + ' 页' if page > 1 else ''}｜Luckline 原创文章",
             description="Luckline 原创内容归档，持续收录旅行见闻、产品实践与数字生活文章。",
-            canonical=f"{SITE_BASE}/content",
+            canonical=f"{SITE_BASE}{_content_url(page, topic)}",
             body=body,
         ),
         content_type="text/html; charset=utf-8",
@@ -311,9 +376,9 @@ def article_detail(slug: str) -> Response:
 @app.get("/articles-sitemap.xml")
 def article_sitemap() -> Response:
     try:
-        posts = (_api("/api/content/posts?page=1&pageSize=100").get("list") or [])
+        posts = _all_posts()
     except Exception:
-        posts = []
+        return _content_error("文章站点地图暂时无法加载", 503)
     urls = [f"<url><loc>{SITE_BASE}/content</loc></url>"]
     for post in posts:
         slug = str(post.get("slug") or "")

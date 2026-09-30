@@ -20,7 +20,7 @@
 .route-hero .route-reactions{position:absolute;right:32px;bottom:32px;padding:7px;border:1px solid rgba(255,255,255,.34);border-radius:18px;background:rgba(8,54,46,.38);box-shadow:0 12px 30px rgba(8,45,39,.18);backdrop-filter:blur(12px)}
 .route-hero .route-view,.route-hero .reaction-button{min-width:78px;border-color:rgba(255,255,255,.25);background:rgba(255,255,255,.92)}
 .route-summary-footer{justify-content:flex-start}
-@media(max-width:760px){.route-hero{align-items:flex-start;padding-bottom:112px}.route-hero .route-reactions{right:18px;bottom:18px;left:18px}.route-hero .route-view,.route-hero .reaction-button{flex:1;min-width:0}}
+@media(max-width:760px){.route-page .route-hero{align-items:flex-start;min-height:290px;padding-bottom:112px}.route-hero .route-reactions{width:auto;right:18px;bottom:18px;left:18px}.route-hero .route-view,.route-hero .reaction-button{flex:1;min-width:0}}
 
 .route-comments{margin-top:40px;padding:28px;background:#fff;border:1px solid var(--line);border-radius:20px}
 .route-comments-head{display:flex;align-items:end;justify-content:space-between;gap:20px;margin-bottom:20px}

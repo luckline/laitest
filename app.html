@@ -159,8 +159,8 @@
     <dialog id="apiImportDialog" class="api-editor-dialog api-import-dialog"><form id="apiImportForm"><div class="api-dialog-head"><div><span class="step-number">API IMPORT</span><h3>导入接口资产</h3></div><button id="apiImportClose" type="button" aria-label="关闭">×</button></div><div class="api-import-body"><label><span>导入格式</span><select name="format"><option value="auto">自动识别</option><option value="openapi">OpenAPI 3 / Swagger JSON</option><option value="curl">cURL</option></select></label><label><span>粘贴内容</span><textarea name="source" required spellcheck="false" placeholder="粘贴 OpenAPI JSON 或 curl 命令"></textarea></label><p>OpenAPI 将批量创建接口用例，并根据 servers 自动创建环境；cURL 将创建一条可立即调试的用例。</p><div id="apiImportMessage" role="alert"></div></div><div class="api-dialog-actions"><button id="apiImportCancel" class="btn ghost" type="button">取消</button><button class="btn solid" type="submit">解析并导入</button></div></form></dialog>
     <dialog id="apiRunDialog" class="api-editor-dialog api-run-dialog"><div class="api-dialog-head"><div><span class="step-number">RUN REPORT</span><h3 id="apiRunTitle">执行报告</h3></div><button id="apiRunClose" type="button" aria-label="关闭">×</button></div><div id="apiRunContent"></div></dialog>
 
-    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-    <script src="/product-nav.js?v=8"></script>
+    <script src="/vendor/xlsx/xlsx.full.min.js?v=0.18.5"></script>
+    <script src="/product-nav.js?v=9"></script>
     <script src="/lingtest-account.js?v=5"></script>
     <script src="/app.js?v=workspace-menu-2"></script>
     <script src="/api-testing.js?v=5"></script>

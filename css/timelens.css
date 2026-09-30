@@ -5,3 +5,7 @@
 .notification-modal-head{display:flex;align-items:center;justify-content:space-between;gap:16px}.notification-modal-head h2{margin:3px 0}.notification-modal-head button{border:0;background:none;color:var(--green);cursor:pointer}
 .notification-list{display:grid;max-height:58vh;overflow:auto;margin-top:12px}.notification-item{display:grid;grid-template-columns:38px 1fr;gap:12px;width:100%;padding:15px 3px;border:0;border-bottom:1px solid var(--line);background:#fff;color:var(--ink);text-align:left;cursor:pointer}.notification-item.unread{background:#f2f8f5}.notification-icon{width:34px;height:34px;border-radius:50%;display:grid;place-items:center;background:var(--pale);color:var(--green);font-size:12px;font-weight:700}.notification-item b,.notification-item small,.notification-item time{display:block}.notification-item b{font-size:13px}.notification-item small{margin-top:4px;color:var(--muted)}.notification-item time{margin-top:5px;color:#9aa6a2;font-size:10px}.notification-empty{padding:42px 16px;text-align:center;color:var(--muted)}
 @media(max-width:620px){.notification-trigger{font-size:0}.notification-trigger::before{content:'信';font-size:14px}.miniapp-trigger{display:none}}
+
+.mobile-home-link{display:none}
+@media(max-width:900px){.mobile-home-link{display:inline-flex;align-items:center;justify-content:center;min-height:44px;padding:8px;color:var(--green);font-size:12px;font-weight:700;text-decoration:none}}
+@media(max-width:380px){.header-actions{gap:5px}header{gap:6px;padding:0 10px}header>div:first-child span{max-width:115px;font-size:10px}}
