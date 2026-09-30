@@ -2,13 +2,15 @@
 
 [laitest.tech](https://laitest.tech) 是 Luckline 的个人站与产品中心，集中承载个人介绍、产品发布、内容沉淀和用户入口。
 
-仓库同时包含静态站点、本地 Python 服务、Vercel Serverless API，以及三个持续迭代的产品：
+仓库包含静态站点、本地 Python 服务与 Vercel Serverless API，产品中心展示五个持续迭代的产品：
 
 | 产品 | 定位 | 主要入口 |
 | --- | --- | --- |
 | 铭测 MingTest | AI 测试设计与自动化执行工作台 | `/mingtest`、`/mingtest-tools` |
 | 时光智行 TimeLens | AI 旅行规划、路线分享、出发清单与旅行记录 | `/timelens`、`/travel/<route-id>` |
 | 锦食铭味 jmfood | 餐饮门店扫码点餐与经营管理 | `/jmfood`、`/jmfood-admin` |
+| 梁点 · 自媒体 AI 工作台 | 账号管理、选题策划、AI 创作、发布与收益复盘 | [进入工作台](http://timelens.cc:8787/#overview)（独立部署） |
+| 铭锦三省 Sanxing | 即时亲子沟通与家庭有效方法沉淀 | `/#sanxing`（微信小程序体验码） |
 
 ## 快速开始
 
