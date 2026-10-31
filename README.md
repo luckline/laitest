@@ -10,7 +10,7 @@
 | 时光智行 TimeLens | AI 旅行规划、路线分享、出发清单与旅行记录 | `/timelens`、`/travel/<route-id>` |
 | 锦食铭味 jmfood | 餐饮门店扫码点餐与经营管理 | `/jmfood`、`/jmfood-admin` |
 | 梁点 · 自媒体 AI 工作台 | 账号管理、选题策划、AI 创作、发布与收益复盘 | [进入工作台](http://timelens.cc:8787/#overview)（独立部署） |
-| 铭锦三省 Sanxing | 即时亲子沟通与家庭有效方法沉淀 | `/#sanxing`（微信小程序体验码） |
+| 小芝麻成长 | 即时亲子沟通与家庭有效方法沉淀 | `/#sanxing`（微信小程序体验码） |
 
 内容中心 `/content` 按每页 12 篇展示全部文章，支持 `topic=travel-note`（旅行见闻）和 `topic=tech-note`（技术与产品）筛选，以及 `page=2` 等分页参数。文章站点地图会遍历上游全部分页；上游读取失败时返回 503，避免发布不完整的文章归档。
 

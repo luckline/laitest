@@ -54,11 +54,11 @@ const checks = [
   {
     name: "铭测管理后台",
     path: "/mingtest-admin",
-    contains: ["noindex,nofollow", "管理员登录", "专业版申请", "lingtest-admin.js?v=2"],
+    contains: ["noindex,nofollow", "管理员登录", "专业版申请", "lingtest-admin.js?v=3"],
   },
   {
     name: "铭测管理脚本",
-    path: "/lingtest-admin.js?v=1",
+    path: "/lingtest-admin.js?v=3",
     contains: ["lingtest:admin-token", "/admin/leads", "activationCode"],
   },
   {
